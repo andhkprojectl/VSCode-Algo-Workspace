@@ -1,0 +1,3 @@
+symbol,short_percent_of_float,shares_short,report_date,source
+NVDA,0.010199999,237153736,1737849600,yfinance
+TSLA,0.024500001,71187964,1735603200,yfinance
