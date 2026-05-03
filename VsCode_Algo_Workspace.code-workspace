@@ -7,7 +7,10 @@
 			"path": "VS_1000_20260204_NVDA"
 		},
 		{
-			"path": "VS_test"
+			"path": "vsTest"
+		},
+		{
+			"path": "vSLiveTrade"
 		}
 	],
 	"settings": {}
