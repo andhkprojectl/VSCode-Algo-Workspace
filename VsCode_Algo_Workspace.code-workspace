@@ -1,27 +1,35 @@
 {
 	"folders": [
 		{
-			"path": "VS_1000_20260204_NVDA"
-		},
-		{
+			"name": "VS_0001_config",
 			"path": "VS_0001_config"
 		},
 		{
+			"name": "VS_0002_data",
 			"path": "VS_0002_data"
 		},
 		{
+			"name": "VS_0003_test",
 			"path": "VS_0003_test"
 		},
 		{
+			"name": "VS_0004_broker",
 			"path": "VS_0004_broker"
 		},
 		{
+			"name": "VS_0005_monitor",
 			"path": "VS_0005_monitor"
 		},
 		{
+			"name": "VS_1000_20260204_NVDA",
+			"path": "VS_1000_20260204_NVDA"
+		},
+		{
+			"name": "VS_9000_LiveTrade",
 			"path": "VS_9000_LiveTrade"
 		},
 		{
+			"name": "VS_9999_test_program",
 			"path": "VS_9999_test_program"
 		}
 	],
