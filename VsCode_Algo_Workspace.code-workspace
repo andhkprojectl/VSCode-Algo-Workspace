@@ -1,16 +1,28 @@
 {
 	"folders": [
 		{
-			"path": "VS_0001_general_function"
-		},
-		{
 			"path": "VS_1000_20260204_NVDA"
 		},
 		{
-			"path": "vsTest"
+			"path": "VS_0001_config"
 		},
 		{
-			"path": "vSLiveTrade"
+			"path": "VS_0002_data"
+		},
+		{
+			"path": "VS_0003_test"
+		},
+		{
+			"path": "VS_0004_broker"
+		},
+		{
+			"path": "VS_0005_monitor"
+		},
+		{
+			"path": "VS_9000_LiveTrade"
+		},
+		{
+			"path": "VS_9999_test_program"
 		}
 	],
 	"settings": {}

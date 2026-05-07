@@ -1,0 +1,134 @@
+import pandas as pd
+import asyncio
+from ib_insync import *
+from datetime import datetime, timedelta
+import os
+
+def getData(symbol, start_dt, start_time, end_dt, end_time, period1):
+    """
+    Get historical OHLCV data from Interactive Brokers TWS.
+
+    Parameters:
+    symbol (str): Stock symbol (e.g., 'NVDA')
+    start_dt (str or datetime): Start date (YYYY-MM-DD format if string)
+    start_time (str or datetime): Start time (HH:MM:SS format if string)
+    end_dt (str or datetime): End date (YYYY-MM-DD format if string)
+    end_time (str or datetime): End time (HH:MM:SS format if string)
+    period1 (int): Timeframe in seconds (e.g., 180 for 3 minutes)
+
+    Returns:
+    pd.DataFrame: DataFrame with OHLCV data and timestamp index
+    """
+    async def fetch_data():
+        ib = IB()
+        try:
+            # Connect to IBKR TWS
+            await ib.connectAsync('127.0.0.1', 4002, clientId=1)
+            print(f"Connected to IBKR for {symbol}")
+
+            # Set market data type to live
+            ib.reqMarketDataType(1)
+
+            # Define the contract
+            contract = Stock(symbol, 'SMART', 'USD')
+            await ib.qualifyContractsAsync(contract)
+
+            # Convert parameters to datetime objects if they're strings
+            if isinstance(start_dt, str):
+                start_dt = datetime.strptime(start_dt, '%Y-%m-%d')
+            if isinstance(start_time, str):
+                start_time = datetime.strptime(start_time, '%H:%M:%S').time()
+            if isinstance(end_dt, str):
+                end_dt = datetime.strptime(end_dt, '%Y-%m-%d')
+            if isinstance(end_time, str):
+                end_time = datetime.strptime(end_time, '%H:%M:%S').time()
+
+            # Combine date and time
+            start_datetime = datetime.combine(start_dt, start_time)
+            end_datetime = datetime.combine(end_dt, end_time)
+
+            # Convert period1 (seconds) to IB bar size setting
+            if period1 <= 60:
+                bar_size = f"{period1} secs"
+            elif period1 <= 3600:
+                bar_size = f"{period1 // 60} min"
+            elif period1 <= 86400:
+                bar_size = f"{period1 // 3600} hour"
+            else:
+                bar_size = f"{period1 // 86400} day"
+
+            # Calculate duration string for IB request
+            duration_seconds = int((end_datetime - start_datetime).total_seconds())
+            if duration_seconds <= 86400:  # Less than 1 day
+                duration_str = f"{duration_seconds} S"
+            elif duration_seconds <= 604800:  # Less than 1 week
+                duration_str = f"{duration_seconds // 86400} D"
+            elif duration_seconds <= 2592000:  # Less than 1 month
+                duration_str = f"{duration_seconds // 604800} W"
+            else:  # More than 1 month
+                duration_str = f"{duration_seconds // 2592000} M"
+
+            print(f"Requesting {bar_size} bars for {duration_str} from {start_datetime} to {end_datetime}")
+
+            # Get historical data
+            bars = await ib.reqHistoricalDataAsync(
+                contract,
+                endDateTime=end_datetime.strftime('%Y%m%d %H:%M:%S'),
+                durationStr=duration_str,
+                barSizeSetting=bar_size,
+                whatToShow='TRADES',
+                useRTH=False,
+                formatDate=1
+            )
+
+            if bars:
+                # Convert to DataFrame
+                df = pd.DataFrame({
+                    'timestamp': [bar.date for bar in bars],
+                    'open': [bar.open for bar in bars],
+                    'high': [bar.high for bar in bars],
+                    'low': [bar.low for bar in bars],
+                    'close': [bar.close for bar in bars],
+                    'volume': [bar.volume for bar in bars]
+                })
+
+                # Set timestamp as index
+                df.set_index('timestamp', inplace=True)
+
+                print(f"Retrieved {len(df)} bars of {bar_size} data")
+                return df
+            else:
+                print("No data retrieved")
+                return pd.DataFrame()
+
+        except Exception as e:
+            print(f"Error fetching data: {e}")
+            return pd.DataFrame()
+        finally:
+            # Close connection
+            if ib.isConnected():
+                ib.disconnect()
+                print("Disconnected from IBKR")
+
+    # Run the async function
+    return asyncio.run(fetch_data())
+
+
+# Example usage:
+if __name__ == "__main__":
+    # Example: Get NVDA data for 3-minute bars from 2024-01-01 09:30:00 to 2024-01-01 16:00:00
+    df = getData(
+        symbol='NVDA',
+        start_dt='2024-01-01',
+        start_time='09:30:00',
+        end_dt='2024-01-01',
+        end_time='16:00:00',
+        period1=180  # 3 minutes
+    )
+
+    if not df.empty:
+        print("Data retrieved successfully:")
+        print(df.head())
+        print(f"Total bars: {len(df)}")
+    else:
+        print("No data retrieved")

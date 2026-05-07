@@ -1,0 +1,32 @@
+About daily1 time frame
+
+1. For instrument of below trading period (US/Eastern time zone)
+Regular Trading Hours:
+	- Sunday to Friday: 
+		- Open: 6:00 PM Eastern Time (ET) on Sunday evening
+		- Close: 5:00 PM ET on Friday evening
+	- Daily Trading Sessions:
+		- Open: 6:00 PM ET
+		- Close: 5:00 PM ET the next day
+	- Daily Maintenance Break:
+		- Closed: 5:00 PM to 6:00 PM ET
+		
+		
+
+2. py file trade available for below period (afl need to add allowBuyShort / allowSellCover control signal)
+# Mon to Thu: 
+	- 00:00:01 to 00:00:30 or 00:05:01 to 00:05:30, every 5 second (new bar after 00:00:00). For next bar O buy/short/sell/cover
+	- 23:58:01 to 23:59:59, every 5 second. For current bar C buy/short/sell/cover
+# Sun: 
+	- 18:00:01 to 18:00:30 or 18:05:01 to 18:05:30. Start trading on Sun 18:00 (new bar after 18:00:00). For next bar O buy/short/sell/cover
+# Fri: 
+	- 16:58:01 to 16:59:59 (17:00:00 end trade). For current bar C buy/short/sell/cover
+# Sat: no trade
+
+
+
+2. Symbols
+@YM#C
+QMGC#C
+@QM#C
+@QC#C

@@ -1,0 +1,9 @@
+1. Period
+# Mon to Thu: 00:00:01 to 00:00:30 or 00:05:01 to 00:05:30, every 5 second (new bar after 00:00:00)
+# Sun: 20:00:01 to 20:00:30 or 20:05:01 to 20:05:30. Start trading on Sun 20:00 (new bar after 20:00:00)
+# Fri: 14:15:01 to 14:15:30 or 14:28:01 to 14:28:30 (14:20:00 end trade)
+# Sat: no trade
+
+
+2. Symbols
+ZS
