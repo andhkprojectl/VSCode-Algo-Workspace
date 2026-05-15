@@ -31,6 +31,9 @@
 		{
 			"name": "VS_9999_test_program",
 			"path": "VS_9999_test_program"
+		},
+		{
+			"path": "VS_0006_dbDataFile"
 		}
 	],
 	"settings": {}
