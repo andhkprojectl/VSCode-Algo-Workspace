@@ -1,0 +1,350 @@
+prompt1 (claude haiku): 
+Below are folder structure of Workspace VSCode Algo Workspace
+|- VS_0001_config
+|- VS_0002_data
+	|- ibMarketData.py
+	|- yahooMarketData.py
+|-VS_0003_test
+	|- backtest.py
+	|- walkforwardTest.py
+	|- monteCarlo.py
+	|- lookAheadTest.py
+	|- monkeyTest.py
+	|- monkeyTest.py
+|- VS_0004_broker
+	|- ibBorker.py
+	|- futuBorker.py
+|- VS_0005_monitor
+	|- dashBoard.py
+	|- logger.py
+	|- alerts.py
+	
+- please create blank python file in the folder if file is missing
+
+prompt 2:
+please help create file VS_0002_data\ibMarketData.py
+
+requirement
+1. create 1st function in file getTicketDataWithTimeFromIB.py
+	- purpose of function getTicketDataWithTimeFromIB: get market data from interactive broker (IB), parameter include date and time
+	- function getTicketDataWithTimeFromIB definition
+		- fetch_data_with_time(conn1, symbolName, startDate, startTime, endDate, endTime, period1):
+	- function getTicketDataWithTimeFromIB parameter
+		- conn1: connection Name of interactive broker TWS
+		- symbolName: character, name of ticker
+		- startDate: begin date of market data. format: 8 characters in format YYYYMMDD
+		- startTime: begin time of market data. format: hh24:mm, e.g. 8:30 pm, value of startTime is 2230
+		- endDate: end  date of market data. format same as startDate
+		- endTime: end time of market data. format: hh24:mm, e.g. 8:30 pm, value of startTime is 2230
+		- period1: timeframe of market data. values in minute, e.g. period1=1 means 1 minute, period = 5 means 5 minutes
+	- function getTicketDataWithTimeFromIB workflow
+		- if conn1 is null, connect to IB. if already connected, proceed below. port is 4002. host is localhost
+		- according to parameter, get below data from IB 
+			- get date, time, high, low, close, open, volume
+			- add new column datetime which is date + time. format yyyy-mm-dd hh24:mi:ss
+			- add new column sybmolName
+			- save into dataframe, index is datetime
+			- sort by datetime asending order
+			
+			
+prompt 3:			
+please help create file VS_0002_test\backtest.py
+please provide content of VS_0002_test\backtest.py
+requirement
+1. create 1st function backtestStrategy
+	- purpose of function backtestStrategy: backtest a strategy and ouput result to dashboard
+	- function backtestStrategy definition
+		- def backtestStrategy(strategy1, inFileName):
+	- function backtestStrategy parameter
+		- strategy1: class of strategy logic
+		- inFileName: absolute filename with path containing backtest data. csv format.columns as below
+        datetime: datetime format mm/dd/yyyy hh24:mi
+        date: date. format mm/dd/yyyy
+        time: time. format hh24:mi:ss
+        high: high price
+        low: low price
+        close: close price
+        open: open price
+        volume: volume
+        symbolName: symbolName 		
+	- function backtestStrategy workflow
+		- function read content of backtest data from inFileName
+		- according to strategy1, perform backtest
+		- strategy1 define strategy, for example, buy when ma5 cross up ma50, sell when ma5 cross down ma50. strategy define below but may be skip some
+			- buy signal
+			- sell signal
+			- short signal (optional)
+			- cover signal (optional)
+			- commission charge
+			- slippage charge
+			- stop loss conditions. must define stop limit order or stop market order. if stop limit order, must provide stop price and stop limit price
+			- take profit condition (optional)
+		- strategy1 must obey below conditions
+			- if there is buy signal, later must has sell signal
+			- if there is short signal, later must has cover  signal
+			- must contains either buy/sell signal or short cover signal or include both. But must not without buy/sell and short/cover signal
+			- must has stop loss signal
+			- may be not take profit signal
+		- after backtest, show below result
+			Percentile Days
+			Net Profit
+			Annual Return
+			% Annual Return
+			Sharpe Ratio
+			Number of Trade
+			Max System Drawdown
+			Max Trade Drawdown
+			Number of Wins
+			Number of Losses
+			Win Ratio
+		- show backtest result in dashboard include plotting chart
+		
+		
+prompt 4:			
+please help create file VS_0002_test\walkForwardTest.py
+please provide content of VS_0002_test\walkForwardTest.py
+requirement
+1. create 1st function walkTestStrategy1
+	- purpose of function walkTestStrategy1: backtest a strategy and ouput result to dashboard
+	- function walkTestStrategy1 definition
+		- def walkTestStrategy1(strategy1, inFileName):
+	- function walkTestStrategy1 parameter
+		- strategy1: class of strategy logic
+		- inFileName: absolute filename with path containing backtest data. csv format.columns as below
+			datetime: datetime format mm/dd/yyyy hh24:mi
+			date: date. format mm/dd/yyyy
+			time: time. format hh24:mi:ss
+			high: high price
+			low: low price
+			close: close price
+			open: open price
+			volume: volume
+			symbolName: symbolName 				
+		- periodUnit: unit of inSamplePeriod parameter and outSample. M: month, W: week, D, day
+		- inSampleWindowStartDate: start date of in sample data window
+		- inSampleWindowEndDate: end date of in sample data window
+		- inSampleEndDate: last date for in sample. End walk forward test if inSampleWindowEndDate = inSampleEndDate
+		- outSampleStep: after optimize parameter from inSampleWindowStartDate to inSampleWindowEndDate, backtest next outSampleStep periodUnit
+		- outSampleStepUnit: M: month, W: week, D: Day
+		- for example. below means optimize parameter from 2025/01/01 to 2025/06/01, then use best parameter to backtest next 1 month data, i.e. 2025/07. after that optmize parameter from 2025/02/01 to 2025/07/01, backtest next 1 month data, i.e. 2025/08. until optimize parameter from 2025/06/01 to 2025/11/01, back test 2025/12/01
+			- inSampleWindowStartDate= 2025/01/01 
+			- inSampleWindowEndDate = 2025/06/01
+			- inSampleEndDate = 2025/11/01
+			- outSampleStep = 1
+			- outSampleStepUnit = M: month, W: week, D: day
+	- function walkTestStrategy1 workflow
+		- function read content of walkforward backtest data from inFileName
+		- according to strategy1, perform walkforward backtest
+		- strategy1 define strategy, for example, buy when ma5 cross up ma50, sell when ma5 cross down ma50. strategy define below but may be skip some
+			- buy signal
+			- sell signal
+			- short signal (optional)
+			- cover signal (optional)
+			- commission charge
+			- slippage charge
+			- stop loss conditions. must define stop limit order or stop market order. if stop limit order, must provide stop price and stop limit price
+			- take profit condition (optional)
+		- strategy1 must obey below conditions
+			- if there is buy signal, later must has sell signal
+			- if there is short signal, later must has cover  signal
+			- must contains either buy/sell signal or short cover signal or include both. But must not without buy/sell and short/cover signal
+			- must has stop loss signal
+			- may be not take profit signal
+			- max 2 parameters can be optimized when backtest in sample window period
+		- after backtest, show below result
+			Percentile Days
+			Net Profit
+			Annual Return
+			% Annual Return
+			Sharpe Ratio
+			Number of Trade
+			Max System Drawdown
+			Max Trade Drawdown
+			Number of Wins
+			Number of Losses
+			Win Ratio
+		- show backtest result in dashboard include plotting chart		
+		
+Prompt 5:
+please help create file VS_0002_test\\monteCarloSimulation.py
+please provide content of VS_0002_test\monteCarloSimulation.py
+requirement
+1. create 1st function monteCarloSimulation1
+- def monteCarloSimulation1 (strategy1, inFileName, num_runs, init_balance, position_size)
+	- strategy1. include
+		- strategy 
+		- buy/sell signal logic
+		- short/cover signal logic
+		- init balance
+		- position size per trade
+		- commission
+		- slippage 
+		- stop loss logic and price
+		- take profit logic and price (optional)
+	- inFileName: absolute filename with path containing backtest data. csv format.columns as below
+		datetime: datetime format mm/dd/yyyy hh24:mi
+		date: date. format mm/dd/yyyy
+		time: time. format hh24:mi:ss
+		high: high price
+		low: low price
+		close: close price
+		open: open price
+		volume: volume
+		symbolName: symbolName
+	- num_runs: number of runs for Monte Carlo
+	- init_balance: initial amount, currency USD
+	- position_size: number of stocks per trade
+	- output of function
+		- Final Equity Percentiles. show 99th, 95th, 90th, 50th Percentile equity
+		- Max Drawdown (MDD) Probability. This tells you the chance of hitting a specific loss. For example: "There is a 15% chance you will experience a 25% drawdown at some point this year.". Please show chance of 90%, 95%, 99%, 80%, 70%, 50%, 25%, 10% drawdown
+		- Probability of Ruin: The percentage of simulations where your account balance hit $\$0$ (or your "Stop Trading" limit). If this is >1%, your position size is likely too large
+		- Confidence Level: show Usually expressed as: "I am 95% confident that my annual return will be between X and Y."
+	- workflow
+		- run backtest of strategy1, get P&L return per trade from strategy1
+		- Number of runs for monte carlos is num_runs
+		
+		
+Prompt 6:
+please help create file VS_0002_test\monteCarloSimulation.py
+please provide content of VS_0002_test\monteCarloSimulation.py
+requirement
+1. create 1st function monteCarloSimulation1
+- def monteCarloSimulation1 (strategy1, inFileName, num_runs, init_balance, position_size)
+	- strategy1. include
+		- strategy 
+		- buy/sell signal logic
+		- short/cover signal logic
+		- init balance
+		- position size per trade
+		- commission
+		- slippage 
+		- stop loss logic and price
+		- take profit logic and price (optional)
+	- inFileName: absolute filename with path containing backtest data. csv format.columns as below
+		datetime: datetime format mm/dd/yyyy hh24:mi
+		date: date. format mm/dd/yyyy
+		time: time. format hh24:mi:ss
+		high: high price
+		low: low price
+		close: close price
+		open: open price
+		volume: volume
+		symbolName: symbolName
+	- num_runs: number of runs for Monte Carlo
+	- init_balance: initial amount, currency USD
+	- position_size: number of stocks per trade
+	- output of function
+		- Final Equity Percentiles. show 99th, 95th, 90th, 50th Percentile equity
+		- Max Drawdown (MDD) Probability. This tells you the chance of hitting a specific loss. For example: "There is a 15% chance you will experience a 25% drawdown at some point this year.". Please show chance of 90%, 95%, 99%, 80%, 70%, 50%, 25%, 10% drawdown
+		- Probability of Ruin: The percentage of simulations where your account balance hit $\$0$ (or your "Stop Trading" limit). If this is >1%, your position size is likely too large
+		- Confidence Level: show Usually expressed as: "I am 95% confident that my annual return will be between X and Y."
+	- workflow
+		- run backtest of strategy1, get P&L return per trade from strategy1
+		- Number of runs for monte carlos is num_runs
+
+
+Prompt 7
+please help create file VS_0002_test\otherTest.py
+please provide content of VS_0002_test\otherTest.py
+requirement
+
+1. create 1st function lookAheadBiasTest
+- def lookAheadBiasTest (strategy1, inFileName, init_balance, position_size)
+	- strategy1. include
+		- strategy 
+		- buy/sell signal logic
+		- short/cover signal logic
+		- init balance
+		- position size per trade
+		- commission
+		- slippage 
+		- stop loss logic and price
+		- take profit logic and price (optional)
+	- inFileName: absolute filename with path containing backtest data. csv format.columns as below
+		datetime: datetime format mm/dd/yyyy hh24:mi
+		date: date. format mm/dd/yyyy
+		time: time. format hh24:mi:ss
+		high: high price
+		low: low price
+		close: close price
+		open: open price
+		volume: volume
+		symbolName: symbolName
+	- init_balance: initial amount, currency USD
+	- position_size: number of stocks per trade
+	- output of function
+		- isLookAhead. True: strategy1 has look ahead issue. false: strategy1 does not has look ahead issue
+		- lookAheadBar. DataFrame. store the bar has look ahead issue
+	- workflow
+		- Perform look ahead bias test to strategy strategy1
+		
+		
+Prompt 8
+please provide content of VS_0002_test\otherTest.py
+
+requirement
+2. create 2nd function monkeyTest
+- def monkeyTest (strategy1, inFileName, init_balance, position_size)
+	- strategy1. include
+		- strategy 
+		- buy/sell signal logic
+		- short/cover signal logic
+		- init balance
+		- position size per trade
+		- commission
+		- slippage 
+		- stop loss logic and price
+		- take profit logic and price (optional)
+	- inFileName: absolute filename with path containing backtest data. csv format.columns as below
+		datetime: datetime format mm/dd/yyyy hh24:mi
+		date: date. format mm/dd/yyyy
+		time: time. format hh24:mi:ss
+		high: high price
+		low: low price
+		close: close price
+		open: open price
+		volume: volume
+		symbolName: symbolName
+	- init_balance: initial amount, currency USD
+	- position_size: number of stocks per trade
+	- workflow
+		- a) call backTestfunction to get backtest result of strategy1 from input data file inFileName
+		- b) update strategy1, use random function to generate buy/sell or short/cover. Then call backTestfunction to get backtest result
+		- compare backtest result of a) b) above
+	- output of function
+		- monkeyTestBetter. True: if backtest result of b) is better than a) in terms of net profit, sharpe ratio, max draw down. false if backtest result of b) worse than a)
+	- attach backtest.py to gemini
+		
+		
+		
+Prompt 9
+please provide content of VS_0002_data\dashBoard.py
+
+requirement
+1. use python to create dashBoard. Get data from IB. save to DB or file depends on option in dashBoard
+2. Layout is dashBoard GetData V2.png. Convert png to dashBoardGetData.html
+3. run localhost server to open dashBoardGetData.html
+4. funtion of component in dashBoardGetData.html according to number in or near component. Below is description of number:
+	- 1 is textbox. User enter tickler name, including NASDAQ stock name or NYSE stock name or HKSE stock name or CME IB future name 
+	- 2 is textbox. it is time frame, value is integer. default value is Minute and disable, not allow to change value
+	- 3 is textbox. it is drop down box. Available values are Second/Minute/Hour/Day/Week/Month. default value is 1 and disable, not allow to change value. For Example, time frame = 1 and time frame unit = Minute, it means time frame is 1 Minute
+	- 4 is calendar. From Date
+	- 5 and 6 is minute. From minute, format is hh:mm
+	- 7 is calendar. To Date
+	- 8 and 9 is minute. To minute, format is hh:mm	
+	- 10 is check box. If checked, data save to sqlite database tickler table. if not checked, data not save to DB
+	- 11 is checked. if checked, data store in csv file, file name and path in component 12. 
+	- 13 is submit button. When press, perform below
+		- system get ticker name, time frame, from date, from time, to date, to time in dash board component 1,2,3,4,5,6,7,8,9. 
+		- Get data from sqlite local DB tickler table. save to dataFrame "ticklerDataFrame1"
+		- check any bar miss from date, from time, to date, to time in ticklerDataFrame1
+		- for those missing bar, get missing bar data from IB, add missing bar to dataFrame ticklerDataFrame1. use libary ib_insync
+		- since there is limitation number of bars getting data from IB, please write a loop to get IB data, each time get 15 days, loop until all missing data between from date from time, to date, to time is backfilled
+		- if save db check box (component 10) is checked, backfill (insert) missing bar to sqlIte tickler table
+		- if save file checked, save dataFrame to file according to filename and path in filename check box (component 12)
+		- Plot ticker name, from date, from time, to date to time, HLCO to chart (component 15). Update title at top of chart 
+		- Plot volume to chart (component 16)
+		
+	- 14 is Cancel button, when press, dashBoard quit
+	- 15 is chart. after submit button data got from IB, data plot to this chart, from from date from time in component 4,5,6. To  to date and to minute in component 7, 8, 9
+	- 16 is chart. show  volume  

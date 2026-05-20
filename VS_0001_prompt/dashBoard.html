@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Dashboard Form</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; padding: 20px; }
+        .card { background: white; max-width: 500px; margin: auto; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; }
+        .row { margin-bottom: 15px; display: flex; align-items: center; }
+        label { width: 130px; font-weight: bold; font-size: 0.9em; }
+        input[type="text"], input[type="date"], select { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .time-box { width: 50px; text-align: center; }
+        .checkbox-section { margin-left: 130px; margin-top: 10px; }
+        .checkbox-row { display: flex; align-items: center; margin-bottom: 10px; gap: 10px; }
+        .btn-group { margin-top: 20px; margin-left: 130px; display: flex; gap: 10px; }
+        button { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .submit { background: #007bff; color: white; }
+        .cancel { background: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Data</h2>
+    
+    <div class="row">
+        <label>Symbol:</label>
+        <input type="text" placeholder="text box">
+    </div>
+
+    <div class="row">
+        <label>Time frame:</label>
+        <input type="text" placeholder="text box">
+    </div>
+
+    <div class="row">
+        <label>Timeframe Unit:</label>
+        <select>
+            <option>second</option>
+            <option>minute</option>
+            <option>hour</option>
+            <option>Day</option>
+            <option>Week</option>
+            <option>Month</option>
+        </select>
+    </div>
+
+    <div class="row">
+        <label>From Date:</label>
+        <input type="date">
+    </div>
+
+    <div class="row">
+        <label>From time:</label>
+        <select style="flex:0.4">
+            <option>hour</option>
+        </select>
+        <span style="margin: 0 5px;">:</span>
+        <select style="flex:0.4">
+            <option>minute</option>
+        </select>
+    </div>
+
+    <div class="row">
+        <label>To Date:</label>
+        <input type="date">
+    </div>
+
+    <div class="row">
+        <label>To time:</label>
+        <input type="text" class="time-box">
+        <span style="margin: 0 5px;">:</span>
+        <input type="text" class="time-box">
+    </div>
+
+    <div class="checkbox-section">
+        <div class="checkbox-row">
+            <input type="checkbox" id="db"> <label for="db" style="width:auto">save db</label>
+        </div>
+        <div class="checkbox-row">
+            <input type="checkbox" id="file"> <label for="file" style="width:auto">save file</label>
+        </div>
+        <div class="checkbox-row">
+            <input type="text" placeholder="file name" style="max-width:150px">
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button class="submit">Submit</button>
+        <button class="cancel">Cancel</button>
+    </div>
+</div>
+
+</body>
+</html>
