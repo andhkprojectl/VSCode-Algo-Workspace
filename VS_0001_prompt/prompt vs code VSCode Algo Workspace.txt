@@ -3,7 +3,7 @@ Below are folder structure of Workspace VSCode Algo Workspace
 |- VS_0001_config
 |- VS_0002_data
 	|- ibMarketData.py
-	|- yahooMarketData.py
+	|- yFinanceMarketData.py
 |-VS_0003_test
 	|- backtest.py
 	|- walkforwardTest.py
@@ -348,3 +348,30 @@ requirement
 	- 14 is Cancel button, when press, dashBoard quit
 	- 15 is chart. after submit button data got from IB, data plot to this chart, from from date from time in component 4,5,6. To  to date and to minute in component 7, 8, 9
 	- 16 is chart. show  volume  
+
+
+Prompt 10:
+yFinanceMarketData.py
+
+Requirement:
+	- Please develop a function name "getTicketDataWithTimeFromYFinance"
+	- purpose of function getTicketDataWithTimeFromYFinance: get market data from yahoo finance, parameter include date and time
+	- definition
+	- def getTicketDataWithTimeFromYFinance(conn1, symbolName, startDate, startTime, endDate, endTime, period1):
+	- function getTicketDataWithTimeFromYFinance parameter
+		- conn1: connection Name of interactive broker TWS
+		- symbolName: character, name of ticker
+		- startDate: begin date of market data. format: 8 characters in format YYYYMMDD
+		- startTime: begin time of market data. format: hh24:mm, e.g. 8:30 pm, value of startTime is 2230
+		- endDate: end  date of market data. format same as startDate
+		- endTime: end time of market data. format: hh24:mm, e.g. 8:30 pm, value of startTime is 2230
+		- period1: timeframe of market data. values in minute, e.g. period1=1 means 1 minute, period = 5 means 5 minutes
+	- function getTicketDataWithTimeFromYFinance workflow
+		- if conn1 is null, connect to yahoo finance. if already connected, proceed below
+		- according to parameter, get below data from yahoo Finance 
+			- get date, time, high, low, close, open, volume
+			- write data to csv file c:/tmp/yFinance_<datetime>.csv.  <datetime> is current datetime
+			- csv column format
+				- Ticker, Date, Open, High, Low, Close, Volume
+			- if parameter period1 is minute and hour, 2nd column Date format is YYYY-MM-DD HH24:MI, else Date format is YYYY-MM-DD
+			- sort by datetime asending order

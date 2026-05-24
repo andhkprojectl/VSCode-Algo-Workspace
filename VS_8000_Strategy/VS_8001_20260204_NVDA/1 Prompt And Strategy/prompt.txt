@@ -32,11 +32,51 @@ requirement:
         - i.e. sumEma20DiffCAbsUpRankper ma
         - e.g. if last 100 bars of ema20DiffCAbsRank has 30 rank 1, within 30 bars, 20 bars of rt10 > 0, ema20DiffCAbsUpRankper for rank 1 is 20
     - find percentage of rank between, save in variale ema20DiffCAbsUpRankper. 
-    
-        - e.g. sumEma20Rankper = sumEma20DiffCAbsUpRankper*100/sumEma20DiffCAbsRank
-    - buy signal: buy00 = iRbBullish
-		AND regSlopema10 > Ref(regSlopema10, -1)
-		AND pRtEma20Rankper > 50
-		AND ema20DiffCAbsRank >= 3
-		AND pRtEma20Rankper >= Ref(pRtEma20Rankper, -1) AND pRtEma20Rankper >= Ref(pRtEma20Rankper, -2)
+            - e.g. sumEma20Rankper = sumEma20DiffCAbsUpRankper*100/sumEma20DiffCAbsRank
+    - buy signal: 
+        buy00 = iRbBullish
+            AND regSlopema10 > Ref(regSlopema10, -1)
+            AND pRtEma20Rankper > 50
+            AND ema20DiffCAbsRank >= 3
+            AND pRtEma20Rankper >= Ref(pRtEma20Rankper, -1) AND pRtEma20Rankper >= Ref(pRtEma20Rankper, -2)
 		;
+        buy signal is triggered when previous bar buy00 is true;
+        if live trade, buy price is current close price. slippage = 0.03
+        else if backtest, buy price is current open price        
+
+    - sell signal:
+        - 5 bars after buy bar
+        if live trade, buy price is current close price. slippage = 0.03
+        else if backtest, buy price is current open price                
+
+
+
+    - short signal: 
+        short00 = iRbBearish
+            AND regSlopema10 < Ref(regSlopema10, -1)
+            AND pRtEma20Rankper < 50
+            AND ema20DiffCAbsRank >= 3
+            AND pRtEma20Rankper <= Ref(pRtEma20Rankper, -1) AND pRtEma20Rankper <= Ref(pRtEma20Rankper, -2)
+            ;		
+        short signal is triggered when previous bar short00 is true;
+        if live trade, short price is current close price. slippage = 0.03
+        - else if backtest, short price is current open price        
+        
+
+    - cover signal:
+        - 5 bars after short bar
+        if live trade, buy price is current close price. slippage = 0.03
+        else if backtest, buy price is current open price                
+
+
+
+    stop loss handle:   
+    - For stop loss of buy, stop limit order:
+        - if live trade, Stop Price = current close price - previous bar of ATR(7)*2.5. stop limit price = Stop Price - 0.06
+        - else if backtest, , Stop Price = current close price - previous bar of ATR(7)*2.5. stop limit price = Stop Price - 0.06
+    - For stop loss of short, stop limit order:
+        - if live trade, Stop Price = current close price + previous bar of ATR(7)*2.5. stop limit price = Stop Price + 0.06
+        - else if backtest, , Stop Price = current close price + previous bar of ATR(7)*2.5. stop limit price = Stop Price + 0.06    
+
+
+7. Positiion size of each buy / short trade: 110 NVDA stocks. Sell/cover all stocks for each trade

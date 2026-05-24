@@ -1,122 +1,106 @@
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from ib_insync import IB, Stock, util
 
 def getTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime, endDate, endTime, period1):
     """
-    Fetches historical intraday market data from Interactive Brokers.
+    Fetches historical intraday market data from Interactive Brokers, 
+    chunking requests into maximum 16-day blocks to handle IB API limits.
     """
-
-    # Increase the global request timeout to 60 seconds (default is usually 10-20s)
-    # IB.setConnectTimeout(120) # 120 s timeout
     
     # 1. Handle Connection
-    # If conn1 is None or not connected, establish connection to TWS/Gateway
     if conn1 is None or not conn1.isConnected():
         conn1 = IB()
-        # Connect to localhost on port 4002 (Paper trading / Gateway default)
-        # Increase timeout to 5 minutes (or 0 for infinite)
-        # conn1.RequestTimeout = 300        
-        # clientId=1 is used to uniquely identify this connection
         conn1.connect('127.0.0.1', 4002, clientId=1)
-    # set timeout
-    # conn1.setTimeout(300) 
-
 
     # 2. Parse Dates and Times
-    # Strip any colons from the time inputs to safely handle both '22:30' and '2230'
     start_time_clean = startTime.replace(':', '')
     end_time_clean = endTime.replace(':', '')
     
-    # Combine into strings
     start_dt_str = f"{startDate}{start_time_clean}"
     end_dt_str = f"{endDate}{end_time_clean}"
     
-    # Convert to Python datetime objects
     start_dt = datetime.strptime(start_dt_str, "%Y%m%d%H%M")
     end_dt = datetime.strptime(end_dt_str, "%Y%m%d%H%M")
     
-    # IB expects the endDateTime parameter formatted as 'YYYYMMDD HH:MM:SS'
-    ib_end_dt = end_dt.strftime("%Y%m%d %H:%M:%S")
-    
-    # 3. Calculate Duration 
-    # IB API fetches backwards from the endDateTime based on a duration string.
-    duration_delta = end_dt - start_dt
-    days = duration_delta.days
-    
-    if days < 1:
-        durationStr = "1 D"
-    elif days < 30:
-        durationStr = f"{days + 1} D" # Add 1 day buffer to ensure coverage
-    elif days < 365:
-        durationStr = f"{duration_delta.days // 30 + 1} M"
-    else:
-        durationStr = f"{duration_delta.days // 365 + 1} Y"
-        
-    # 4. Format Bar Size (period1)
+    # 3. Format Bar Size (period1)
     if period1 == 1:
         barSizeSetting = "1 min"
     else:
         barSizeSetting = f"{period1} mins"
         
-    # 5. Define the Contract
-    # Assuming standard US Equities (SMART routing, USD)
+    # 4. Define the Contract
     contract = Stock(symbolName, 'SMART', 'USD')
 
+    # 5. Loop and Chunk Data Fetching (Max 16 Days per request)
+    all_dfs = []
+    current_start = start_dt
     
-
-
-
+    print(f"Starting data fetch for {symbolName} from {start_dt} to {end_dt}")
     
-    print("before get data:", datetime.now())
-    try:
-        # 6. Fetch Data from IB
-        # bars = conn1.reqHistoricalData(
-        #     contract,
-        #     endDateTime=ib_end_dt,
-        #     durationStr=durationStr,
-        #     barSizeSetting=barSizeSetting,
-        #     whatToShow='TRADES',
-        #     useRTH=False, # Set to False to include pre/post market data
-        #     formatDate=1
-        # )
-        bars = conn1.run(conn1.reqHistoricalDataAsync(
-            contract,
-            endDateTime=ib_end_dt,
-            durationStr=durationStr,
-            barSizeSetting=barSizeSetting,
-            whatToShow='TRADES',
-            useRTH=False, # Set to False to include pre/post market data
-            formatDate=1,
-            timeout=300))  
+    while current_start < end_dt:
+        # Determine the end date for this specific chunk (max 16 days forward)
+        current_end = min(current_start + timedelta(days=16), end_dt)
+        
+        # IB expects endDateTime for this chunk
+        ib_end_dt = current_end.strftime("%Y%m%d %H:%M:%S")
+        
+        # Calculate duration string for this specific chunk
+        duration_delta = current_end - current_start
+        days = duration_delta.days
+        
+        if days < 1:
+            durationStr = "1 D"
+        else:
+            durationStr = f"{days + 1} D" # Add 1 day buffer to ensure edge coverage
+            
+        print(f"  -> Fetching chunk: {current_start} to {current_end} (Duration: {durationStr}) at {datetime.now().time().replace(microsecond=0)}")
+        
+        try:
+            # Fetch Data from IB for this chunk
+            bars = conn1.run(conn1.reqHistoricalDataAsync(
+                contract,
+                endDateTime=ib_end_dt,
+                durationStr=durationStr,
+                barSizeSetting=barSizeSetting,
+                whatToShow='TRADES',
+                useRTH=False, 
+                formatDate=1,
+                timeout=300
+            ))  
+            
+            if bars:
+                chunk_df = util.df(bars)
+                all_dfs.append(chunk_df)
+                
+        except Exception as e:
+            print(f"  -> An error occurred during chunk {current_start} to {current_end}: {e}")
+            # Continue to the next chunk even if one fails, or you could return/break here depending on your strictness
+            
+        finally:
+            # Advance the start pointer for the next loop iteration
+            current_start = current_end
 
-    except Exception as e:
-        # Code that runs if an error happens (the "catch" part)
-        print(f"An error occurred: {e}")
-        bars = []  # Set bars to empty list on error to allow function to continue and return empty DataFrame
-    finally:
-        # Code that runs NO MATTER WHAT (success or failure)
-        print("after get data:", datetime.now())  
+    print("Data fetch completed:", datetime.now().time().replace(microsecond=0))  
     
-    
-    # Return empty DataFrame if no data is found
-    if not bars:
+    # 6. Check if any data was retrieved across all chunks
+    if not all_dfs:
+        print("Warning: No data found for the requested period.")
         return pd.DataFrame()
         
-    # 7. Data Processing into DataFrame
-    # ib_insync provides a fast utility to convert bars to pandas
-    df = util.df(bars)
+    # 7. Data Processing into a single DataFrame
+    # Concatenate all chunks together
+    df = pd.concat(all_dfs, ignore_index=True)
+    
+    # Drop duplicates in case chunk boundaries overlapped slightly due to the 1 D buffer
+    df.drop_duplicates(subset=['date'], inplace=True)
     
     # Create the strict datetime column (yyyy-mm-dd hh24:mi:ss) for indexing
     df['index_datetime'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d %H:%M:%S')
-    
-    # Set the new datetime column as the index
     df.set_index('index_datetime', inplace=True)
-    
-    # Ensure index is sorted in ascending order
     df.sort_index(ascending=True, inplace=True)
     
-    # Filter the dataframe strictly by the requested start and end times 
+    # Filter the aggregated dataframe strictly by the overall requested start and end times 
     start_filter = start_dt.strftime('%Y-%m-%d %H:%M:%S')
     end_filter = end_dt.strftime('%Y-%m-%d %H:%M:%S')
     df = df.loc[start_filter:end_filter]
@@ -124,15 +108,11 @@ def getTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime, endDate
     # Prepare individual columns for final output
     df_date = pd.to_datetime(df.index).strftime('%Y-%m-%d')
     df_time = pd.to_datetime(df.index).strftime('%H:%M:%S')
-    
-    # Create the requested custom formatted datetime column: mm/dd/yyyy hh24:mi
     df_custom_datetime = pd.to_datetime(df.index).strftime('%m/%d/%Y %H:%M')
-    
-    
 
     # 8. Construct Final Output mapping to requested columns
     result_df = pd.DataFrame({
-        'datetime': df_custom_datetime,  # <--- New column added here
+        'datetime': df_custom_datetime,
         'date': df_date,
         'time': df_time,
         'high': df['high'],
@@ -142,7 +122,5 @@ def getTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime, endDate
         'volume': df['volume'],
         'symbolName': symbolName 
     }, index=df.index) 
-
-    
     
     return result_df
