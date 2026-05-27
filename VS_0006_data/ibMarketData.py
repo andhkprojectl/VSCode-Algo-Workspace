@@ -111,7 +111,7 @@ def getTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime, endDate
     df_custom_datetime = pd.to_datetime(df.index).strftime('%m/%d/%Y %H:%M')
 
     # 8. Construct Final Output mapping to requested columns
-    result_df = pd.DataFrame({
+    `result_df` = pd.DataFrame({
         'datetime': df_custom_datetime,
         'date': df_date,
         'time': df_time,

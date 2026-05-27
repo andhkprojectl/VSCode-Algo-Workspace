@@ -1,0 +1,82 @@
+import os
+import sys
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Add VS_0002_data to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+import ibMarketData
+# from folder2.b import some_function
+import pandas as pd
+
+# --------------------------------------------
+current_dir = Path(__file__).resolve().parent
+dotenv_path = current_dir.parents[1] / "VS_0002_config" / ".env"
+if dotenv_path.exists():
+    load_dotenv(dotenv_path=dotenv_path)
+    print(f"Loaded .env from: {dotenv_path}")
+else:
+    print(f"ERROR: .env file not found at {dotenv_path}")
+csv_excel_path = os.getenv("csvExcelPath")
+if csv_excel_path:
+    print(f"Successfully retrieved csvExcelPath: {csv_excel_path}")
+#    
+#    # Optional: Resolve the relative path inside the .env relative to the .env file's location
+#    # '../../VSCode Algo Workspace DataFile/csvExcel' -> Absolute Path
+    env_dir = dotenv_path.parent
+    absolute_csv_path = (env_dir / csv_excel_path).resolve()
+#    print(f"Absolute path to data folder: {absolute_csv_path}")
+else:
+    print("ERROR: csvExcelPath not found in the .env file.")
+
+outcsvFileName = Path(csv_excel_path) / "NVDA_20250101_20260430_5Min.csv"
+print(f"outcsvFileName: {outcsvFileName}")
+#outcsvFileName = csv_excel_path / "csvExcel" / "NVDA_20250101_20260430_5Min.csv"
+#print(f"outcsvFileName: {outcsvFileName}")
+# --------------------------------------------
+
+
+# conn1 = None
+# symbolName = "NVDA"
+# startDate = "20260101"
+# startTime = "0930"
+# endDate = "20260430"
+# endTime = "1600"
+# period1 = 1
+# # a1 = ibMarketData.getTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime, endDate, endTime, period1)
+# a1 = ibMarketData.getTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime, endDate, endTime, period1)
+# a1.to_csv("c:/tmp/NVDA_1min_data01.csv", index=False)
+
+# ==========================================
+# Example Usage
+# ==========================================
+if __name__ == "__main__":
+    # You can pass None to let the function create the connection
+    my_ib_connection = None 
+    
+    # Fetch 1-minute NVDA data 
+    df = ibMarketData.getTicketDataWithTimeFromIB(
+        conn1=my_ib_connection,
+        symbolName="NVDA",
+        startDate="20250501",
+        startTime="0355",
+        endDate="20260430",
+        endTime="2005",
+        period1=5
+    )
+    
+    print(df.head())
+    df.to_csv(outcsvFileName, index=False)
+
+    # --------------------------------------------------------------------------------------------
+    # format import amibroker
+    # --------------------------------------------------------------------------------------------
+    # Select the columns in the exact requested order
+    df2_amibroker = df[['symbolName', 'date', 'time', 'open', 'high', 'low', 'close', 'volume']].copy()
+    
+    # Rename columns to match the target standard
+    df2_amibroker.columns = ['Ticker', 'Date', 'Time', 'Open', 'High', 'Low', 'Close', 'Volume']
+    # --------------------------------------------------------------------------------------------
+
+    
