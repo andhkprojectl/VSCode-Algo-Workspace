@@ -1,40 +1,7 @@
 {
 	"folders": [
 		{
-			"name": "VS_0001_prompt",
-			"path": "VS_0001_prompt"
-		},
-		{
-			"name": "VS_0002_config",
-			"path": "VS_0002_config"
-		},
-		{
-			"name": "VS_0003_test",
-			"path": "VS_0003_test"
-		},
-		{
-			"name": "VS_0004_broker",
-			"path": "VS_0004_broker"
-		},
-		{
-			"name": "VS_0006_data",
-			"path": "VS_0006_data"
-		},
-		{
-			"name": "VS_0005_monitor",
-			"path": "VS_0005_monitor"
-		},
-		{
-			"name": "VS_8000_Strategy",
-			"path": "VS_8000_Strategy"
-		},
-		{
-			"name": "VS_9000_LiveTrade",
-			"path": "VS_9000_LiveTrade"
-		},
-		{
-			"name": "VS_9999_test_program",
-			"path": "VS_9999_test_program"
+			"path": "."
 		}
 	],
 	"settings": {}

@@ -1,10 +1,10 @@
 Please provide python program for algo trade strategy
 
 requirement:
-1. filename: VS_1000_20260204_NVDA/1 Strategy/strategyIRB1000_V1.py
+1. filename: VS_8000_Strategy/VS_8001_20260204_NVDA/1 Prompt And Strategy/strategyIRB1000_V1.py
 2. in py file, create a class strategyIRB1000_V1, strategy logic inside the class
 3. class strategyIRB1000_V1 can be a parameter to all testing program VS_0003_test backtest.py, otherTest.py, monteCarloSimulation.py and walkforwardTest.py
-4. class strategyIRB1000_V1 also can be parameter of 5 minute live trade program VS_9000_LiveTrade/5min/inCubation_intraday1.py
+4. class strategyIRB1000_V1 also can be parameter of 5 minute live trade program VS_9000_LiveTrade/5min/inCubation_intraday1.py (TBD)
 5. strategyIRB1000_V1 backgroup information:
     - time frame: 5minute
     - period: from 09:30 to 16:00 regular NASDAQ trading hour US NY time zone

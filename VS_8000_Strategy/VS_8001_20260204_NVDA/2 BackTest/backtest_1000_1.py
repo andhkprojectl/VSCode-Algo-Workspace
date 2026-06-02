@@ -32,6 +32,8 @@ class strategyIRB1000V1(Strategy):
         L = self.data.Low
         O = self.data.Open
         C = self.data.Close
+        self.datetime1 = self.data.index[-1]
+        # self.datetime1 = self.data.index[len(self.data) - 1]
 
         # ---------------------------------------------------------
         # 1. IRB (Inside Range Bar) Logic
@@ -172,13 +174,23 @@ class strategyIRB1000V1(Strategy):
             if buy00:
                 stop_price = close_curr - (atr_curr * 2.5)
                 stop_limit_price = stop_price - 0.06
+
+                # copy to excel
+
+                # print(f"{buy00},{RbBull_curr:.2f}, {(regSlope_curr:.2f}, {(regSlope_prev:.2f},{pRt_curr:.2f}, {rank_curr:.2f}, {pRt_curr:.2f}, {pRt_prev1:.2f}, {pRt_prev2:.2f}")
+                print(f"buy00, {self.datetime1}, {iRbBull_curr:.2f}, {regSlope_curr:.2f}, {regSlope_prev:.2f}, {pRt_curr:.2f}, {rank_curr:.2f}, {pRt_curr:.2f}, {pRt_prev1:.2f}, {pRt_prev2:.2f}")
                 
                 # Standard buy with SL integrated directly.
                 self.buy(size=self.position_size, sl=stop_limit_price)
 
+                
+               
+
             elif short00:
                 stop_price = close_curr + (atr_curr * 2.5)
                 stop_limit_price = stop_price + 0.06
+
+                print(f"short00, {self.datetime1}, {iRbBear_curr:.2f}, {regSlope_curr:.2f}, {regSlope_prev:.2f}, {pRt_curr:.2f}, {rank_curr:.2f}, {pRt_curr:.2f}, {pRt_prev1:.2f}, {pRt_prev2:.2f}")
                 
                 # Standard short with SL integrated directly.
                 self.sell(size=self.position_size, sl=stop_limit_price)
