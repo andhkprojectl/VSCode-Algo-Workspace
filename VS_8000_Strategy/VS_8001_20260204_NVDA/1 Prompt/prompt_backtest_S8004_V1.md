@@ -1,0 +1,59 @@
+Please generate a backtest python program. Requirement:
+- python file is VS_8001_20260204_NVDA/3 BackTest/backtest_S8004_v1.py
+- run backtest using strategy in file VS_8001_20260204_NVDA/2 Strategy/S8004_GenerateFromPromptQwen37Max.py. class is strategyIRB1000_V1
+- backtest data file is C:\Project\ProjectLife\VSCode Algo Workspace DataFile\csvExcel\NVDA_20250101_20260430_5Min.csv. stock data is NVDA. first row is header. 5 minute time frame. columns:
+    - column A: datetime. format MM/DD/YYYY hh24:mi
+    - column B: date. format MM/DD/YYYY
+    - column C: time. format hh24:mi:ss
+    - column D: high price
+    - column E: low price
+    - column F: close price
+    - column G: Open price
+    - column H: Volume
+    - column I: symbol Name
+- backtest output result 
+    - output 2 files. 
+    - 1st file is backtest statistics file
+        - in html format
+        - file in C:\Project\ProjectLife\VSCode Algo Workspace - DataFile\backTestResult\VS_8001_20260204_NVDA\VS_8001_20260204_NVDA\S8004_GenerateFromPromptQwen3.7Max_<YYYYMMDDHH24MISS>.html
+        - at at least include below value
+            - Inital Captial
+            - End Captial
+            - Net Profit
+            - Net Profit %
+            - Explosure %
+            - Annual Return %
+            - Total Commission Cost
+            - Number of trades
+            - Number of Long trades
+            - Number of Short trades
+            - Number of wins
+            - Number of wins %
+            - Total win amount
+            - Number of loss
+            - Number of loss %
+            - Total loss amount
+            - Average Profit/loss
+            - Average Profit/loss %
+            - Maximum trade drawdown
+            - Maximum system drawdown
+            - CAR/MaxDD
+            - Profit Factor
+            - Sharpe Ratio
+            - Ulcer Index
+            - K-Ratio
+            
+    - 2nd file is backtest trade file
+        - in csv format 
+        - file in C:\Project\ProjectLife\VSCode Algo Workspace - DataFile\backTestResult\VS_8001_20260204_NVDA\VS_8001_20260204_NVDA\S8004_GenerateFromPromptQwen3.7Max_<YYYYMMDDHH24MISS>.csv
+        columns:
+            - column A: datetime. format MM/DD/YYYY hh24:mi
+            - column B: date. format MM/DD/YYYY
+            - column C: time. format hh24:mi:ss
+            - column D: high price
+            - column E: low price
+            - column F: close price
+            - column G: Open price
+            - column H: Volume
+            - column I: symbol Name
+        

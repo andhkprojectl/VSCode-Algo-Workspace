@@ -1,0 +1,19 @@
+please update python program VS_8001_20260204_NVDA/3 BackTest/backtest_S8004_V1.py
+- Update backtest result csv file format. columns:
+    - column A: symbol Name
+    - column B: Trade type. value either Long or Short
+    - column C: buy or short entry date time. format DD/MM/YYYY hh24:mi
+    - column D: buy or short entry price 
+    - column E: sell or cover exit date time. format DD/MM/YYYY hh24:mi
+    - column F: sell or cover exit price 
+    - column G: % change
+    - column H: Profit
+    - column I: % Profit
+    - column J: buyer or short Shares
+    - column K: Position values
+    - column L: Cumulative profit
+    - column M: number of bars between buy to sell or short to cover
+    - column N: MAE
+    - column O: MFE
+- Update backtest result html file. Add equity chart
+- records in decending order of column C

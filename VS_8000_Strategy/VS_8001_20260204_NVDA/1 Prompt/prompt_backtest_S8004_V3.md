@@ -1,0 +1,11 @@
+please update python program VS_8001_20260204_NVDA/3 BackTest/backtest_S8004_V1.py (or stragey python file if necessary)
+- after running backtest, create 3rd file 
+    - filename: C:\Project\ProjectLife\VSCode Algo Workspace DataFile\backTestResult\VS_8001_20260204_NVDA\S8004_GenerateFromPromptQwen3.7Max_explore_<YYYYMMDDHH24MISS>.csv
+    - write to file when there is buy00 or short00 is true in strategy
+    - Columns of file
+        - column A: Symbol
+        - column B: value either buyer00 or short00
+        - column C: date time of buy00 or short00. format DD/MM/YYYY hh24:mi
+        - column D - G: Open, close, high, low
+        - column H - R: value in data['buy00'] or data['short00']. field: data['buy00'], data['short00'], data['iRbBullish'], data['iRbBearish'], data['regSlopema10'], data['regSlopema10'].shift(1), data['pRtEma20Rankper'], data['ema20DiffCAbsRank'], data['pRtEma20Rankper'], ['pRtEma20Rankper'].shift(1), data['pRtEma20Rankper'].shift(2)
+    - records in decending order of column C
