@@ -86,8 +86,8 @@ class strategyIRB1000_V1:
         # Linear regression slope of ema10 over 3 bars
         data['regSlopema10'] = self._calculate_regression_slope(data['ema10'], 3)
         
-        # EMA20 difference from close
-        data['ema20DiffCAbsRound0'] = np.floor(np.abs(data['ema20'] - data['C']) * 100)
+        # EMA20 difference from close (rounded to nearest integer)
+        data['ema20DiffCAbsRound0'] = np.round(np.abs(data['ema20'] - data['C']) * 100)
         
         # Rank based on ema20DiffCAbsRound0
         data['ema20DiffCAbsRank'] = self._calculate_rank(data['ema20DiffCAbsRound0'])
@@ -250,6 +250,16 @@ class strategyIRB1000_V1:
         data['sell_signal'] = 0
         data['cover_signal'] = 0
         
+        # Extract time from index for time-based conditions
+        # Assumes index is datetime-like
+        data['_bar_time'] = data.index.time if hasattr(data.index, 'time') else pd.to_datetime(data.index).time
+        
+        # Time condition: only allow buy/short between 09:30:00 and 14:55:00
+        within_trading_window = (data['_bar_time'] >= time(9, 30, 0)) & (data['_bar_time'] <= time(14, 55, 0))
+        
+        # Time condition: force close at 15:55:00
+        at_1555 = data['_bar_time'] == time(15, 55, 0)
+        
         # Buy signal conditions
         data['buy00'] = np.where(
             (data['iRbBullish'] == 1) &
@@ -257,7 +267,8 @@ class strategyIRB1000_V1:
             (data['pRtEma20Rankper'] > 50) &
             (data['ema20DiffCAbsRank'] >= 3) &
             (data['pRtEma20Rankper'] >= data['pRtEma20Rankper'].shift(1)) &
-            (data['pRtEma20Rankper'] >= data['pRtEma20Rankper'].shift(2)),
+            (data['pRtEma20Rankper'] >= data['pRtEma20Rankper'].shift(2)) &
+            within_trading_window,
             1, 0
         )
         
@@ -268,7 +279,8 @@ class strategyIRB1000_V1:
             (data['pRtEma20Rankper'] < 50) &
             (data['ema20DiffCAbsRank'] >= 3) &
             (data['pRtEma20Rankper'] <= data['pRtEma20Rankper'].shift(1)) &
-            (data['pRtEma20Rankper'] <= data['pRtEma20Rankper'].shift(2)),
+            (data['pRtEma20Rankper'] <= data['pRtEma20Rankper'].shift(2)) &
+            within_trading_window,
             1, 0
         )
         
@@ -283,6 +295,43 @@ class strategyIRB1000_V1:
         
         # Cover signal: 5 bars after short
         data['cover_signal'] = data['short_signal'].shift(5).fillna(0).astype(int)
+        
+        # Force close all open positions at 15:55:00
+        # Track open positions to determine if we need to force sell or force cover
+        data['_open_long'] = 0
+        data['_open_short'] = 0
+        
+        open_long = 0
+        open_short = 0
+        
+        for i in range(len(data)):
+            # Update open position tracking
+            if data['buy_signal'].iloc[i] == 1:
+                open_long = 1
+            if data['short_signal'].iloc[i] == 1:
+                open_short = 1
+            
+            # If normal sell/cover signal fires, close the position
+            if data['sell_signal'].iloc[i] == 1:
+                open_long = 0
+            if data['cover_signal'].iloc[i] == 1:
+                open_short = 0
+            
+            # Store current state
+            data.iloc[i, data.columns.get_loc('_open_long')] = open_long
+            data.iloc[i, data.columns.get_loc('_open_short')] = open_short
+            
+            # Force close at 15:55:00
+            if at_1555.iloc[i]:
+                if open_long == 1:
+                    data.iloc[i, data.columns.get_loc('sell_signal')] = 1
+                    open_long = 0
+                if open_short == 1:
+                    data.iloc[i, data.columns.get_loc('cover_signal')] = 1
+                    open_short = 0
+        
+        # Clean up temporary columns
+        data = data.drop(columns=['_bar_time', '_open_long', '_open_short'])
         
         # Calculate entry and exit prices
         data = self._calculate_trade_prices(data)

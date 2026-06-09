@@ -732,8 +732,12 @@ def generate_explore_csv(df, output_path):
             'iRbBearish': row['iRbBearish'],
             'regSlopema10': row['regSlopema10'],
             'regSlopema10_shift1': df.iloc[original_idx-1]['regSlopema10'] if original_idx > 0 else np.nan,
-            'pRtEma20Rankper': row['pRtEma20Rankper'],
+            'rt10': row['rt10'],
+            'ema20DiffCAbsRound0': row['ema20DiffCAbsRound0'],
             'ema20DiffCAbsRank': row['ema20DiffCAbsRank'],
+            'sumEma20DiffCAbsRank': row['sumEma20DiffCAbsRank'],
+            'sumEma20DiffCAbsUpRankper': row['sumEma20DiffCAbsUpRankper'],
+            'pRtEma20Rankper': row['pRtEma20Rankper'],
             'pRtEma20Rankper_current': row['pRtEma20Rankper'],
             'pRtEma20Rankper_shift1': df.iloc[original_idx-1]['pRtEma20Rankper'] if original_idx > 0 else np.nan,
             'pRtEma20Rankper_shift2': df.iloc[original_idx-2]['pRtEma20Rankper'] if original_idx > 1 else np.nan
@@ -760,8 +764,13 @@ def main():
     Main function to run backtest.
     """
     # Configuration
-    data_file = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\csvExcel\NVDA_20250101_20260430_5Min_0930_1600.csv"
-    initial_capital = 100000
+    # csv only from 0930 to 1600
+    # data_file = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\csvExcel\NVDA_20250101_20260430_5Min_0930_1600.csv"
+    # csv include pre and post trading hour, i.e. from 0400 to 2000
+    data_file = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\csvExcel\NVDA_20250101_20260430_5Min.csv"
+    
+    # initial_capital = 100000
+    initial_capital = 20000
     
     # Generate timestamp for output files
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
