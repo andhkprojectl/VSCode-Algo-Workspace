@@ -286,10 +286,14 @@ def run_backtest(df, strategy, initial_capital=100000):
     # Calculate profit factor
     profit_factor = total_win_amount / total_loss_amount if total_loss_amount > 0 else 0
     
-    # Calculate Sharpe ratio (assuming risk-free rate of 2%)
-    risk_free_rate = 0.02
-    excess_returns = equity_df['returns'] - risk_free_rate / 252
-    sharpe_ratio = (excess_returns.mean() / excess_returns.std()) * np.sqrt(252) if excess_returns.std() > 0 else 0
+    # Calculate Sharpe ratio (annual risk-free rate of 3%)
+    # Compute bars per year from actual data to correctly scale per-bar returns
+    risk_free_rate_annual = 0.03
+    days_in_data = (equity_df.index[-1] - equity_df.index[0]).days
+    bars_per_year = len(equity_df) / days_in_data * 365.25 if days_in_data > 0 else 252 * 78
+    per_bar_rf = risk_free_rate_annual / bars_per_year
+    excess_returns = equity_df['returns'].dropna() - per_bar_rf
+    sharpe_ratio = (excess_returns.mean() / excess_returns.std()) * np.sqrt(bars_per_year) if excess_returns.std() > 0 else 0
     
     # Calculate Ulcer Index
     drawdowns = (equity_df['equity'] / equity_df['equity'].cummax() - 1) * 100
