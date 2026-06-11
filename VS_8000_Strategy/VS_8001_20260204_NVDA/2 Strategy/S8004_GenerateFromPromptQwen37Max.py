@@ -97,8 +97,10 @@ class strategyIRB1000_V1:
         
         # Calculate rank statistics over last 100 bars
         rank_stats = self._calculate_rank_statistics(data['ema20DiffCAbsRank'], data['rt10'], 100)
-        data['sumEma20DiffCAbsRank'] = rank_stats['sum_rank']
-        data['sumEma20DiffCAbsUpRankper'] = rank_stats['sum_up_rank']
+        # rank_stats = self._calculate_rank_statistics(data['ema20DiffCAbsRank'], data['rt10'], 99)
+        for r in range(1, 6):
+            data[f'sumEma20DiffCAbsRank_{r}'] = rank_stats[f'sum_rank_{r}']
+            data[f'sumEma20DiffCAbsUpRank_{r}'] = rank_stats[f'sum_up_rank_{r}']
         data['pRtEma20Rankper'] = rank_stats['percentage']
         
         # ATR calculation (7 periods)
@@ -157,10 +159,18 @@ class strategyIRB1000_V1:
         """
         Calculate rank statistics over a rolling window.
         
+        For each of the 5 ranks, calculates:
+        - sum_rank: count of occurrences of that rank in the rolling window
+        - sum_up_rank: count of occurrences where that rank and rt10 > 0
+        
+        The percentage returned for each bar is dynamically selected based on
+        the current bar's ema20DiffCAbsRank value. For example, if the current
+        bar's rank is 2, percentage = sum_up_rank_2 * 100 / sum_rank_2.
+        
         Parameters:
         -----------
         ranks : pandas.Series
-            Rank values
+            Rank values (1-5)
         rt10 : pandas.Series
             Future returns (next 5 bar close - current close)
         window : int
@@ -169,33 +179,42 @@ class strategyIRB1000_V1:
         Returns:
         --------
         dict
-            Dictionary with sum_rank, sum_up_rank, and percentage
+            Dictionary with:
+            - sum_rank_1 to sum_rank_5: count of each rank in rolling window
+            - sum_up_rank_1 to sum_up_rank_5: count of each rank with rt10>0
+            - percentage: dynamically selected based on current bar's rank
         """
-        sum_rank = pd.Series(np.zeros(len(ranks)), index=ranks.index)
-        sum_up_rank = pd.Series(np.zeros(len(ranks)), index=ranks.index)
-        percentage = pd.Series(np.zeros(len(ranks)), index=ranks.index)
+        result = {}
         
-        current_rank = ranks.iloc[-1] if len(ranks) > 0 else 0
+        # Initialize 5 series for sum_rank and sum_up_rank (one per rank)
+        for r in range(1, 6):
+            result[f'sum_rank_{r}'] = pd.Series(np.zeros(len(ranks)), index=ranks.index)
+            result[f'sum_up_rank_{r}'] = pd.Series(np.zeros(len(ranks)), index=ranks.index)
+        
+        percentage = pd.Series(np.zeros(len(ranks)), index=ranks.index)
         
         for i in range(window, len(ranks)):
             window_ranks = ranks.iloc[i-window:i]
             window_rt10 = rt10.iloc[i-window:i]
             
-            # Count occurrences of current rank
-            sum_rank.iloc[i] = (window_ranks == current_rank).sum()
+            for r in range(1, 6):
+                # Count occurrences of rank r in the window
+                # result[f'sum_rank_{r}'].iloc[i] = (window_ranks == r).sum()
+                result[f'sum_rank_{r}'].iloc[i-1] = (window_ranks == r).sum()
+                # Count occurrences where rank r and rt10 > 0
+                # result[f'sum_up_rank_{r}'].iloc[i] = ((window_ranks == r) & (window_rt10 > 0)).sum()
+                result[f'sum_up_rank_{r}'].iloc[i-1] = ((window_ranks == r) & (window_rt10 > 0)).sum()
             
-            # Count occurrences where current rank and rt10 > 0
-            sum_up_rank.iloc[i] = ((window_ranks == current_rank) & (window_rt10 > 0)).sum()
-            
-            # Calculate percentage
-            if sum_rank.iloc[i] > 0:
-                percentage.iloc[i] = (sum_up_rank.iloc[i] * 100) / sum_rank.iloc[i]
+            # Calculate percentage based on current bar's rank
+            current_rank = int(ranks.iloc[i-1])
+            if 1 <= current_rank <= 5:
+                sr = result[f'sum_rank_{current_rank}'].iloc[i-1]
+                sur = result[f'sum_up_rank_{current_rank}'].iloc[i-1]
+                if sr > 0:
+                    percentage.iloc[i-1] = (sur * 100) / sr
         
-        return {
-            'sum_rank': sum_rank,
-            'sum_up_rank': sum_up_rank,
-            'percentage': percentage
-        }
+        result['percentage'] = percentage
+        return result
     
     def _calculate_atr(self, data, period):
         """

@@ -718,7 +718,8 @@ def generate_explore_csv(df, output_path):
         else:
             signal_type = 'none'
         
-        explore_data.append({
+        # Build explore data dictionary
+        row_data = {
             'symbol': 'NVDA',
             'signal_type': signal_type,
             'datetime': filtered_df.index[i].strftime('%d/%m/%Y %H:%M'),
@@ -735,13 +736,18 @@ def generate_explore_csv(df, output_path):
             'rt10': row['rt10'],
             'ema20DiffCAbsRound0': row['ema20DiffCAbsRound0'],
             'ema20DiffCAbsRank': row['ema20DiffCAbsRank'],
-            'sumEma20DiffCAbsRank': row['sumEma20DiffCAbsRank'],
-            'sumEma20DiffCAbsUpRankper': row['sumEma20DiffCAbsUpRankper'],
             'pRtEma20Rankper': row['pRtEma20Rankper'],
             'pRtEma20Rankper_current': row['pRtEma20Rankper'],
             'pRtEma20Rankper_shift1': df.iloc[original_idx-1]['pRtEma20Rankper'] if original_idx > 0 else np.nan,
             'pRtEma20Rankper_shift2': df.iloc[original_idx-2]['pRtEma20Rankper'] if original_idx > 1 else np.nan
-        })
+        }
+        
+        # Add new 5 columns for sumEma20DiffCAbsRank and sumEma20DiffCAbsUpRank
+        for r in range(1, 6):
+            row_data[f'sumEma20DiffCAbsRank_{r}'] = row[f'sumEma20DiffCAbsRank_{r}']
+            row_data[f'sumEma20DiffCAbsUpRank_{r}'] = row[f'sumEma20DiffCAbsUpRank_{r}']
+            
+        explore_data.append(row_data)
     
     # Create DataFrame
     explore_df = pd.DataFrame(explore_data)
@@ -767,7 +773,7 @@ def main():
     # csv only from 0930 to 1600
     # data_file = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\csvExcel\NVDA_20250101_20260430_5Min_0930_1600.csv"
     # csv include pre and post trading hour, i.e. from 0400 to 2000
-    data_file = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\csvExcel\NVDA_20250101_20260430_5Min.csv"
+    data_file = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_8001_20260204_NVDA\csvExcel\NVDA_20250101_20260430_5Min_.csv"
     
     # initial_capital = 100000
     initial_capital = 20000
@@ -776,9 +782,9 @@ def main():
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     
     # Output paths
-    html_output = rf"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\backTestResult\VS_8001_20260204_NVDA\S8004_GenerateFromPromptQwen37Max_{timestamp}.html"
-    csv_output = rf"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\backTestResult\VS_8001_20260204_NVDA\S8004_GenerateFromPromptQwen37Max_{timestamp}.csv"
-    explore_output = rf"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\backTestResult\VS_8001_20260204_NVDA\S8004_GenerateFromPromptQwen37Max_explore_{timestamp}.csv"
+    html_output = rf"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_8001_20260204_NVDA\backTestResult\S8004_GenerateFromPromptQwen37Max_{timestamp}.html"
+    csv_output = rf"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_8001_20260204_NVDA\backTestResult\S8004_GenerateFromPromptQwen37Max_{timestamp}.csv"
+    explore_output = rf"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_8001_20260204_NVDA\backTestResult\S8004_GenerateFromPromptQwen37Max_explore_{timestamp}.csv"
     
     print("=" * 80)
     print("Backtest: S8004 IRB1000 V1 Strategy on NVDA 5-Minute Data")
