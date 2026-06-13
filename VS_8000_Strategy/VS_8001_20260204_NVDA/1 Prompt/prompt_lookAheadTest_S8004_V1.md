@@ -1,0 +1,33 @@
+Please generate a testing python program. Requirement:
+- python file is VS_8001_20260204_NVDA/5 Limited Test/lookAheadTest_S8004_v1.py
+- purpose: run look ahead test using strategy in file VS_8001_20260204_NVDA/2 Strategy/S8004_GenerateFromPromptQwen37Max.py. class is strategyIRB1000_V1. Determine whether this strategy has look adhead issue, i.e. change of future OHLCV value will affect previous bar buy/short/sell/cover signal
+- input data file for look ahead test is C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_8001_20260204_NVDA\csvExcel\NVDA_20250101_20260430_5Min_.csv. stock data is NVDA. first row is header. 5 minute time frame. columns:
+    - column A: datetime. format MM/DD/YYYY hh24:mi
+    - column B: date. format MM/DD/YYYY
+    - column C: time. format hh24:mi:ss
+    - column D: high price
+    - column E: low price
+    - column F: close price
+    - column G: Open price
+    - column H: Volume
+    - column I: symbol Name
+- output result of look ahead test  
+    - all output files save to folder "C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_8001_20260204_NVDA\LimitTestResult"
+    - output 1 file: 
+    - 1st file is backtest statistics file
+        - in html format, filename S8004_LookAheadTest_Qwen3.7Max_<YYYYMMDDHH24MISS>.html
+        - plot chart, show which buy or short bar has look ahead issue
+        - show total number of buy
+        - show total number of buy with look ahead issue
+        - show total number of short
+        - show total number of short with look ahead issue
+- Logic
+    - Find out all buy, sell, short, cover signal from input data file using strategy S8004_GenerateFromPromptQwen37Max.py
+    - loop for each bar, starting from last bar to first bar, Each step is 1 bar. hence sequence is last bar, last bar - 1, last bar -2, ....,  until 1st bar
+    - For each step, set -1 to open, high, low, close, volume (OHLCV) of current bar. After set OHLCV to -1 and current bar is not buy or short or sell or cover signal, if latest bar with buy or short or sell or cover signal before current bar disappear, then this strategy has look ahead issue. That bar with disappear buy or short signal means that bar has look ahead issue.
+    - Tune program, do not run too long
+    - use mulitprocessing technique to make program run faster
+    - if more than 5 bars found with look ahead issue, stop the program and output result
+    - only test last 2 months data in input csv file
+    - print date time before and after program run, also print out how many hours and minute took to run the program on screen
+    
