@@ -8,14 +8,15 @@ strong relation to revenue via correlation (|r|>=0.5) and R-squared (>=0.25).
 Plan: .github/prompts/plan-nvda1MinAlphaFinder.prompt.md
 
 Input : C:\\Project\\ProjectLife\\VSCode Algo Workspace DataFile\\VS_6002_findAlpha\\csvExcel\\NVDA_20260101_20260615_1Min.csv
-Output: same folder
-    - S6002_1_statistics_revenue.csv   (input cols + all stats + rt cols)
-    - S6002_1_relation_summary.csv     (strong relations table)
-    - S6002_1_scatter_plots.html       (plotly scatter for strong relations)
+Output: C:\...\VS_6002_findAlpha\Output (files suffixed with YYYYMMDDHH24MISS)
+    - S6002_1_statistics_revenue_*.csv   (input cols + all stats + rt cols)
+    - S6002_1_relation_summary_*.csv     (strong relations table)
+    - S6002_1_scatter_plots_*.html       (plotly scatter for strong relations)
 """
 
 import os
 import sys
+from datetime import datetime
 from itertools import combinations
 from pathlib import Path
 
@@ -34,7 +35,7 @@ except ImportError:
 # Configuration
 # ---------------------------------------------------------------------------
 INPUT_CSV = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_6002_findAlpha\csvExcel\NVDA_20260101_20260615_1Min.csv"
-OUTPUT_DIR = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_6002_findAlpha\csvExcel"
+OUTPUT_DIR = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_6002_findAlpha\Output"
 
 # Relation thresholds (relaxed per user request)
 CORR_THRESHOLD = 0.5      # |r| >= 0.5
@@ -325,15 +326,15 @@ def find_strong_relations(df: pd.DataFrame, features: list, rt_cols: list):
 # ===========================================================================
 # Phase E - Output (5)
 # ===========================================================================
-def write_statistics_csv(df: pd.DataFrame, out_dir: str) -> str:
-    path = os.path.join(out_dir, "S6002_1_statistics_revenue.csv")
+def write_statistics_csv(df: pd.DataFrame, out_dir: str, ts: str) -> str:
+    path = os.path.join(out_dir, f"S6002_1_statistics_revenue_{ts}.csv")
     df.to_csv(path)
     print(f"  Wrote {path} ({len(df)} rows, {len(df.columns)} cols)")
     return path
 
 
-def write_relation_summary(relations: list, out_dir: str) -> str:
-    path = os.path.join(out_dir, "S6002_1_relation_summary.csv")
+def write_relation_summary(relations: list, out_dir: str, ts: str) -> str:
+    path = os.path.join(out_dir, f"S6002_1_relation_summary_{ts}.csv")
     if not relations:
         pd.DataFrame(columns=['type', 'features', 'rt', 'corr', 'r2']).to_csv(path, index=False)
         print(f"  Wrote {path} (0 strong relations)")
@@ -345,8 +346,8 @@ def write_relation_summary(relations: list, out_dir: str) -> str:
     return path
 
 
-def write_scatter_html(relations: list, clean: pd.DataFrame, out_dir: str) -> str:
-    path = os.path.join(out_dir, "S6002_1_scatter_plots.html")
+def write_scatter_html(relations: list, clean: pd.DataFrame, out_dir: str, ts: str) -> str:
+    path = os.path.join(out_dir, f"S6002_1_scatter_plots_{ts}.html")
     if not _HAS_PLOTLY:
         with open(path, 'w') as f:
             f.write("<html><body><h2>plotly not installed; no scatter plots.</h2></body></html>")
@@ -452,9 +453,10 @@ def main(only_regular: bool = True):
     # Phase E
     print("\n[Phase E] Writing outputs...")
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    write_statistics_csv(df, OUTPUT_DIR)
-    write_relation_summary(relations, OUTPUT_DIR)
-    write_scatter_html(relations, clean, OUTPUT_DIR)
+    ts = datetime.now().strftime("%Y%m%d%H%M%S")
+    write_statistics_csv(df, OUTPUT_DIR, ts)
+    write_relation_summary(relations, OUTPUT_DIR, ts)
+    write_scatter_html(relations, clean, OUTPUT_DIR, ts)
 
     print("\nDone.")
 
