@@ -1,0 +1,136 @@
+- copy below requirement to "Plan" mode, generate md file
+- copy md file 
+- before agent implement md file, trim down input data csv file to 1000 rows, avoid agent read too many rows raise high cost
+- 
+Please create plan of below requirement: 
+1. Develop a python program to find any alpha of NVDA 1 minute data.
+    - pyton file is VS_0006_data\VS_6002_findAlpha\2 Strategy\S6002_1_GenStatisticsRelationCsvFile.py
+2. Target find relation between statistics data and revenue data
+3. Read csv data file. stock data is NVDA. first row is header. 1 minute time frame
+    - data file is C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_6002_findAlpha\csvExcel\NVDA_20260101_20260615_1Min.csv
+    - columns:
+        - column A: datetime. format MM/DD/YYYY hh24:mi
+        - column B: date. format MM/DD/YYYY
+        - column C: time. format hh24:mi:ss
+        - column D: high price
+        - column E: low price
+        - column F: close price
+        - column G: Open price
+        - column H: Volume
+        - column I: symbol Name
+4. logic:
+    - 4a. program read input csv file. assume csv file 1 minute time frame
+    - 4b. provide a parameter onlyRegularPeriod
+        - if onlyRegularPeriod = Y, only include data from 9:30 to 16:00, ignore data not in this period
+        - if onlyRegularPeriod = N, include all data in csv file
+        - default onlyRegularPeriod = Y
+    - 4c. Calculate below statistics data
+        - Calculate ATR of close price using
+            - 3 bars. save to atr3
+            - 5 bars. save to atr5
+            - 10 bars. save to atr10
+            - 15 bars. save to atr15
+        - Calculate difference of current bar ATR value - prev bar ATR value
+            - atr3Diff1 = current bar atr3 - previous bar atr3
+            - atr5Diff1 = current bar atr5 - previous bar atr5
+            - atr10Diff1 = current bar atr10 - previous bar atr10
+            - atr15Diff1 = current bar atr15 - previous bar atr15
+            - atr3Diff3 = current bar atr3 - previous 3 bars atr3
+            - atr5Diff3 = current bar atr5 - previous 3 bars atr5
+            - atr10Diff3 = current bar atr10 - previous 3 bars atr10
+            - atr15Diff3 = current bar atr15 - previous 3 bars atr15
+        - Calculate percentile of atr 
+            - from last 100 bar, find top 90% and bottom 10% of atr3, save variable atr3_90, atr3_10
+            - from last 100 bar, find top 90% and bottom 10% of atr5, save variable atr5_90, atr5_10
+            - from last 100 bar, find top 90% and bottom 10% of atr10, save variable atr10_90, atr10_10
+            - from last 100 bar, find top 90% and bottom 10% of atr15, save variable atr15_90, atr15_10
+        - Calculate percentile of atr difference 
+            - from last 100 bar, find top 90% and bottom 10% of atr3Diff1, save variable atr3Diff1_90, atr3Diff1_10
+            - from last 100 bar, find top 90% and bottom 10% of atr5Diff1, save variable atr5Diff1_90, atr5Diff1_10
+            - from last 100 bar, find top 90% and bottom 10% of atr10Diff1, save variable atr10Diff1_90, atr10Diff1_10
+            - from last 100 bar, find top 90% and bottom 10% of atr15Diff1, save variable atr15Diff1_90, atr15Diff1_10
+            - from last 100 bar, find top 90% and bottom 10% of atr3Diff3, save variable atr3Diff3_90, atr3Diff3_10
+            - from last 100 bar, find top 90% and bottom 10% of atr5Diff3, save variable atr5Diff3_90, atr5Diff3_10
+            - from last 100 bar, find top 90% and bottom 10% of atr10Diff3, save variable atr10Diff3_90, atr10Diff3_10
+            - from last 100 bar, find top 90% and bottom 10% of atr15Diff3, save variable atr15Diff3_90, atr15Diff3_10
+        - Calculate difference between close price
+            - cDiff1 = current bar close price - previous bar close price
+            - cDiff2 = current bar close price - previous 2 bar close price
+            - cDiff3 = current bar close price - previous 3 bar close price
+            - cDiff5 = current bar close price - previous 5 bar close price
+        - Calculate percentile of close difference 
+            - from last 100 bar, find top 90% and bottom 10% of cDiff1, save variable cDiff1_90, cDiff1_10
+            - from last 100 bar, find top 90% and bottom 10% of cDiff2, save variable cDiff2_90, cDiff2_10
+            - from last 100 bar, find top 90% and bottom 10% of cDiff3, save variable cDiff3_90, cDiff3_10
+            - from last 100 bar, find top 90% and bottom 10% of cDiff5, save variable cDiff5_90, cDiff5_10
+        - Calculate difference between close price and ema
+            - cDiffEma5 = current bar close price - 5 bars ema close price 
+            - cDiffEma10 = current bar close price - 10 bars ema close price 
+            - cDiffEma20 = current bar close price - 20 bars ema close price 
+        - Calculate percentile of close price and ema difference 
+            - from last 100 bar, find top 90% and bottom 10% of cDiffEma5, save variable cDiffEma5_90, cDiffEma5_10
+            - from last 100 bar, find top 90% and bottom 10% of cDiffEma10, save variable cDiffEma10_90, cDiffEma10_10
+            - from last 100 bar, find top 90% and bottom 10% of cDiffEma20, save variable cDiffEma20_90, cDiffEma20_10
+        - Calculate bar close open close price cross up top Bollinger Band top and close price cross down bottom
+            - close price cross up top Bollinger Band top, save to cCrossUpBBTop
+            - next bar close price after cross up top Bollinger Band top -  close price cross up top Bollinger Band top. save to cCrossUpBBTopDiff1
+            - next 3 bar close price after cross up top Bollinger Band top -  close price cross up top Bollinger Band top. save to cCrossUpBBTopDiff3
+            - next 5 bar close price after cross up top Bollinger Band top -  close price cross up top Bollinger Band top. save to cCrossUpBBTopDiff5
+            - close price cross down top Bollinger Band bottom, save to cCrossDownBBBottom
+            - next bar close price after cross down top Bollinger Band bottom -  close price cross down top Bollinger Band bottom. save to cCrossDownBBBottomDiff1
+            - next 3 bar close price after cross down top Bollinger Band bottom -  close price cross down top Bollinger Band bottom. save to cCrossDownBBBottomDiff3
+            - next 5 bar close price after cross down top Bollinger Band bottom -  close price cross down top Bollinger Band bottom. save to cCrossDownBBBottomDiff5
+        - Calculate percentile Bollinger Band and with close price different
+            - from last 100 bar, find top 90% and bottom 10% of cCrossUpBBTop, save variable cCrossUpBBTop_90, cCrossUpBBTop_10
+            - from last 100 bar, find top 90% and bottom 10% of cCrossUpBBTopDiff1, save variable cCrossUpBBTopDiff1_90, cCrossUpBBTopDiff1_10
+            - from last 100 bar, find top 90% and bottom 10% of cCrossUpBBTopDiff3, save variable cCrossUpBBTopDiff3_90, cCrossUpBBTopDiff3_10
+            - from last 100 bar, find top 90% and bottom 10% of cCrossUpBBTopDiff5, save variable cCrossUpBBTopDiff5_90, cCrossUpBBTopDiff5_10
+            - from last 100 bar, find top 90% and bottom 10% of cCrossDownBBBottom, save variable cCrossDownBBBottom_90, cCrossDownBBBottom_10
+            - from last 100 bar, find top 90% and bottom 10% of cCrossDownBBBottomDiff1, save variable cCrossDownBBBottomDiff1_90, cCrossDownBBBottomDiff1_10
+            - from last 100 bar, find top 90% and bottom 10% of cCrossDownBBBottomDiff3, save variable cCrossDownBBBottomDiff3_90, cCrossDownBBBottomDiff3_10
+            - from last 100 bar, find top 90% and bottom 10% of cCrossDownBBBottomDiff5, save variable cCrossDownBBBottomDiff5_90, cCrossDownBBBottomDiff5_10
+        - Calculate rsi
+            - calculate rsi 2 bars using close price. save to rsi2
+            - calculate rsi 6 bars using close price. save to rsi6
+            - calculate rsi 14 bars using close price. save to rsi14
+            - calculate difference current bar rsi2 - previous bar rsi2. save to rsi2Diff1
+            - calculate difference current bar rsi6 - previous bar rsi6. save to rsi6Diff1
+            - calculate difference current bar rsi14 - previous bar rsi14. save to rsi14Diff1
+            - calculate difference current bar rsi2 - previous 5 bar rsi2. save to rsi2Diff5
+            - calculate difference current bar rsi6 - previous 5 bar rsi6. save to rsi6Diff5
+            - calculate difference current bar rsi14 - previous 5 bar rsi14. save to rsi14Diff5
+        - Calculate percentile of rsi
+            - from last 100 bar, find top 90% and bottom 10% of rsi2, save variable rsi2_90, rsi2_10
+            - from last 100 bar, find top 90% and bottom 10% of rsi6, save variable rsi6_90, rsi6_10
+            - from last 100 bar, find top 90% and bottom 10% of rsi14, save variable rsi14_90, rsi14_10
+            - from last 100 bar, find top 90% and bottom 10% of rsi2Diff1, save variable rsi2Diff1_90, rsi2Diff1_10
+            - from last 100 bar, find top 90% and bottom 10% of rsi6Diff1, save variable rsi6Diff1_90, rsi6Diff1_10
+            - from last 100 bar, find top 90% and bottom 10% of rsi14Diff1, save variable rsi14Diff1_90, rsi14Diff1_10
+            - from last 100 bar, find top 90% and bottom 10% of rsi2Diff5, save variable rsi2Diff5_90, rsi2Diff5_10
+            - from last 100 bar, find top 90% and bottom 10% of rsi6Diff5, save variable rsi6Diff5_90, rsi6Diff5_10
+            - from last 100 bar, find top 90% and bottom 10% of rsi14Diff5, save variable rsi14Diff5_90, rsi14Diff5_10
+        - Calculate volume percent different and percentile volume percent different
+            - calculate percent different current bar volume and previous bar volume. save to vDiff1
+            - from last 100 bar, find top 90% and bottom 10% of vDiff1, save variable vDiff1_90, vDiff1_10
+        - calculate IRB of current bar. save to irb1
+    - 4d. calcualte below revenue data: 
+        - rt1 = next 2 bar (future 2 bar from current bar) open price - next bar open price
+        - rt3 = next 4 bar (future 4 bar from current bar) open price - next bar open price
+        - rt5 = next 6 bar (future 6 bar from current bar) open price - next bar open price
+        - rt8 = next 9 bar (future 9 bar from current bar) open price - next bar open price
+    - 4f. use below 3 methods to find out which above single statisitics data or combination of statistics data (mulitple statistics data together)(4c above) have relation with revenue data (4d above):
+        - Correlation Coefficient. >= 0.7 or <= -0.7
+        - R-squared. >= 0.49
+        - Scatter Plot chart. show liner relation
+    - 4g. create automated test of above statistics data and revenue data and ensure pass the test
+5. output
+    - output to csv files, including 3 parts
+        - all columns of input csv file
+        - all statistics data (4c)    
+        - all revenue data (4d)
+        - Correlation Coefficient and R-squared (4d)
+    - Scatter Plot chart of statistics data and revenue data with strong relation. save to html file
+    - all output save to folder "C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_6002_findAlpha\csvExcel"
+        
+
+

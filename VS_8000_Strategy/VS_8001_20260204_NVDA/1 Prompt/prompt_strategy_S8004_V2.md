@@ -1,4 +1,4 @@
-Please update existing python program VS_8001_20260204_NVDA/2 Strategy/S8004_GenerateFromPromptQwen37Max.py
+Please update existing python program VS_8001_20260204_NVDA/2 Strategy/S8001_4_GenerateFromPromptQwen37Max.py
 
 requirement:
 1. add 1 condition for buy and short signal: only allow buy or short between 09:30:00 and 14:55:00

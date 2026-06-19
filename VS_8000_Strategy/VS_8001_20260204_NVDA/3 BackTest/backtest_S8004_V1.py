@@ -11,7 +11,7 @@ import sys
 
 # Import strategy module
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '2 Strategy'))
-from S8004_GenerateFromPromptQwen37Max import strategyIRB1000_V1
+from S8001_4_GenerateFromPromptQwen37Max import strategyIRB1000_V1
 
 
 def load_data(csv_path):
@@ -786,12 +786,12 @@ def main():
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     
     # Output paths
-    html_output = rf"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_8001_20260204_NVDA\backTestResult\S8004_GenerateFromPromptQwen37Max_{timestamp}.html"
-    csv_output = rf"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_8001_20260204_NVDA\backTestResult\S8004_GenerateFromPromptQwen37Max_{timestamp}.csv"
-    explore_output = rf"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_8001_20260204_NVDA\backTestResult\S8004_GenerateFromPromptQwen37Max_explore_{timestamp}.csv"
+    html_output = rf"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_8001_20260204_NVDA\backTestResult\S8001_4_GenerateFromPromptQwen37Max_{timestamp}.html"
+    csv_output = rf"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_8001_20260204_NVDA\backTestResult\S8001_4_GenerateFromPromptQwen37Max_{timestamp}.csv"
+    explore_output = rf"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_8001_20260204_NVDA\backTestResult\S8001_4_GenerateFromPromptQwen37Max_explore_{timestamp}.csv"
     
     print("=" * 80)
-    print("Backtest: S8004 IRB1000 V1 Strategy on NVDA 5-Minute Data")
+    print("Backtest: S8001_4 IRB1000 V1 Strategy on NVDA 5-Minute Data")
     print("=" * 80)
     
     # Load data

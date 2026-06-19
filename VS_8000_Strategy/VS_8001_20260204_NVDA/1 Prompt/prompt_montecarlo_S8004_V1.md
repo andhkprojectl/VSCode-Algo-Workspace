@@ -1,6 +1,6 @@
 Please generate a backtest python program. Requirement:
 - python file is VS_8001_20260204_NVDA/6 MonteCarlo/monteCarlo_S8004_v1.py
-- run montecarlo test using strategy in file VS_8001_20260204_NVDA/2 Strategy/S8004_GenerateFromPromptQwen37Max.py. class is strategyIRB1000_V1
+- run montecarlo test using strategy in file VS_8001_20260204_NVDA/2 Strategy/S8001_4_GenerateFromPromptQwen37Max.py. class is strategyIRB1000_V1
 - montecarlo test data file is C:\Project\ProjectLife\VSCode Algo Workspace DataFile\csvExcel\NVDA_20250101_20260430_5Min.csv. stock data is NVDA. first row is header. 5 minute time frame. columns:
     - column A: datetime. format MM/DD/YYYY hh24:mi
     - column B: date. format MM/DD/YYYY

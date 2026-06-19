@@ -21,12 +21,6 @@ else:
 csv_excel_path = os.getenv("csvExcelPath")
 if csv_excel_path:
     print(f"Successfully retrieved csvExcelPath: {csv_excel_path}")
-#    
-#    # Optional: Resolve the relative path inside the .env relative to the .env file's location
-#    # '../../VSCode Algo Workspace DataFile/csvExcel' -> Absolute Path
-    env_dir = dotenv_path.parent
-    absolute_csv_path = (env_dir / csv_excel_path).resolve()
-#    print(f"Absolute path to data folder: {absolute_csv_path}")
 else:
     print("ERROR: csvExcelPath not found in the .env file.")
 

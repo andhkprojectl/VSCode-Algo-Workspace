@@ -58,7 +58,7 @@ STRATEGY_DIR = os.path.abspath(
 )
 sys.path.insert(0, STRATEGY_DIR)
 
-from S8004_GenerateFromPromptQwen37Max import strategyIRB1000_V1
+from S8001_4_GenerateFromPromptQwen37Max import strategyIRB1000_V1
 
 # ---------------------------------------------------------------------------
 # Configuration

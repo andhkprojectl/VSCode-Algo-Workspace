@@ -1,4 +1,4 @@
-Please update existing python program VS_8001_20260204_NVDA/2 Strategy/S8004_GenerateFromPromptQwen37Max.py
+Please update existing python program VS_8001_20260204_NVDA/2 Strategy/S8001_4_GenerateFromPromptQwen37Max.py
 
 requirement:
 please update function _calculate_rank_statistics
