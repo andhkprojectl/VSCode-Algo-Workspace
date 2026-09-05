@@ -1,0 +1,44 @@
+Please provide python program for algo trade strategy
+
+requirement:
+1. filename: VS_8000_Strategy/VS_8002_20260620_NVDA/2 Strategy/S8002_1_BB.py
+2. in py file, create a class strategyS8002BBV1, strategy logic inside the class
+3. class strategyS8002BBV1 can be a parameter to all testing program VS_0003_test backtest.py, otherTest.py, monteCarloSimulation.py and walkforwardTest.py
+4. class strategyS8002BBV1 also can be parameter of 5 minute live trade program VS_9000_LiveTrade/5min/inCubation_intraday1.py (TBD)
+5. strategyS8002BBV1 backgroup information:
+    - time frame: 5minute
+    - period: from 09:30 to 16:00 regular NASDAQ trading hour US NY time zone
+    - symbol: NVDA    
+6. strategyS8002BBV1 logic:
+    - calculate below statistics data:
+        - calculate Bollinger Band using 20 bars. Top bollinger Band save to bbTop, bottom bollinger Band save to bbBottom
+        - close price cross up top Bollinger Band , save to cCrossUpBBTop
+        - close price cross down bottom Bollinger Band, save to cCrossDownBBBottom
+    - buy signal: 
+        buy00 = cCrossUpBBTop is true
+        buy signal is triggered when previous bar buy00 is true;
+        if live trade, buy price is current close price. slippage = 0.03
+        else if backtest, buy price is current open price        
+    - sell signal:
+        - 5 bars after buy bar
+        if live trade, buy price is current close price. slippage = 0.03
+        else if backtest, buy price is current open price                
+    - short signal: 
+        short00 = cCrossDownBBBottom is true
+        short signal is triggered when previous bar short00 is true;
+        if live trade, short price is current close price. slippage = 0.03
+        - else if backtest, short price is current open price        
+    - cover signal:
+        - 5 bars after short bar
+        if live trade, buy price is current close price. slippage = 0.03
+        else if backtest, buy price is current open price                
+    stop loss handle:   
+    - For stop loss of buy, stop limit order:
+        - if live trade, Stop Price = current close price - previous bar of ATR(7)*2.5. stop limit price = Stop Price - 0.06
+        - else if backtest, , Stop Price = current close price - previous bar of ATR(7)*2.5. stop limit price = Stop Price - 0.06
+    - For stop loss of short, stop limit order:
+        - if live trade, Stop Price = current close price + previous bar of ATR(7)*2.5. stop limit price = Stop Price + 0.06
+        - else if backtest, , Stop Price = current close price + previous bar of ATR(7)*2.5. stop limit price = Stop Price + 0.06    
+    - For buy and short, only allow between 09:30:00 and 14:55:00
+    - For sell and cover: if there is open position of NVDA on 15:55:00. If position is from long, force sell all position. If position is from short, force cover all position
+7. Positiion size of each buy / short trade: 110 NVDA stocks. Sell/cover all stocks for each trade

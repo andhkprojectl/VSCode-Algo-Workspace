@@ -2,8 +2,8 @@ from dotenv import load_dotenv
 import os
 import sys
 
-# Add VS_0002_data to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../VS_0002_data'))
+# Add VS_6000_DataSource (VS_0006_data) to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'VS_0006_data', 'VS_6000_DataSource'))
 
 import ibMarketData
 # from folder2.b import some_function

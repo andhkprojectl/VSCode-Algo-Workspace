@@ -3,8 +3,8 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Add VS_0002_data to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Add VS_6000_DataSource (VS_0006_data) to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'VS_6000_DataSource'))
 
 import ibMarketData
 import pandas as pd

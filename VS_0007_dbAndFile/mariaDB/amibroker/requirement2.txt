@@ -1,0 +1,8 @@
+- update function saveDfToTicker5Min
+    - move function from saveDfToTicker5Min DB_NVDA_20250101_20260430_5Min.py to ibMarketData.py.py, then DB_NVDA_20250101_20260430_5Min.py call this function from ibMarketData.py
+    - update logic
+        - add a parameter isOverride to function saveDfToTicker5Min, data type boolean. Default true
+        - if isOverride == true and dateime1, ticker record already exists in table, update record to table
+        - if isOverride == false and dateime1, ticker record already exists in table, no action
+        - if dateime1, ticker record not exists in table, no matter isOverride is true or false, insert record to table
+

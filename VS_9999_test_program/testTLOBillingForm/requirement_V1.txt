@@ -1,0 +1,34 @@
+Requirement: 
+- Develop a python program to read all columns in input excel file testTLOBillingForm\BillingPricingForm.xls
+- For column tierPricingDesc, if value is not blank value, interpret and extract value in tierPricingDesc and write to output file
+- python program: BIllingForm\breakBillingFormTierPricingDesc.py
+- Interpret and extract value in tierPricingDesc
+    - All string before 1st occurrence of "." is called tierHead, save to variable tierHead1. below only interpret string value after "."
+    - split string after ".", delimiter ";", each subString called "subString1"
+        - for each subString1, there are 2 format:
+            - format1: 0 <unit> no charge, in this case 0 is both starting range and end range, save 0 to variable rangeFrom, rangeTo, unit save to variable unit1
+            - format2: further split into substrings, delimiter ":", called substring2
+                - Suppose each substring1 format2 has 3 substring2
+                    - first substring2 format tier<N>, where N is integer save to variable tier
+                    - 2nd substring2 has 3 format, either
+                        - format1: <from> - <to> <Unit>, where <from> is starting range, save to variable rangeFrom, <to> is ending range, save to variable rangeTo, unit save to variable unit1
+                        - format2: > <from> <unit>, where <from> is starting range, save to variable rangeFrom, rangeTo set to blank, unit save to variable unit1
+                    - 3rd substring2 is <currency><amount>
+                        - currency can be values: HKD, THB, MOP, RMB, VND, INR, USD. save to variable currency
+                        - amount is float number, save to variable amount. if more than 1000, amount may have ",". 4 decimal places
+    - example tierPriceingDesc: "Base on number of ASN. tier1:1-5 ASN: RMB217.62; tier2: 6-10 ASN: RMB435.24; tier3: 11-15 ASN: RMB652.86; tier4: 16-20 ASNs: RMB870.48; tier5: >20 ASN: RMB1,088.10; 0 ASN no charge"
+- output file format
+    - each time run python program, overwrite existing output file content
+    - output file location
+        - testTLOBillingForm\BillingPricingForm_tierPricing.xls
+    - output file format
+        - 1st row is header
+        - column A: 1st row named "VendorCode". content  is column D from input file
+        - column B: 1st row named "BuyerCode". content is column F from input file
+        - column C: 1st row named "Tier". variable tier
+        - column D: 1st row named "rangeFrom". variable rangefrom
+        - column E: 1st row named "rangeTo". variable rangeTo
+        - column F: 1st row named "Unit". variable unit1
+        - column G: 1st row named "currency". variable currency
+        - column H: 1st row named "Amount". variable amount
+        - column I: 1st row named "TierHeader". variable tierHead1

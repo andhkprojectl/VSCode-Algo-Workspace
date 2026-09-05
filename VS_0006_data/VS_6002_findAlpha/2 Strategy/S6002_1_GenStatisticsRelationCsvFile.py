@@ -1,14 +1,14 @@
 """
 S6002_1_GenStatisticsRelationCsvFile.py
 =======================================
-Find alpha in NVDA 1-minute data by computing ~112 statistics columns and
+Find alpha in NVDA 1-minute data by computing ~114 statistics columns and
 4 forward revenue targets, then finding single & 2-feature combinations with
 strong relation to revenue via correlation (|r|>=0.5) and R-squared (>=0.25).
 
-Plan: .github/prompts/plan-nvda1MinAlphaFinder.prompt.md
+Plan: .github/prompts/planNvda1MinAlphaFinderV3.prompt.md
 
-Input : C:\\Project\\ProjectLife\\VSCode Algo Workspace DataFile\\VS_6002_findAlpha\\csvExcel\\NVDA_20260101_20260615_1Min.csv
-Output: C:\...\VS_6002_findAlpha\Output (files suffixed with YYYYMMDDHH24MISS)
+Input : C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_6002_findAlpha/csvExcel/NVDA_20260101_20260615_1Min.csv
+Output: C:/.../VS_6002_findAlpha/Output (files suffixed with YYYYMMDDHH24MISS)
     - S6002_1_statistics_revenue_*.csv   (input cols + all stats + rt cols)
     - S6002_1_relation_summary_*.csv     (strong relations table)
     - S6002_1_scatter_plots_*.html       (plotly scatter for strong relations)
@@ -34,7 +34,8 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-INPUT_CSV = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_6002_findAlpha\csvExcel\NVDA_20260101_20260615_1Min.csv"
+# INPUT_CSV = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_6002_findAlpha\csvExcel\NVDA_20260101_20260615_1Min.csv"
+INPUT_CSV = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_6002_findAlpha\csvExcel\NVDA_20250101_20260430_5Min_0930_1600.csv"
 OUTPUT_DIR = r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_6002_findAlpha\Output"
 
 # Relation thresholds (relaxed per user request)
@@ -141,7 +142,13 @@ def calc_bollinger(df: pd.DataFrame, period: int = BB_PERIOD, std_mult: int = BB
 
 
 def calc_irb(df: pd.DataFrame) -> pd.Series:
-    """Inside Range Bar flag (bullish OR bearish) per S8001_2 0.45 threshold."""
+    """
+    Inside Range Bar (IRB) flag — "inventory retracement bar".
+    Bullish: open & close both in lower 45% of [Low, High] range.
+    Bearish: open & close both in upper 45% of [Low, High] range.
+    Returns 1 if bullish OR bearish, else 0.
+    Verified against S8001_2_ConvertFromGemini.py reference (2026-06-20).
+    """
     hl_range = df['High'] - df['Low']
     upper_th = df['High'] - hl_range * 0.45
     lower_th = df['Low'] + hl_range * 0.45
@@ -164,7 +171,7 @@ def calc_irb(df: pd.DataFrame) -> pd.Series:
 # Phase B - Statistics (4c)
 # ===========================================================================
 def compute_statistics(df: pd.DataFrame) -> pd.DataFrame:
-    """Compute all ~112 statistics columns. Returns a copy with new columns."""
+    """Compute all ~114 statistics columns. Returns a copy with new columns."""
     out = df.copy()
 
     # --- ATR group ---
@@ -189,28 +196,33 @@ def compute_statistics(df: pd.DataFrame) -> pd.DataFrame:
 
     # --- Bollinger Band group ---
     bb_top, bb_bot = calc_bollinger(out, BB_PERIOD, BB_STD)
+    out['bbTop'] = bb_top
+    out['bbBottom'] = bb_bot
     close = out['Close']
     prev_close = close.shift(1)
 
     # Cross up BB top: prev close <= top & cur close > top -> save close at cross
     cross_up = (prev_close <= bb_top) & (close > bb_top)
     out['cCrossUpBBTop'] = close.where(cross_up, np.nan)
-    out['cCrossUpBBTopDiff1'] = close.shift(-1) - out['cCrossUpBBTop']
-    out['cCrossUpBBTopDiff3'] = close.shift(-3) - out['cCrossUpBBTop']
-    out['cCrossUpBBTopDiff5'] = close.shift(-5) - out['cCrossUpBBTop']
 
     # Cross down BB bottom: prev close >= bot & cur close < bot -> save close at cross
     cross_down = (prev_close >= bb_bot) & (close < bb_bot)
     out['cCrossDownBBBottom'] = close.where(cross_down, np.nan)
-    out['cCrossDownBBBottomDiff1'] = close.shift(-1) - out['cCrossDownBBBottom']
-    out['cCrossDownBBBottomDiff3'] = close.shift(-3) - out['cCrossDownBBBottom']
-    out['cCrossDownBBBottomDiff5'] = close.shift(-5) - out['cCrossDownBBBottom']
 
-    for bb_col in [
-        'cCrossUpBBTop', 'cCrossUpBBTopDiff1', 'cCrossUpBBTopDiff3', 'cCrossUpBBTopDiff5',
-        'cCrossDownBBBottom', 'cCrossDownBBBottomDiff1', 'cCrossDownBBBottomDiff3', 'cCrossDownBBBottomDiff5',
+    # BB band diffs (current - N bars ago)
+    out['bbTopDiff1'] = bb_top - bb_top.shift(1)
+    out['bbTopDiff3'] = bb_top - bb_top.shift(3)
+    out['bbTopDiff5'] = bb_top - bb_top.shift(5)
+    out['bbBottomDiff1'] = bb_bot - bb_bot.shift(1)
+    out['bbBottomDiff3'] = bb_bot - bb_bot.shift(3)
+    out['bbBottomDiff5'] = bb_bot - bb_bot.shift(5)
+
+    # Percentile columns for BB band diffs
+    for bb_diff_col in [
+        'bbTopDiff1', 'bbTopDiff3', 'bbTopDiff5',
+        'bbBottomDiff1', 'bbBottomDiff3', 'bbBottomDiff5',
     ]:
-        add_pct_cols(out, bb_col)
+        add_pct_cols(out, bb_diff_col)
 
     # --- RSI group ---
     for n in [2, 6, 14]:
@@ -284,12 +296,15 @@ def find_strong_relations(df: pd.DataFrame, features: list, rt_cols: list):
                 continue
             r2 = r * r
             if abs(r) >= CORR_THRESHOLD:
+                # Clip to valid ranges before rounding (floating-point guard)
+                r_clipped = max(-1.0, min(1.0, r))
+                r2_clipped = max(0.0, min(1.0, r2))
                 relations.append({
                     'type': 'single',
                     'features': feat,
                     'rt': rt,
-                    'corr': r,
-                    'r2': r2,
+                    'corr': round(r_clipped, 4),
+                    'r2': round(r2_clipped, 4),
                 })
 
     # --- Pairs (closed-form 2-feature R^2 from correlations) ---
@@ -309,12 +324,15 @@ def find_strong_relations(df: pd.DataFrame, features: list, rt_cols: list):
                 continue
             r2 = (r_y1 * r_y1 + r_y2 * r_y2 - 2 * r_y1 * r_y2 * r_12) / denom
             if r2 >= R2_THRESHOLD:
+                # Clip to valid ranges before rounding (floating-point guard)
+                r2_clipped = max(0.0, min(1.0, r2))
+                corr_clipped = max(-1.0, min(1.0, np.sqrt(r2_clipped)))
                 relations.append({
                     'type': 'pair',
                     'features': f"{f1} + {f2}",
                     'rt': rt,
-                    'corr': np.nan,  # not defined for pairs
-                    'r2': r2,
+                    'corr': round(corr_clipped, 4),  # multiple R = sqrt(R^2)
+                    'r2': round(r2_clipped, 4),
                 })
 
     # For scatter plots, build a clean df using only non-sparse features + rt

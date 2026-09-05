@@ -1,0 +1,42 @@
+- some bug in V1, run this V2 file
+- update md file plan-nvda1MinAlphaFinder.prompt.md
+
+Please update below requirement in md file plan-nvda1MinAlphaFinder.prompt.md:
+1. Update below variables
+    - Calculate difference between close price and ema
+        - cDiffEma5 = current bar close price - previous 5 bars ema close price 
+        - cDiffEma10 = current bar close price - previous 10 bars ema close price 
+        - cDiffEma20 = current bar close price - previous 20 bars ema close price 
+    - Calculate bar close open close price cross up top Bollinger Band top and close price cross down bottom
+        - close price cross up top Bollinger Band top - previous bar close price after cross up top Bollinger Band top. save to cCrossUpBBTopDiff1
+        - close price cross up top Bollinger Band top - previous 3 bars close price after cross up top Bollinger Band top. save to cCrossUpBBTopDiff3
+        - close price cross up top Bollinger Band top - previous 5 bars close price after cross up top Bollinger Band top. save to cCrossUpBBTopDiff5
+        - close price cross down top Bollinger Band bottom - previous bar close price after cross down top Bollinger Band bottom. save to cCrossDownBBBottomDiff1
+        - close price cross down top Bollinger Band bottom - previous 3 bars close price after cross down top Bollinger Band bottom. save to cCrossDownBBBottomDiff3
+        - close price cross down top Bollinger Band bottom - previous 5 bars close price after cross down top Bollinger Band bottom. save to cCrossDownBBBottomDiff5
+    - Revise calculaton of IRB, double check if calculation correct. IRB refer to "inventory retracement bar"
+2. output file add 2 more columns
+    - Bollinger Band top
+    - Bollinger Band bottom 
+        
+
+
+
+According below requirement, update program S6002_1_GenStatisticsRelationCsvFile.py:
+1. Update below variables
+    - Calculate difference between close price and ema
+        - cDiffEma5 = current bar close price - previous 5 bars ema close price 
+        - cDiffEma10 = current bar close price - previous 10 bars ema close price 
+        - cDiffEma20 = current bar close price - previous 20 bars ema close price 
+    - Calculate bar close open close price cross up top Bollinger Band top and close price cross down bottom
+        - close price cross up top Bollinger Band top - previous bar close price after cross up top Bollinger Band top. save to cCrossUpBBTopDiff1
+        - close price cross up top Bollinger Band top - previous 3 bars close price after cross up top Bollinger Band top. save to cCrossUpBBTopDiff3
+        - close price cross up top Bollinger Band top - previous 5 bars close price after cross up top Bollinger Band top. save to cCrossUpBBTopDiff5
+        - close price cross down top Bollinger Band bottom - previous bar close price after cross down top Bollinger Band bottom. save to cCrossDownBBBottomDiff1
+        - close price cross down top Bollinger Band bottom - previous 3 bars close price after cross down top Bollinger Band bottom. save to cCrossDownBBBottomDiff3
+        - close price cross down top Bollinger Band bottom - previous 5 bars close price after cross down top Bollinger Band bottom. save to cCrossDownBBBottomDiff5
+    - Revise calculaton of IRB, double check if calculation correct. IRB refer to "inventory retracement bar"
+2. output file add 2 more columns
+    - Bollinger Band top
+    - Bollinger Band bottom 
+

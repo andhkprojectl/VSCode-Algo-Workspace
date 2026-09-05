@@ -1,0 +1,37 @@
+Aim:
+- amibroker read ticker information, i.e. OHLCV from local MariaDB using ODBC
+- create table in mariaDB, database IBTradingDb to store ticker information
+- ticker information get from IB
+
+Background:
+- software
+    - Python 3.8+
+    - mysql-connector-python
+    - pandas
+    - numpy
+    - ibapi (for IB Gateway/TWS integration)
+    - pyodbc (if using ODBC connection)
+
+- database
+    - MariaDB 10.5+
+    - IB Trading Database (IBTradingDb) with user ibUser1 (see createIBDbUser.sql)
+    - ODBC Driver for MySQL/MariaDB (MySQL Connector/ODBC)
+
+- amibroker
+    - Amibroker 6.30.5
+    - ODBC driver configuration for IBTradingDb
+    - Ticker data import/export capabilities
+
+Requirement:
+- develop database structure
+    - design and create a table ticker1 to store ticker information that able to read from amibroker via ODBC
+    - ticker1 store date, time, ticker code, OHLCV
+    - table ticker5Min store in IB Trading Database (IBTradingDb) with user ibUser1 (see createIBDbUser.sql)
+    - only 1 column to save date and time, call datetime1
+    
+
+
+- update existing python program
+    - program name: VS_6003_GetMarketDataToDb\DB_NVDA_20250101_20260430_5Min.py
+    - existing program already read NVDA from IB by calling ibMarketData.getTicketDataWithTimeFromIB to get data from IB and save to variable df
+    - modify program to save data from df to mariDB table ticker1 in database IBTradingDb

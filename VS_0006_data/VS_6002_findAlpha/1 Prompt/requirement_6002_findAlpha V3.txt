@@ -1,0 +1,22 @@
+- some bug in V1, V2, run this V3 file (assume already run V1, V2)
+- Create new md file
+
+According below requirement, update program S6002_1_GenStatisticsRelationCsvFile.py:
+1. remove below variables
+    - cCrossUpBBTopDiff1, cCrossUpBBTopDiff3, cCrossUpBBTopDiff5, cCrossDownBBBottomDiff1, cCrossDownBBBottomDiff3, cCrossDownBBBottomDiff5, cCrossUpBBTopDiff1_90, cCrossUpBBTopDiff1_10, cCrossUpBBTopDiff3_90, cCrossUpBBTopDiff3_10, cCrossUpBBTopDiff5_90, cCrossUpBBTopDiff5_10, cCrossDownBBBottomDiff1_90, cCrossDownBBBottomDiff1_10, cCrossDownBBBottomDiff3_90, cCrossDownBBBottomDiff3_10, cCrossDownBBBottomDiff5_90, cCrossDownBBBottomDiff5_10, cCrossUpBBTop_90, cCrossUpBBTop_10, cCrossDownBBBottom_90, cCrossDownBBBottom_10
+2. Add below variables
+    - current bar Bollinger Band top - previous bar Bollinger Band top. save to bbTopDiff1
+    - current bar Bollinger Band bottom - previous bar Bollinger Band bottom. save to bbBottomDiff1
+    - current bar Bollinger Band top - previous 3 bar Bollinger Band top. save to bbTopDiff3
+    - current bar Bollinger Band bottom - previous 3 bar Bollinger Band bottom. save to bbBottomDiff3
+    - current bar Bollinger Band top - previous 5 bar Bollinger Band top. save to bbTopDiff5
+    - current bar Bollinger Band bottom - previous 5 bar Bollinger Band bottom. save to bbBottomDiff5
+    Calculate percentile Bollinger Band and with close price different
+        - from last 100 bar, find top 90% and bottom 10% of bbTopDiff1, save variable bbTopDiff1_90, bbTopDiff1_10
+        - from last 100 bar, find top 90% and bottom 10% of bbTopDiff3, save variable bbTopDiff3_90, bbTopDiff3_10
+        - from last 100 bar, find top 90% and bottom 10% of bbTopDiff5, save variable bbTopDiff5_90, bbTopDiff5_10
+        - from last 100 bar, find top 90% and bottom 10% of bbBottomDiff1, save variable bbBottomDiff1_90, bbBottomDiff1_10
+        - from last 100 bar, find top 90% and bottom 10% of bbBottomDiff3, save variable bbBottomDiff3_90, bbBottomDiff3_10
+        - from last 100 bar, find top 90% and bottom 10% of bbBottomDiff5, save variable bbBottomDiff5_90, bbBottomDiff5_10
+3. output file update above variables
+

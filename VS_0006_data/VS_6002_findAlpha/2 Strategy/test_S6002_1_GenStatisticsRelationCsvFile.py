@@ -130,13 +130,13 @@ def test_bb_cross_up():
     out = s6002.compute_statistics(df)
     # There should be at least one non-NaN cCrossUpBBTop
     assert out['cCrossUpBBTop'].notna().any()
-    # Diff1/3/5 at a cross bar = future close - cross close
+    # Diff1/3/5 at a cross bar = cross_close - close N bars before cross (backward-looking)
     cross_idx = out['cCrossUpBBTop'].first_valid_index()
     cross_close = out.loc[cross_idx, 'cCrossUpBBTop']
-    # Diff1 at cross bar = close[t+1] - cross_close
+    # Diff1 at cross bar = cross_close - close[t-1]
     pos = out.index.get_loc(cross_idx)
-    if pos + 1 < len(out):
-        expected_diff1 = out['Close'].iloc[pos + 1] - cross_close
+    if pos >= 1:
+        expected_diff1 = cross_close - out['Close'].iloc[pos - 1]
         assert out['cCrossUpBBTopDiff1'].iloc[pos] == pytest.approx(expected_diff1)
 
 
@@ -289,6 +289,8 @@ def test_compute_statistics_columns():
         assert f'cDiffEma{n}' in out.columns
         assert f'cDiffEma{n}_90' in out.columns
     # BB
+    assert 'bbTop' in out.columns
+    assert 'bbBottom' in out.columns
     assert 'cCrossUpBBTop' in out.columns
     assert 'cCrossUpBBTopDiff1' in out.columns
     assert 'cCrossDownBBBottom' in out.columns
