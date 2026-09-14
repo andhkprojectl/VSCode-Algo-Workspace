@@ -1,0 +1,8 @@
+1. update file S4003_5_randomforest_kimi.py
+2. Target:
+    - win rate increase 15%
+3. change random forest to linear regression
+5. output: 
+    - output file: S4003_5_linearRegression_kimi.py
+    - run S4003_5_linearRegression_kimi.py output same file as S4003_5_randomforest_kimi.py
+    - in output html file, top of html, show the py program name    

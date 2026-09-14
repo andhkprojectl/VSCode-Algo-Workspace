@@ -1,0 +1,1463 @@
+function writeline2(s1) { 
+//  
+// The following code writes all the above AddColumn to permanent logfile, where Filter occurs on last bar  
+//  
+		fh = fopen( "TWSTrade111.log", "a");  
+		if( fh )  
+		{  
+			fputs( Now(), fh );  
+			fputs( ";", fh ); 
+ 
+			fputs( "inCubatio_NQ.afl", fh );  
+			fputs( ";", fh ); 
+ 
+			fputs(s1, fh); 
+			fputs( "\n", fh ); 
+ 
+			fclose( fh );  
+		}  
+ 
+} 
+ 
+function writeTradeLog(s1) { 
+//  
+// The following code writes all the above AddColumn to permanent logfile, where Filter occurs on last bar  
+//  
+		fh = fopen( "TWSTradeTrade.log", "a");  
+		if( fh )  
+		{  
+			fputs( Now(), fh );  
+			fputs( ";", fh ); 
+ 
+			fputs( "inCubation_NQ.afl;" + Name() + ";", fh );  
+			fputs( ";", fh ); 
+ 
+			fputs(s1, fh); 
+			fputs( "\n", fh ); 
+ 
+			fclose( fh );  
+		}  
+ 
+} 
+ 
+////////////////////////////////////////////////////////////////////////////////////////////////// 
+// Parameter 
+////////////////////////////////////////////////////////////////////////////////////////////////// 
+isTesting = True; 
+ 
+ 
+////////////////////////////////////////////////////////////////////////////////////////////////// 
+// Init system param
+////////////////////////////////////////////////////////////////////////////////////////////////// 
+
+SetBacktestMode(backtestRegular);
+// SetBacktestMode(backtestRegularRaw );
+
+SetOption( "AllowSameBarExit", true);
+SetOption( "ActivateStopsImmediately", True);
+ 
+ 
+ 
+ 
+allowOpenNewPosition=true; 
+allowSellCover = True;
+
+ 
+////////////////////////////////////////////////////////////////////////////////////////////////// 
+// Buy/Sell condiction 
+////////////////////////////////////////////////////////////////////////////////////////////////// 
+
+atr14T0 = ATR(14);
+
+
+minCO = Min(C, O);
+maxCO = Max(C, O);
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////// 
+// return
+////////////////////////////////////////////////////////////////////////////////////////////////// 
+rtTh = 1.5;
+
+// within 10 bars, h > w*atr14
+max3BarAtr14_1 = Ref(HHV(atr14T0, 3), -1); // max last 3 bars (exclude) current bar
+
+
+next10BarHHV_H = Ref(Ref(HHV(H, 10), 10), 1);
+next15BarHHV_H = Ref(Ref(HHV(H, 15), 15), 1);
+next20BarHHV_H = Ref(Ref(HHV(H, 20), 20), 1);
+
+// next n bar L 
+next10BarLLV_L = Ref(Ref(LLV(L, 10), 10), 1);
+next15BarLLV_L = Ref(Ref(LLV(L, 15), 15), 1);
+next20BarLLV_L = Ref(Ref(LLV(L, 20), 20), 1);
+
+
+
+// buy rt
+// fix number of bars
+buyRtB1 = (Ref(maxCO, 1) - maxCO) >= rtTh;
+buyRtB3 = (Ref(maxCO, 3) - maxCO) >= rtTh;
+buyRtB5 = (Ref(maxCO, 5) - maxCO) >= rtTh;
+buyRtB10 = (Ref(maxCO, 10) - maxCO) >= rtTh;
+buyRtB20 = (Ref(maxCO, 20) - maxCO) >= rtTh;
+buyRtB30 = (Ref(maxCO, 30) - maxCO) >= rtTh;
+
+
+// within 10 bar
+max3BarAtr14_1_15 = 1.5*max3BarAtr14_1;
+max3BarAtr14_1_20 = 2.0*max3BarAtr14_1;
+max3BarAtr14_1_30 = 3.0*max3BarAtr14_1;
+
+buyAtr15ProfitTakePrice = Ref(O, 1) + max3BarAtr14_1_15;
+buyAtr20ProfitTakePrice = Ref(O, 1) + max3BarAtr14_1_20;
+buyAtr30ProfitTakePrice = Ref(O, 1) + max3BarAtr14_1_30;
+
+
+buyRtAtr15 = next10BarHHV_H >= buyAtr15ProfitTakePrice;
+buyRtAtr20 = next10BarHHV_H >= buyAtr20ProfitTakePrice;
+buyRtAtr30 = next10BarHHV_H >= buyAtr30ProfitTakePrice;
+
+// within 15 bar
+buyRtAtr15_15bar = next15BarHHV_H >= buyAtr15ProfitTakePrice;
+buyRtAtr20_15bar = next15BarHHV_H >= buyAtr20ProfitTakePrice;
+buyRtAtr30_15bar = next15BarHHV_H >= buyAtr30ProfitTakePrice;
+
+// within 20 bar
+buyRtAtr15_20bar = next20BarHHV_H >= buyAtr15ProfitTakePrice;
+buyRtAtr20_20bar = next20BarHHV_H >= buyAtr20ProfitTakePrice;
+buyRtAtr30_20bar = next20BarHHV_H >= buyAtr30ProfitTakePrice;
+
+// stop loss
+buyAtr1StopLossPrice = Ref(O, 1) - max3BarAtr14_1;
+
+
+// within 10 bar. profit return (1.5, 2, 3)*atr and no L price < 1*atr
+buyRtAtr15_wo_sl = next10BarHHV_H >= buyAtr15ProfitTakePrice AND NOT (next10BarLLV_L < buyAtr1StopLossPrice);
+buyRtAtr20_wo_sl = next10BarHHV_H >= buyAtr20ProfitTakePrice AND NOT (next10BarLLV_L < buyAtr1StopLossPrice);
+buyRtAtr30_wo_sl = next10BarHHV_H >= buyAtr30ProfitTakePrice AND NOT (next10BarLLV_L < buyAtr1StopLossPrice);
+
+// within 15 bar. profit return (1.5, 2, 3)*atr and no L price < 1*atr
+buyRtAtr15_15bar_wo_sl = next15BarHHV_H >= buyAtr15ProfitTakePrice  AND NOT (next10BarLLV_L < buyAtr1StopLossPrice);
+buyRtAtr20_15bar_wo_sl = next15BarHHV_H >= buyAtr20ProfitTakePrice  AND NOT (next10BarLLV_L < buyAtr1StopLossPrice);
+buyRtAtr30_15bar_wo_sl = next15BarHHV_H >= buyAtr30ProfitTakePrice  AND NOT (next10BarLLV_L < buyAtr1StopLossPrice);
+
+// within 15 bar. profit return (1.5, 2, 3)*atr and no L price < 1*atr
+buyRtAtr15_20bar_wo_sl = next20BarHHV_H >= buyAtr15ProfitTakePrice AND NOT (next10BarLLV_L < buyAtr1StopLossPrice);
+buyRtAtr20_20bar_wo_sl = next20BarHHV_H >= buyAtr20ProfitTakePrice AND NOT (next10BarLLV_L < buyAtr1StopLossPrice);
+buyRtAtr30_20bar_wo_sl = next20BarHHV_H >= buyAtr30ProfitTakePrice AND NOT (next10BarLLV_L < buyAtr1StopLossPrice);
+
+
+
+// short rt
+shortAtr1StopLossPrice = Ref(O, 1) + max3BarAtr14_1;
+
+// fix number of bars
+shortRtB1 = (minCO - Ref(minCO, 1)) >= rtTh;
+shortRtB3 = (minCO - Ref(minCO, 3)) >= rtTh;
+shortRtB5 = (minCO - Ref(minCO, 5)) >= rtTh;
+shortRtB10 = (minCO - Ref(minCO, 10)) >= rtTh;
+shortRtB20 = (minCO - Ref(minCO, 20)) >= rtTh;
+shortRtB30 = (minCO - Ref(minCO, 30)) >= rtTh;
+
+
+// within 10 bar
+max3BarAtr14_1_15 = 1.5*max3BarAtr14_1;
+max3BarAtr14_1_20 = 2.0*max3BarAtr14_1;
+max3BarAtr14_1_30 = 3.0*max3BarAtr14_1;
+
+shortAtr15ProfitTakePrice = Ref(O, 1) - max3BarAtr14_1_15;
+shortAtr20ProfitTakePrice = Ref(O, 1) - max3BarAtr14_1_20;
+shortAtr30ProfitTakePrice = Ref(O, 1) - max3BarAtr14_1_30;
+
+shortRtAtr15 = next10BarLLV_L <= shortAtr15ProfitTakePrice;
+shortRtAtr20 = next10BarLLV_L <= shortAtr20ProfitTakePrice;
+shortRtAtr30 = next10BarLLV_L <= shortAtr30ProfitTakePrice;
+
+// within 15 bar
+shortRtAtr15_15bar = next15BarLLV_L <= shortAtr15ProfitTakePrice;
+shortRtAtr20_15bar = next15BarLLV_L <= shortAtr20ProfitTakePrice;
+shortRtAtr30_15bar = next15BarLLV_L <= shortAtr30ProfitTakePrice;
+
+// within 20 bar
+shortRtAtr15_20bar = next20BarLLV_L <= shortAtr15ProfitTakePrice;
+shortRtAtr20_20bar = next20BarLLV_L <= shortAtr20ProfitTakePrice;
+shortRtAtr30_20bar = next20BarLLV_L <= shortAtr30ProfitTakePrice;
+
+// stop loss
+shortAtr1StopLossPrice = Ref(O, 1) + max3BarAtr14_1;
+
+
+// within 10 bar. profit return (1.5, 2, 3)*atr and no H price > 1*atr
+shortRtAtr15_wo_sl = next10BarLLV_L <= shortAtr15ProfitTakePrice and NOT (next10BarHHV_H > shortAtr1StopLossPrice);
+shortRtAtr20_wo_sl = next10BarLLV_L <= shortAtr20ProfitTakePrice and NOT (next10BarHHV_H > shortAtr1StopLossPrice);
+shortRtAtr30_wo_sl = next10BarLLV_L <= shortAtr30ProfitTakePrice and NOT (next10BarHHV_H > shortAtr1StopLossPrice);
+
+// within 15 bar. profit return (1.5, 2, 3)*atr and no H price > 1*atr
+shortRtAtr15_15bar_wo_sl = next15BarLLV_L <= shortAtr15ProfitTakePrice and NOT (next10BarHHV_H > shortAtr1StopLossPrice);
+shortRtAtr20_15bar_wo_sl = next15BarLLV_L <= shortAtr20ProfitTakePrice and NOT (next10BarHHV_H > shortAtr1StopLossPrice);
+shortRtAtr30_15bar_wo_sl = next15BarLLV_L <= shortAtr30ProfitTakePrice and NOT (next10BarHHV_H > shortAtr1StopLossPrice);
+
+
+// within 20 bar. profit return (1.5, 2, 3)*atr and no H price > 1*atr
+shortRtAtr15_20bar_wo_sl = next20BarLLV_L <= shortAtr15ProfitTakePrice and NOT (next10BarHHV_H > shortAtr1StopLossPrice);
+shortRtAtr20_20bar_wo_sl = next20BarLLV_L <= shortAtr20ProfitTakePrice and NOT (next10BarHHV_H > shortAtr1StopLossPrice);
+shortRtAtr30_20bar_wo_sl = next20BarLLV_L <= shortAtr30ProfitTakePrice and NOT (next10BarHHV_H > shortAtr1StopLossPrice);
+
+// divergence
+
+
+
+period1 = 20;
+hhvCOHist1 = HHV(maxCO, period1);
+LLVCOHist1 = LLV(minCO, period1);
+hhvCHist1 = HHV(C, period1);
+llvCHist1 = llv(C, period1);
+
+
+
+period2 = 3;
+regSlop20BarMaxCO = LinRegSlope(maxCO, period2);
+regSlop20BarMinCO = LinRegSlope(minCO, period2);
+regSlop20BarC = LinRegSlope(C, period2);
+
+hhvCHist1Bar = hhvBars(C, period1);
+llvCHist1Bar = LLVBars(C, period1);
+regSlop20BarCUp2Pts = (C - Ref(C, -llvCHist1Bar))/IIf(llvCHist1Bar==0, 1, llvCHist1Bar);
+regSlop20BarCDown2Pts = (C - Ref(C, -hhvCHist1Bar))/IIf(hhvCHist1Bar==0, 1, hhvCHist1Bar);
+
+
+stoch1 = StochK(9,3);
+hhvStoch1Hist1 = HHV(stoch1, period1);
+llvStoch1Hist1 = llv(stoch1, period1);
+// regSlop20BarStoch1 = LinRegSlope(stoch1, period2);
+regSlop20BarStoch1Down = LinRegSlope(stoch1, hhvCHist1Bar);
+regSlop20BarStoch1Up = LinRegSlope(stoch1, llvCHist1Bar);
+
+sumStoch93L20 = Sum(stoch1<=35, 4);
+sumStoch93H80 = Sum(stoch1>=65, 4);
+
+
+diffCHHv = hhvCHist1 - C;
+diffCLLV = C - llvCHist1;
+// > 1 downtrend, < 1 up trend, 0 - no trend
+diffPer = diffCHHv/IIf(diffCLLV==0, 1, diffCLLV);
+isUp = IIf(diffPer < 1, 1, 0);
+
+
+
+
+
+// 1. divergence case 1. bar from by H/L price
+hhvH = HHV(H, period1);
+hhvHBar = HHVBars(H, period1);
+llvL = LLV(L, period1);
+llvLBar = LLVBars(L, period1);
+
+stoch1AtH = Ref(stoch1, -hhvHBar);
+stoch1AtL = Ref(stoch1, -llvLBar);
+
+isBullDiverg = L < llvL AND stoch1 > stoch1AtL;
+isBearDiverg = H > hhvH AND stoch1 < stoch1AtH;
+
+
+
+// 2. divergence case 2. bar from stoch1
+hhvStoch12 = HHV(stoch1, period1);
+hhvStoch1Bar2 = HHVBars(stoch1, period1);
+llvStoch12 = LLV(stoch1, period1);
+llvStoch1Bar2 = LLVBars(stoch1, period1);
+
+hAtH2 = Ref(H, -hhvStoch1Bar2);
+lAtL2 = Ref(L, -llvStoch1Bar2);
+
+isBullDiverg2 = L < lAtL2 AND stoch1 > llvStoch12;
+isBearDiverg2 = H > hAtH2 AND stoch1 < hhvStoch12;
+
+
+
+isDiverg = isBullDiverg == True OR isBearDiverg == True
+		OR isBullDiverg2 == True OR isBearDiverg2 == True
+		;
+
+// 3 stoch
+stoch2 = StochK(14,3);
+stoch3 = StochK(40,4);
+stoch4 = StochK(60,5);
+
+bullishStoch20 = stoch1 <= 25 AND stoch2 <= 25 AND stoch3 <= 20 AND stoch4 <= 20;
+bearishStoch80 = stoch1 >= 75 AND stoch2 >= 75 AND stoch3 >= 80 AND stoch4 >= 80;
+bullishOrBearishStochTh = bullishStoch20 == True OR bearishStoch80 == True;
+
+
+bullishStoch20_2 = stoch1 <= 25 AND stoch2 <= 25 AND stoch3 <= 30 AND stoch4 <= 30;
+bearishStoch80_2 = stoch1 >= 75 AND stoch2 >= 75 AND stoch3 >= 65 AND stoch4 >= 65;
+bullishOrBearishStochTh_2 = bullishStoch20_2 == True OR bearishStoch80_2 == True;
+
+// 4. cross down or cross up
+ema9 = EMA(C, 9);
+crossDownEma9 = Cross(ema9, C) OR (O > ema9 AND C < ema9);
+crossUpEma9 = Cross(C, ema9) OR (O < ema9 AND C > ema9);
+isCrossEma9 = crossDownEma9 OR  crossUpEma9;
+
+
+stochCrossUp = Cross(stoch1, 20);
+stochCrossDown = Cross(80, stoch1);
+
+// 5. large body
+// --- Logic ---
+// a. Calculate the current bar's absolute body
+bodySize = abs(close - open);
+
+numBars = 100;
+bodySizeRankTop = Percentile( bodySize, numBars, 70);
+bodySizeRankBot = Percentile( bodySize, numBars, 30);
+bodySizeRankBot2 = Percentile( bodySize, numBars, 40);
+
+bodySizePer = abs(C-O)/(H-L);
+
+isLargeBody = bodySize >= bodySizeRankTop AND bodySizePer >= 0.65;
+isSmallBody = bodySize <= bodySizeRankBot AND bodySizePer <= 0.35;
+isSmallBody2 = bodySize <= bodySizeRankBot2  AND bodySizePer <= 0.35;
+
+hLsize = abs(H-L);
+hLSizeRankTop = Percentile( hLsize, numBars, 80);
+hLSizeRankBot = Percentile( hLsize, numBars, 20);
+hLSizeRankBot2 = Percentile( hLsize, numBars, 30);
+
+isLargeHl = hLsize >= hLSizeRankTop;
+isSmallHl = hLsize <= hLSizeRankBot;
+isSmallHl2 = hLsize <= hLSizeRankBot2;
+
+
+// d. pattern
+isBullish = close > Open;
+largeBullishBody = isBullish and isLargeBody;
+largeBulllishHl = isBullish AND isLargeHl;
+
+isBearish = close < Open;
+largeBearishBody = isBearish and isLargeBody;
+largeBearishHl = isBearish and isSmallHl;
+
+// among current bar minCO < prev 4 bar
+lowMinCO = minCO < Ref(minCO, -1) AND minCO < Ref(minCO, -2)
+				AND minCO < Ref(minCO, -3) AND minCO < Ref(minCO, -4)
+				;
+
+
+
+// 5. top reversal pattern
+// 
+// a. engulfing pattern. close lowest of last 3 bars, open is highest of last 3 bars, large body size
+//topEngulfing1 = C <= Ref(C, -1) AND C <= Ref(C, -2) AND C <= Ref(C, -3)
+				//AND O >= Ref(O, -1) AND O >= Ref(O, -2) AND O >= Ref(O, -3)
+topEngulfing1 = minCO < Ref(minCO, -1) AND maxCO > Ref(maxCO, -1)			;
+bearishEngulfing = topEngulfing1 AND (largeBearishBody OR largeBearishHl);
+bullishEngulfing = topEngulfing1 AND (largeBullishBody OR largeBulllishHl);
+			
+// largeBulllishHl = isBullish AND isLargeHl;			
+//bodySizePer = abs(C-O)/(H-L);
+//numBars = 100;
+//bodySizeRankBot2 = Percentile( bodySize, numBars, 40);
+//isSmallBody2 = bodySize <= bodySizeRankBot2  AND bodySizePer <= 0.35;
+//largeBearishBody = isBearish and isLargeBody;
+//bodySizeRankTop = Percentile( bodySize, numBars, 70);
+//isLargeBody = bodySize >= bodySizeRankTop AND bodySizePer >= 0.65;
+
+diffCO = abs(C - O);
+bodyHLPer = diffCO*1.0000/IIf((H-L)== 0, 1, (H-L));
+rng = diffCO/minCO;
+smallBodyTh0 = 0.45;
+smallBody= bodyHLPer >= 0.0 AND bodyHLPer < smallBodyTh0;
+lowerShadow = Min(O,C) - L;
+mediumSizeLowerShadow = lowerShadow > (H - L)*0.6 OR  abs(C-O)*1.5 < lowershadow ;
+smallRealBody = smallbody;
+shavenHead = abs(H - Max(O,C))/Max(O,C) < 0.00045;
+candleStickHammer = mediumSizeLowerShadow AND smallRealBody  AND shavenHead;
+
+uppershadow = H - Max(O,C);
+mediumSizeUpperShadow = uppershadow > (H - L)*0.6 OR  abs(C-O)*1.5 < uppershadow ;  // shadow > 4times body
+shavenBottom = abs(L - Min(O,C))/Min(O,C) < 0.00045;
+candleStickInvertedHammer = mediumSizeUpperShadow AND smallRealBody  AND shavenBottom;
+
+hammerBar = candleStickHammer OR candleStickInvertedHammer;
+ 
+
+topMiddleBar = Ref(H, -1) >= Ref(H, -2) AND Ref(H, -1) >= H
+			OR Ref(maxCO, -1) >= Ref(maxCO, -2) AND Ref(maxCO, -1) >= maxCO
+			;
+
+top3BarReveral1 = // Ref(largeBulllishHl, -2)
+				Ref(isBullish, -2)
+				 // AND  Ref(isSmallBody2, -1) AND 2*Ref(bodysize, -1) <= Ref(bodysize, -2) AND Ref(hammerBar, -1) AND topMiddleBar
+				 AND  2*Ref(bodysize, -1) <= Ref(bodysize, -2) AND Ref(hammerBar, -1) AND topMiddleBar 
+				AND isBearish AND minCO < Ref(minCO, -1) AND minCO < Ref(minCO, -2) AND bodysize >= 2*Ref(bodysize, -1) 
+				 ; 
+				 
+top3BarReveral2 = // Ref(largeBulllishHl, -2)
+				Ref(candleStickInvertedHammer, -2)
+				 // AND  Ref(isSmallBody2, -1) AND Ref(hammerBar, -1) AND topMiddleBar
+				 AND  Ref(hammerBar, -1) AND topMiddleBar
+				AND isBearish AND minCO < Ref(minCO, -1) AND minCO < Ref(minCO, -2) AND bodysize >= 2*Ref(bodysize, -1) AND bodysize >= 2*Ref(bodysize, -2) 
+				 ;				 
+
+top3BarReveral00 = top3BarReveral1 OR top3BarReveral2;
+
+
+// for c < ma200
+top3BarReveral3 = Ref(isBullish, -2)
+				 AND  (Ref(hammerBar, -1) OR Ref(largeBullishBody, -1) OR Ref(largeBulllishHl, -1) ) AND topMiddleBar 
+				AND isBearish AND minCO < Ref(minCO, -1) AND minCO < Ref(minCO, -2)
+				 ; 
+				 
+
+top3BarReveral01 = top3BarReveral3 ;
+
+// 6. VWAP
+
+
+TypicalPrice = (H + L + C) / 3;
+
+// . Identify the Reset Condition (1st day of the month)
+// Month() changes when a new month rolls over. BarIndex() == 0 handles the first loaded bar.
+isNewMonth = Month() != Ref(Month(), -1);
+isFirstBar = BarIndex() == 0;
+resetCondition = isNewMonth OR isFirstBar;
+
+// . Vectorized Cumulative Calculations (Zero Loops = Instant Load)
+PV = TypicalPrice * V;
+
+cumPV = Cum(PV);
+cumV  = Cum(V);
+
+// Capture the cumulative values exactly 1 bar *before* the reset.
+// This allows us to isolate the current month's accumulation by subtracting historical data.
+startPV = ValueWhen(resetCondition, cumPV - PV);
+startV  = ValueWhen(resetCondition, cumV - V);
+
+MonthlySumPV = cumPV - startPV;
+MonthlySumV  = cumV - startV;
+
+// . Calculate Core VWAP
+//VWAP = IIf(MonthlySumV > 0, MonthlySumPV / MonthlySumV, TypicalPrice);
+
+
+
+// 1. Detect if the current bar is in a different month than the previous bar
+//newMonth = Month() != Ref( Month(), -1 );
+
+// 2. Account for the very first bar in the entire chart array to prevent null references
+// isFirstBarOfMonth = newMonth OR BarIndex() == 0;
+
+// 3. Calculate the number of bars since the condition was met
+barsFromStartOfMonth = BarsSince( resetCondition );
+
+vrange = barsFromStartOfMonth;
+
+// vrange = Param("VWMA range", 50, 1, 200 );
+//mrange = Param("MA range", 70, 1, 200 );
+
+vsum = Sum( Volume, vrange );
+vpsum = Sum( Close * Volume, vrange );
+
+VWAP = vpsum / vsum;
+
+// Plot( C, Date() + " Close", colorDefault, styleCandle );
+
+// Plot( vwma, "VWMA" + vrange, colorRed );
+// Plot( MA( C, mrange ), "MA" + mrange, colorBlue );
+
+
+// . Enhancement: VWAP Standard Deviation Bands
+vwap2 = Nz(VWAP);
+// Calculate Volume-Weighted Variance
+PriceDiffSq = (TypicalPrice - vwap2) ^ 2;
+CumPriceDiffSq = Cum(PriceDiffSq * V);
+
+// Reset the variance at the start of the month using the same vectorized logic
+StartPriceDiffSq = ValueWhen(resetCondition, CumPriceDiffSq - (PriceDiffSq * V));
+MonthlyVariance = (CumPriceDiffSq - StartPriceDiffSq) / MonthlySumV;
+
+// Calculate the Standard Deviation
+VWAP_SD = sqrt(MonthlyVariance);
+
+// Define the SD Bands
+UpperBand1 = VWAP + VWAP_SD;
+LowerBand1 = VWAP - VWAP_SD;
+UpperBand2 = VWAP + (2 * VWAP_SD);
+LowerBand2 = VWAP - (2 * VWAP_SD);
+
+
+bearishVWAP1 = maxCO >= UpperBand1;
+
+
+vrange1 = 50;
+
+
+vsum1 = Sum( Volume, vrange1 );
+vpsum1 = Sum( Close * Volume, vrange1);
+
+vwap11 = vpsum1 / vsum1;
+
+vwap50_2 = Nz(vwap11);
+
+regSlop5vwap50Bar = LinRegSlope(vwap50_2, 5);
+regSlop5vwap50BarL0 = regSlop5vwap50Bar < -0.01;
+regSlop5vwap50BarL0Sum15 = Sum(regSlop5vwap50BarL0, 5);
+
+regSlop5vwap50BarH0 = regSlop5vwap50Bar > 0.01;
+regSlop5vwap50BarH0Sum15 = Sum(regSlop5vwap50BarH0, 5);
+
+regSlop3Vwap50Bar = LinRegSlope(vwap50_2, 3);
+regSlop10vwap50Bar = LinRegSlope(vwap50_2, 10);
+regSlop20vwap50Bar = LinRegSlope(vwap50_2, 20);
+
+regSlop3Vwap50BarSum3 = Sum(regSlop3Vwap50Bar < 0, 3);
+
+regSlop3Vwap50BarDiff = (regSlop3Vwap50Bar - Ref(regSlop3Vwap50Bar, -1))/IIf(Ref(regSlop3Vwap50Bar, -1) == 0, 1, Ref(regSlop3Vwap50Bar, -1));
+regSlop5Vwap50BarDiff = (regSlop5Vwap50Bar - Ref(regSlop5Vwap50Bar, -1))/IIf(Ref(regSlop5Vwap50Bar, -1) == 0, 1, Ref(regSlop5Vwap50Bar, -1));
+
+
+vsum9 = Sum( Volume, 9);
+vpsum9 = Sum( Close * Volume, 9);
+vwap9 = vpsum9 / vsum9;
+vwap9_2 = Nz(vwap9);
+regSlop5Vwap9Bar = LinRegSlope(vwap9_2, 5);
+
+vsum20 = Sum( Volume, 20);
+vpsum20 = Sum( Close * Volume, 20);
+vwap20 = vpsum20 / vsum20;
+vwap20_2 = Nz(vwap20);
+regSlop5Vwap20Bar = LinRegSlope(vwap20_2, 5);
+
+vsum6 = Sum( Volume, 6);
+vpsum6 = Sum( Close * Volume, 6);
+vwap6 = vpsum6 / vsum6;
+vwap6_2 = Nz(vwap6);
+regSlop5Vwap6Bar = LinRegSlope(vwap6_2, 5);
+regSlop3Vwap6Bar = LinRegSlope(vwap6_2, 3);
+
+vsum3 = Sum( Volume, 3);
+vpsum3 = Sum( Close * Volume, 3);
+vwap3 = vpsum3 / vsum3;
+vwap3_2 = Nz(vwap3);
+
+
+crossUpVWap50_3 = Cross(vwap3_2, vwap50_2 ) ;
+crossDownVWap50_3 = Cross(vwap50_2, vwap3_2) ;
+
+crossDownVWap50_3Sum = Sum(crossDownVWap50_3, 15);
+
+
+
+stoch1 = StochK(9,3);
+regSlop3Stoch1 = LinRegSlope(stoch1, 3);
+
+
+isBullDiverg3 = vwap6_2 < Ref(vwap6_2, -2) 
+				AND regSlop3Vwap6Bar < 0
+				AND stoch1 > Ref(stoch1, -2)
+				AND regSlop3Stoch1 > 0
+				;
+isBearDiverg3 = vwap6_2 > Ref(vwap6_2, -2) 
+				AND regSlop3Vwap6Bar > 0
+				AND stoch1 < Ref(stoch1, -2)
+				AND regSlop3Stoch1 < 0
+				;
+
+/*
+largeBullishBody = isBullish and isLargeBody;
+largeBulllishHl = isBullish AND isLargeHl;
+
+isBearish = close < Open;
+largeBearishBody = isBearish and isLargeBody;
+largeBearishHl = isBearish and isSmallHl;
+*/
+
+crossDownVWap50 = Cross(vwap50_2, C) 
+					OR (O > vwap50_2 AND C < vwap50_2)
+					;
+crossUpVWap50 = Cross(C, vwap50_2) 
+					OR (O < vwap50_2 AND C > vwap50_2)
+					;					
+
+hhvBar5_1 = HHVBars(H, 5);
+hhvBar5_2 = HHVBars(maxCO, 5);
+
+llvBar5_1 = LLVBars(L, 5);
+llvBar5_2 = LLVBars(minCO, 5);
+
+// within 4 bars, 2 bars
+priceActionUp2Bar1 = Ref(largeBearishBody, -1) AND Ref(crossDownVWap50, -1)
+					 AND largeBullishBody AND crossUpVWap50
+					 AND (hhvBar5_1 == 0 OR hhvBar5_2 == 0) // current bar is highest bar within 5
+					 ;
+//crossDownThenUpVwap50_3bars =
+priceActionUp4Bar1 = (Ref(largeBearishBody, -3) or Ref(largeBearishBody, -2))
+					 AND (Ref(crossDownVWap50, -3) or Ref(crossDownVWap50, -2))
+					 AND Ref(largeBullishBody, -1) AND Ref(crossUpVWap50, -1)
+					 AND (hhvBar5_1 == 0 OR hhvBar5_2 ==0) AND isBullish // current bar is highest bar within 5
+				;
+				
+priceActionUp4Bar2 = (Ref(largeBullishBody, -3) or Ref(largeBullishBody, -2)) 
+					 AND (Ref(crossUpVWap50, -3) or Ref(crossUpVWap50, -2))
+					 AND Ref(largeBearishBody, -1) AND Ref(crossDownVWap50, -1)
+					 AND (llvBar5_1 == 0 OR llvBar5_2 ==0) AND isBullish // current bar is highest bar within 5
+				;					 				
+
+hhvBar12_1 = HHVBars(H, 12);
+hhvBar12_2 = HHVBars(maxCO, 12);
+hhv12_1 = HHV(H, 12);
+hhv12_2 = HHV(maxCO, 12);
+
+
+llvBar12_1 = LLVBars(L, 12);
+llvBar12_2 = LLVBars(minCO, 12);
+llv12_1 = LLV(L, 12);
+llv12_2 = LLV(minCO, 12);
+
+buyFilterCond4 = Ref(regSlop3Vwap50BarSum3, -1) == 3 AND regSlop3Vwap50Bar > 0
+			  AND isBullDiverg3 > 0
+			  AND crossDownVWap50_3Sum > 0
+			  ;
+				
+priceActionDown2Bar1 = // Ref(largeBullishBody, -1) 
+					 Ref(isBullish, -1) 
+					 AND Ref(crossUpVWap50, -1)
+					 // AND topEngulfing1
+					 AND largeBearishBody AND crossDownVWap50
+					 AND (minCO < Ref(minCO, -1) OR L < Ref(L, -1))
+					 AND (hhvBar12_1 > llvBar12_1 OR hhvBar12_2 > llvBar12_2) // prev high bar then low bar then current bar pull back
+					 and (hhv12_2 > maxCO and llv12_2 < minCO) // prev high value > current bar hih and prev low value < current low
+					 ;
+					 
+priceActionDown2Bar2 = //Ref(largeBullishBody, -1) 
+					Ref(isBullish, -1) 
+					 AND Ref(crossUpVWap50, -1)
+					 AND largeBearishBody AND crossDownVWap50
+					 AND (minCO < Ref(minCO, -1) OR L < Ref(L, -1)) // englufing candle
+					 AND (maxCO > Ref(maxCO, -1) OR H > Ref(H, -1))
+					 ;
+					 
+// reverse of priceActionUp2Bar1
+priceActionDown2Bar3 = Ref(largeBullishBody, -1) AND Ref(crossUpVWap50, -1)
+					 AND largeBearishBody AND crossDownVWap50
+					 AND (llvBar5_1 == 0 OR llvBar5_2 == 0) // current bar is lowest bar within 5 bars
+					 ;					 					 
+					 
+priceActionDown3Bar1 = 	Ref(isbullish, -2)
+					 AND Ref(isBearish, -1)
+					 AND (Ref(minCO, -2) > Ref(minCO, -1) OR Ref(L, -2) > Ref(L, -1)) // englufing candle
+					 AND (Ref(maxCO, -2) < Ref(maxCO, -1) OR Ref(H, -2) < Ref(H, -1))
+					 AND isBearish AND crossDownVWap50
+					 ;					 					 
+					 
+priceActionDown3Bar2 = 	Ref(isbullish, -2) AND Ref(minCO, -2) < Ref(vwap50_2, -2) AND Ref(regSlop3Vwap50Bar, -2) > 0
+					 AND Ref(maxCO, -1) > Ref(vwap50_2, -1)
+					 AND largeBearishBody AND minCO < vwap50_2 AND LLV(L, 3) == L AND regSlop3Vwap50Bar < 0
+					 ;					 
+					
+// reverse of priceActionUp4Bar1					 
+priceActionDown4Bar1 = priceActionUp4Bar2
+				;					 
+					 
+
+
+// 7. ma
+ma100 = MA(C, 100);
+ma200 = MA(C, 200);
+regSlop100C = LinRegSlope(ma100, 3);
+regSlop200C = LinRegSlope(ma200, 3);
+
+
+
+// setup 1
+buy01 = regSlop5vwap50BarH0Sum15 >= 4  // within 15 bars, 14 bars > 0.01
+		// AND sumStoch93L20 >= 1 // within last 4 bars, at least 1 bar stoch (9,3) <= 20
+		AND (
+			priceActionUp2Bar1
+			OR priceActionUp4Bar1
+		)
+		;
+		
+buy01_1 = regSlop5vwap50BarH0Sum15 >= 4  AND priceActionUp2Bar1;
+buy01_2 = regSlop5vwap50BarH0Sum15 >= 4  AND priceActionUp4Bar1;
+buy01_3 = regSlop5vwap50BarH0Sum15 >= 4  AND priceActionUp4Bar2;
+buy01_3_2 = priceActionUp4Bar2;
+
+	
+// setup 2	
+buy02 = Ref(regSlop3Vwap50Bar, -1) < 0 
+		AND regSlop3Vwap50Bar > 0
+		AND Sum(crossUpVWap50, 4) > 0
+		AND isbullish AND Ref(isbullish, -1)
+		;
+		
+		
+/*		
+buy00 = buy01
+		OR buy02
+		;
+*/
+
+// buy00 = buy01_3;
+buy00 = buy01_3_2
+		// OR buy02
+		// buy01
+			;
+
+
+
+// From 09:30 to 12:30
+// timeFilter = TimeNum() >= 93000 AND TimeNum() <= 123000;
+
+// From 10:00 to 12:30
+// timeFilterBuy = TimeNum() >= 93000 AND TimeNum() <= 123000;
+// timeFilterBuy = TimeNum() >= 100000 AND TimeNum() <= 120000;
+// timeFilterBuy = TimeNum() >= 100000 AND TimeNum() <= 120000;
+// timeFilterBuy = TimeNum() >= 100000 AND TimeNum() <= 113000;
+// timeFilterBuy = TimeNum() >= 100000 AND TimeNum() <= 120000;
+timeFilterBuy = True;
+
+// Weekday filter: Allow buy only on Thursday (DayOfWeek() == 5)
+// weekdayFilterBuy = DayOfWeek() == 3;
+
+Buy = Ref(buy00, -1)
+	  AND timeFilterBuy
+	  // AND weekdayFilterBuy
+	  AND allowOpenNewPosition 
+; 
+
+buyShortPriceTh = Ref(atr14T0, -1)/4.0;
+BuyPrice=O - buyShortPriceTh; 
+
+
+
+// setup 1
+short01 = (
+			priceActionDown2Bar1
+			OR priceActionDown4Bar1
+			OR priceActionDown2Bar2
+			OR priceActionDown3Bar1
+			
+		)
+		AND regSlop5vwap50BarL0Sum15 >= 4  // within 15 bars, 14 bars > 0.01
+		;
+		
+short01_1 = priceActionDown2Bar1;
+short01_2 = priceActionDown4Bar1;
+short01_3 = priceActionDown2Bar2;
+short01_4 = priceActionDown3Bar1;
+
+		
+// setup 2	
+short02 = Ref(regSlop3Vwap50Bar, -1) > 0 
+		AND regSlop3Vwap50Bar < 0
+		AND Sum(crossDownVWap50, 4) > 0
+		AND isBearish AND Ref(isBearish, -1)
+		AND regSlop5vwap50BarL0Sum15 >= 4  // within 15 bars, 14 bars > 0.01
+		;		
+		
+short02_2 = priceActionDown3Bar2;
+
+
+// short00 = False;		
+short00 = short01_4
+		  OR short02
+		  ;
+
+
+
+Short = Ref(short00, -1)
+	  AND timeFilterBuy
+	  AND allowOpenNewPosition 
+	  ;
+ 
+
+ShortPrice=O + buyShortPriceTh;
+
+
+
+// sellTh = Optimize("sellTh", 6, 2, 8, 1);
+
+// sellTh = 2;
+
+//sell00 = bullishBody AND bodySize >= 2;
+//Sell = Ref(sell00, -1) == True
+//		AND O > Ref(O, -1)
+//		;
+
+Sell = False;
+SellPrice = O;
+
+//Cover = Buy AND (NOT Short);
+// Cover =False;
+//cover00 = (C < Ref(llv1, -1) OR C > Ref(C, -1) AND Ref(C, -1) > Ref(C, -2));
+
+// coverTh = Optimize("coverTh", 3, 3, 10, 1);
+//cover00 = bearishBody AND bodySize >= 2
+//			AND O < Ref(O, -1)
+//			;
+//Cover = Ref(cover00, -1) == True;	     
+Cover = False;
+CoverPrice = O;
+
+
+
+
+// Buy=Short=Sell=Cover=False;
+
+
+
+
+// maxAtr14=HHV(atr14T0, 3);
+maxAtr14=atr14T0;
+
+// stopLossPt = 50; // assume no stop loss
+// stopLossPt = maxAtr14;  // 1 ATR stop loss
+stopLossPt = max3BarAtr14_1;  // 1 ATR stop loss
+
+
+
+
+//max3BarAtr14_1_15 = 1.5*max3BarAtr14_1;
+//max3BarAtr14_1_20 = 2.0*max3BarAtr14_1;
+//max3BarAtr14_1_30 = 3.0*max3BarAtr14_1;
+
+profit1Pt = 1.5*max3BarAtr14_1;
+// profit1Pt = 2.0*max3BarAtr14_1;
+
+
+
+
+
+// Trade tracking variables
+isInLong  = False;
+isInShort = False;
+longEntryPrice  = 0;
+shortEntryPrice = 0;
+longStopPrice        = 0;
+shortStopPrice       = 0;
+longProfitPrice        = 0;
+shortProfitPrice       = 0;
+
+longProfitPriceArr  = Null;
+longStopPriceArr  = Null;
+longBarindexArr = Null;
+longBarindex = 0;
+
+shortProfitPriceArr = Null;
+shortStopPriceArr = Null;
+shortBarindexArr = Null;
+shortBarindex = 0;
+
+isInShortArr = Null;
+isInLongArr = Null;
+
+buyForceCover = False;
+shortForceSell = False;
+
+// stopLossPrice1 = 0;
+// profitTakePrice1 = 0;
+
+liveStopLossPrice1 = 0;
+liveProfitTakePrice1 = 0;
+
+// N bar stop
+stopPeriod1 = 15;
+// stopPeriod1 = Optimize("stopPeriod1", 1, 1, 4, 1);
+sellStopNBarPeriod = 0;
+
+
+coverSignal1 = 0;
+sellSignal1 = 0;
+
+/*
+if (isTesting == True) {
+	tradePrice0 = O;  // backtest, use O
+}
+else {
+	tradePrice0 = C;  // live, use C
+}
+*/
+tradePrice0 = O;
+liveTradePrice0 = C;
+
+
+
+// use this
+// Loop through bars to track trades
+for(i = 0; i < BarCount; i++)
+{
+
+    // =====================
+    // Handling Buy
+    // =====================
+    if( Buy[i] AND !isInLong )  
+    {
+        longEntryPrice = tradePrice0[i];
+        longProfitPrice = longEntryPrice + profit1Pt[i];
+        longStopPrice = longEntryPrice - stopLossPt[i];
+        liveProfitTakePrice1 = liveTradePrice0[i] + profit1Pt[i];
+		liveStopLossPrice1 = liveTradePrice0[i] - stopLossPt[i];        
+        
+        //profitTakePrice1[i] = longProfitPrice;
+        //stopLossPrice1[i] = longStopPrice;
+        
+        isInLong = True;
+        sellStopNBarPeriod = stopPeriod1;
+        longBarIndex = i;
+		if (isInShort) {
+			buyForceCover = True;
+		}
+		
+    }
+    isInLongArr[i] = isInLong;
+    
+    // =====================
+    // Handling Short
+    // =====================
+    if( Short[i] AND !isInShort )  
+    {
+        shortEntryPrice = tradePrice0[i];
+        shortProfitPrice = shortEntryPrice - profit1Pt[i];
+        shortStopPrice = shortEntryPrice + stopLossPt[i];
+        liveProfitTakePrice1 = liveTradePrice0[i] - profit1Pt[i];
+		liveStopLossPrice1 = liveTradePrice0[i] + stopLossPt[i];        
+        
+        // profitTakePrice1[i] = shortProfitPrice;
+        // stopLossPrice1[i] = shortStopPrice;
+        
+        isInShort = True;
+        shortBarIndex = i;
+		if (isInLong) {
+			shortForceSell = True;
+		}		
+        
+    }    
+    isInShortArr[i] = isInShort;    
+	
+	// ==========================================
+	// Handling Stop Profit and Stop Loss for Buy
+	// ==========================================
+    if( isInLong )
+    {
+        longProfitPriceArr[i] = longProfitPrice;  
+        
+        longStopPriceArr[i] = longStopPrice;  
+        
+        longBarindexArr[i] = longBarindex;        
+
+		// =====================
+		// Handling Stop Loss
+		// =====================        
+        // if( (Low[i] <= longStopPrice OR shortForceSell) AND isInLong == True)  // Exit if stop-loss hit
+        if( (Low[i] <= longStopPrice OR shortForceSell) AND isInLong 
+			AND istesting  // only cater when testing. live use bracket order
+			)  // Exit if stop-loss hit
+        {
+			sellSignal1[i] = 2;
+            Sell[i] = 1;  
+            SellPrice[i] = longStopPrice;
+            Buy[i] = 0;
+            isInLong = False;
+            if (shortForceSell) {
+				shortForceSell = False;
+				SellPrice[i] = tradePrice0[i];
+			}
+        }		
+		// =====================
+		// Handling Stop Profit
+		// =====================
+        // shortForceSell means within buy but later has short signal, force sell and then short
+        // if( (high[i] >= longProfitPrice OR shortForceSell) AND isInLong == True)
+        if( (high[i] >= longProfitPrice OR shortForceSell) 
+			AND isInLong
+			AND istesting  // only cater when testing. live use bracket order
+			)
+        {
+			sellSignal1[i] = 1;
+            Sell[i] = 1;  
+            SellPrice[i] = longProfitPrice;
+            Buy[i] = 0;
+            isInLong = False;
+            if (shortForceSell) {
+				shortForceSell = False;
+				SellPrice[i] = tradePrice0[i];
+			}
+        }        
+		// =====================
+		// N bar stop
+		// =====================
+		// isNbarStopSell = True;
+		// if( (i - stopPeriod1) >= 0 AND allowSellCover[i] == True AND isInLong
+		if( (i - sellStopNBarPeriod) >= 0 AND allowSellCover[i] == True AND isInLong
+			 AND Buy[ i ] != 1 // if current bar still Buy, do not sell, just keep 2 bar buy
+			 // AND (Buy[ i - stopPeriod1] == 1 OR shortForceSell) 
+			 AND (Buy[ i - sellStopNBarPeriod] == 1 OR shortForceSell) 
+			 
+			) {
+				isInLong = False;
+				sellSignal1[i] = 3;
+				Sell[ i ] = 1; 
+				SellPrice[i] = tradePrice0[i];
+				// Buy[i] = 0; // do not set Buy[i] = 0
+		}
+		// for consequent buy, do not sell at stopPeriod1 until consequent buy end. sellStopNBarPeriod = 1st buy bar
+		if (Buy[ i - sellStopNBarPeriod] == 1 AND Buy[ i ] == 1) {
+			sellStopNBarPeriod = sellStopNBarPeriod + 1;
+		}
+    }
+
+	// ============================================
+	// Handling Stop Profit and Stop Loss for Short
+	// =============================================
+    if( isInShort == true )
+    {
+        shortProfitPriceArr[i] = shortProfitPrice;  
+        shortStopPriceArr[i] = shortStopPrice;  
+        
+        shortBarindexArr[i] = shortBarIndex;        
+
+		// =====================
+		// Handling Stop Loss
+		// =====================        
+		// if( (high[i] >= shortStopPrice OR buyForceCover) AND isInShort == True)  // Exit if stop-loss hit
+		if( (high[i] >= shortStopPrice OR buyForceCover) AND isInShort == True
+			AND istesting  // only cater when testing. live use bracket order
+			) // Exit if stop-loss hit
+        {
+			coverSignal1[i]= 2;
+            Cover[i] = 1;  
+            CoverPrice[i] = shortStopPrice;
+            Short[i] = 0;
+            isInShort = False;
+            if (buyForceCover) {
+				buyForceCover = False;
+				CoverPrice[i] = tradePrice0[i];
+			}
+    //        if (isInLong) {
+				//isInLong = False;
+    //        }
+        }
+
+		// =====================
+		// Handling Stop Profit
+		// =====================
+		// if( (low[i] <= shortProfitPrice OR buyForceCover) AND isInShort == True) 
+		if( (low[i] <= shortProfitPrice OR buyForceCover) AND isInShort == True
+			AND istesting  // only cater when testing. live use bracket order
+				)
+        {
+			coverSignal1[i]= 1;
+            Cover[i] = 1;  
+            CoverPrice[i] = shortProfitPrice;
+            Short[i] = 0;
+            isInShort = False;
+            if (buyForceCover) {
+				buyForceCover = False;
+				CoverPrice[i] = tradePrice0[i];
+			}
+    //        if (isInLong) {
+				//isInLong = False;
+    //        }
+        }        
+
+        
+		// =====================
+		// N bar stop
+		// =====================
+		// isNbarStopCover = True;
+		if( (i - stopPeriod1) >= 0 AND (Short[ i - stopPeriod1] == 1 OR buyForceCover) AND allowSellCover[i] == True AND isInShort == True
+			AND Short[ i ] != 1 // if current bar still Short, do not cover, just keep 2 bar short
+			) {
+				coverSignal1[i]= 3;
+				isInShort = False;
+				Cover[ i ] = 1; 
+				CoverPrice[i] = tradePrice0[i];
+			
+			}				
+
+
+        
+    }
+}
+
+
+
+// if not testing, use applystop
+if (istesting == False) {
+	ApplyStop(stopTypeLoss, stopModePoint, stopLossPt, 1, False); 
+	ApplyStop(stopTypeProfit, stopModePoint, profit1Pt, 1, False ); 
+}
+
+
+// ------------------------------------------------------
+// end. stop loss and profit. replace below 2 command
+// ------------------------------------------------------
+ 
+ 
+ 
+////////////////////////////////////////////////////////////////////////////////////////////////// 
+// Stop / Profit  
+////////////////////////////////////////////////////////////////////////////////////////////////// 
+ 
+ 
+stopLossPrice1 = 0;
+profitTakePrice1 = 0;
+
+
+ 
+NumContracts = 1; 
+PositionSize = NumContracts * MarginDeposit; 
+// PositionSize = 30000;
+
+ 
+ 
+ 
+// 
+// explorer columns 
+//  
+ // Filter=Buy OR Sell OR Short OR Cover; 
+// Filter=(Month()==10 OR Month() == 9) AND Year() == 2025;
+// Filter = TimeNum() >= 091500 AND TimeNum() <= 094500; 
+Filter = True;
+// Filter=short00; 
+// Filter = buyFilterCond4;
+
+
+SetOption("NoDefaultColumns", True ); 
+SetSortColumns(-3,-4); 
+AddTextColumn( Name(), "Symbol"); 
+ 
+//signal1 = WriteIf(Buy, "Buy", "Sell"); 
+// AddColumn(Buy, "Trade", 1.2); 
+// AddTextColumn(signal1, "Trade"); 
+AddColumn(IIf(Buy, 66, 83), "Trade", formatChar, colorBlack, IIf(Buy, colorGreen, colorRed)); 
+AddColumn( DateTime(), "Date", formatDateTime ); 
+Addcolumn( Close, "Close price", 1.4 ); 
+Addcolumn( Open, "Open price", 1.4 ); 
+Addcolumn( H, "H price", 1.4 ); 
+Addcolumn( L, "L price", 1.4 ); 
+
+
+//AddColumn( dayOfMonth1, "dayOfMonth1", 1.5 ); 
+//AddColumn( buycond1, "buycond1", 1.5 ); 
+//AddColumn( shortcond1, "shortcond1", 1.5 ); 
+
+
+AddColumn( buy, "buy", 1.5 ); 
+AddColumn( sell, "sell", 1.5 ); 
+
+
+AddColumn( stopLossPrice1, "stopLossPrice1", 1.5 ); 
+AddColumn( profitTakePrice1, "profitTakePrice1", 1.5 ); 
+
+/*
+AddColumn( minCO, "minCO", 1.5 ); 
+AddColumn( maxCO, "maxCO", 1.5 ); 
+AddColumn( hhvCOHist1, "hhvCOHist1", 1.5 ); 
+AddColumn( LLVCOHist1, "LLVCOHist1", 1.5 ); 
+AddColumn( hhvCHist1, "hhvCHist1", 1.5 ); 
+AddColumn( llvCHist1, "llvCHist1", 1.5 ); 
+*/
+
+AddColumn( regSlop20BarMaxCO, "regSlop20BarMaxCO", 1.5 ); 
+AddColumn( regSlop20BarMinCO, "regSlop20BarMinCO", 1.5 ); 
+AddColumn( regSlop20BarC, "regSlop20BarC", 1.5 ); 
+
+AddColumn( stoch1, "stoch1", 1.5 ); 
+/*
+AddColumn( hhvStoch1Hist1, "hhvStoch1Hist1", 1.5 ); 
+AddColumn( llvStoch1Hist1, "llvStoch1Hist1", 1.5 ); 
+AddColumn( regSlop20BarStoch1Down, "regSlop20BarStoch1Down", 1.5 );
+AddColumn( regSlop20BarStoch1Up, "regSlop20BarStoch1Up", 1.5 );
+
+AddColumn( hhvCHist1Bar, "hhvCHist1Bar", 1.5 );
+AddColumn( llvCHist1Bar, "llvCHist1Bar", 1.5 );
+AddColumn( regSlop20BarCUp2Pts, "regSlop20BarCUp2Pts", 1.5 );
+AddColumn( regSlop20BarCDown2Pts, "regSlop20BarCDown2Pts", 1.5 );
+
+AddColumn( diffCHHv, "diffCHHv", 1.5 );
+AddColumn( diffCLLV, "diffCLLV", 1.5 );
+AddColumn( diffPer, "diffPer", 1.5 );
+AddColumn( isUp, "isUp", 1.5 );
+ */
+ 
+AddColumn( hhvH, "hhvH", 1.5 );
+AddColumn( hhvHBar, "hhvHBar", 1.5 );
+AddColumn( llvL, "llvL", 1.5 );
+AddColumn( llvLBar, "llvLBar", 1.5 ); 
+
+AddColumn( stoch1AtH, "stoch1AtH", 1.5 ); 
+AddColumn( stoch1AtL, "stoch1AtL", 1.5 ); 
+
+AddColumn( isBullDiverg, "isBullDiverg", 1.5 ); 
+AddColumn( isBearDiverg, "isBearDiverg", 1.5 ); 
+
+
+
+AddColumn( hhvStoch12, "hhvStoch12", 1.5 );
+AddColumn( hhvStoch1Bar2, "hhvStoch1Bar2", 1.5 );
+AddColumn( llvStoch12, "llvStoch12", 1.5 );
+AddColumn( llvStoch1Bar2, "llvStoch1Bar2", 1.5 ); 
+
+AddColumn( hAtH2, "hAtH2", 1.5 ); 
+AddColumn( lAtL2, "lAtL2", 1.5 ); 
+
+AddColumn( isBullDiverg2, "isBullDiverg2", 1.5 ); 
+AddColumn( isBearDiverg2, "isBearDiverg2", 1.5 ); 
+AddColumn( isDiverg, "isDiverg", 1.5 ); 
+
+
+AddColumn( bullishStoch20, "bullishStoch20", 1.5 ); 
+AddColumn( bearishStoch80, "bearishStoch80", 1.5 ); 
+AddColumn( bullishOrBearishStochTh, "bullishOrBearishStochTh", 1.5 ); 
+
+AddColumn( crossDownEma9, "crossDownEma9", 1.5 ); 
+AddColumn( crossUpEma9, "crossUpEma9", 1.5 ); 
+AddColumn( isCrossEma9, "isCrossEma9", 1.5 ); 
+
+
+
+AddColumn( bodySize, "bodySize", 1.5 ); 
+AddColumn( bodySizePer, "bodySizePer", 1.5 ); 
+AddColumn( bodySizeRankTop, "bodySizeRankTop", 1.5 ); 
+AddColumn( bodySizeRankBot, "bodySizeRankBot", 1.5 ); 
+AddColumn( bodySizeRankBot2, "bodySizeRankBot2", 1.5 ); 
+AddColumn( isLargeBody, "isLargeBody", 1.5 ); 
+AddColumn( isBullish, "isBullish", 1.5 ); 
+AddColumn( largeBullishBody, "largeBullishBody", 1.5 ); 
+AddColumn( isBearish, "isBearish", 1.5 ); 
+AddColumn( largeBearishBody, "largeBearishBody", 1.5 ); 
+AddColumn( isSmallBody, "isSmallBody", 1.5 ); 
+AddColumn( isSmallBody2, "isSmallBody2", 1.5 ); 
+
+
+AddColumn( isLargeHl, "isLargeHl", 1.5 ); 
+AddColumn( isSmallHl, "isSmallHl", 1.5 ); 
+AddColumn( isSmallHl2, "isSmallHl2", 1.5 ); 
+
+AddColumn( largeBulllishHl, "largeBulllishHl", 1.5 ); 
+AddColumn( largeBearishHl, "largeBearishHl", 1.5 ); 
+
+AddColumn( stochCrossUp, "stochCrossUp", 1.5 ); 
+AddColumn( stochCrossDown, "stochCrossDown", 1.5 ); 
+
+
+
+AddColumn( topEngulfing1, "topEngulfing1", 1.5 ); 
+AddColumn( bearishEngulfing, "bearishEngulfing", 1.5 ); 
+AddColumn( bullishEngulfing, "bullishEngulfing", 1.5 ); 
+
+AddColumn( top3BarReveral00, "top3BarReveral00", 1.5 ); 
+
+
+
+
+AddColumn( hhvBar12_1, "hhvBar12_1", 1.5 ); 
+AddColumn( llvBar12_1, "llvBar12_1", 1.5 ); 
+AddColumn( hhvBar12_2, "hhvBar12_2", 1.5 ); 
+AddColumn( llvBar12_2, "llvBar12_2", 1.5 ); 
+AddColumn( short00, "short00", 1.5 ); 
+AddColumn( buy00, "buy00", 1.5 ); 
+AddColumn( hLsize, "hLsize", 1.5 ); 
+
+AddColumn( candleStickHammer, "candleStickHammer", 1.5 ); 
+AddColumn( candleStickInvertedHammer, "candleStickInvertedHammer", 1.5 ); 
+AddColumn( hammerBar, "hammerBar", 1.5 ); 
+AddColumn( maxCO, "maxCO", 1.5 ); 
+AddColumn( minCO, "minCO", 1.5 ); 
+
+AddColumn( VWAP, "VWAP", 1.5 ); 
+AddColumn( UpperBand1, "VWAP_UpperBand1", 1.5 ); 
+AddColumn( UpperBand2, "VWAP_UpperBand2", 1.5 ); 
+AddColumn( topMiddleBar, "topMiddleBar", 1.5 ); 
+AddColumn( top3BarReveral2, "top3BarReveral2", 1.5 ); 
+AddColumn( lowMinCO, "lowMinCO", 1.5 ); 
+
+AddColumn( ma100, "ma100", 1.5 ); 
+AddColumn( ma200, "ma200", 1.5 ); 
+AddColumn( regSlop100C, "regSlop100C", 1.5 ); 
+AddColumn( regSlop200C, "regSlop200C", 1.5 ); 
+
+AddColumn( bullishStoch20_2, "bullishStoch20_2", 1.5 ); 
+AddColumn( bearishStoch80_2, "bearishStoch80_2", 1.5 ); 
+AddColumn( bullishOrBearishStochTh_2, "bullishOrBearishStochTh_2", 1.5 ); 
+
+
+AddColumn( top3BarReveral01, "top3BarReveral01", 1.5 ); 
+AddColumn( hhv12_2, "hhv12_2", 1.5 ); 
+AddColumn( bearishVWAP1, "bearishVWAP1", 1.5 ); 
+
+/*
+AddColumn( PriceDiffSq, "PriceDiffSq", 1.5 ); 
+AddColumn( CumPriceDiffSq, "CumPriceDiffSq", 1.5 ); 
+AddColumn( StartPriceDiffSq, "StartPriceDiffSq", 1.5 ); 
+AddColumn( MonthlyVariance, "MonthlyVariance", 1.5 ); 
+*/
+AddColumn( VWAP_SD, "VWAP_SD", 1.5 ); 
+
+
+AddColumn( regSlop5vwap50BarL0, "regSlop5vwap50BarL0", 1.5 ); 
+AddColumn( regSlop5vwap50BarL0Sum15, "regSlop5vwap50BarL0Sum15", 1.5 ); 
+
+AddColumn( regSlop5vwap50BarH0, "regSlop5vwap50BarH0", 1.5 ); 
+AddColumn( regSlop5vwap50BarH0Sum15, "regSlop5vwap50BarH0Sum15", 1.5 ); 
+
+
+AddColumn( regSlop5Vwap9Bar, "regSlop5Vwap9Bar", 1.5 ); 
+AddColumn( regSlop5Vwap20Bar, "regSlop5Vwap20Bar", 1.5 ); 
+
+AddColumn( hhvBar5_1, "hhvBar5_1", 1.5 ); 
+AddColumn( hhvBar5_2, "hhvBar5_2", 1.5 ); 
+AddColumn( llvBar5_1, "llvBar5_1", 1.5 ); 
+AddColumn( llvBar5_2, "llvBar5_2", 1.5 ); 
+AddColumn( priceActionUp2Bar1, "priceActionUp2Bar1", 1.5 ); 
+AddColumn( priceActionUp4Bar1, "priceActionUp4Bar1", 1.5 ); 
+
+AddColumn( crossDownVWap50, "crossDownVWap50", 1.5 ); 
+AddColumn( crossUpVWap50, "crossUpVWap50", 1.5 ); 
+
+AddColumn( llv12_2, "llv12_2", 1.5 ); 
+
+
+AddColumn( top3BarReveral1, "top3BarReveral1", 1.5 ); 
+AddColumn( top3BarReveral3, "top3BarReveral3", 1.5 ); 
+
+
+
+AddColumn( vwap6_2, "vwap6_2", 1.5 ); 
+AddColumn( regSlop3Stoch1, "regSlop3Stoch1", 1.5 ); 
+AddColumn( isBullDiverg3, "isBullDiverg3", 1.5 ); 
+AddColumn( isBearDiverg3, "isBearDiverg3", 1.5 ); 
+
+AddColumn( vwap50_2, "vwap50_2", 1.5 ); 
+AddColumn( vwap20_2, "vwap20_2", 1.5 ); 
+AddColumn( vwap9_2, "vwap9_2", 1.5 ); 
+
+AddColumn( regSlop3Vwap50Bar, "regSlop3Vwap50Bar", 1.5 ); 
+AddColumn( regSlop5vwap50Bar, "regSlop5vwap50Bar", 1.5 ); 
+AddColumn( regSlop10vwap50Bar, "regSlop10vwap50Bar", 1.5 ); 
+AddColumn( regSlop20vwap50Bar, "regSlop20vwap50Bar", 1.5 ); 
+
+AddColumn( regSlop3Vwap50BarDiff, "regSlop3Vwap50BarDiff", 1.5 ); 
+AddColumn( regSlop5Vwap50BarDiff, "regSlop5Vwap50BarDiff", 1.5 ); 
+
+AddColumn( buy01, "buy01", 1.5 ); 
+AddColumn( buy01_1, "buy01_1", 1.5 ); 
+AddColumn( buy01_2, "buy01_2", 1.5 ); 
+AddColumn( buy01_3, "buy01_3", 1.5 ); 
+AddColumn( buy01_3_2, "buy01_3_2", 1.5 ); 
+
+AddColumn( buy02, "buy02", 1.5 ); 
+
+
+AddColumn( priceActionDown2Bar1, "priceActionDown2Bar1", 1.5 ); 
+AddColumn( priceActionDown2Bar2, "priceActionDown2Bar2", 1.5 ); 
+AddColumn( priceActionDown3Bar1, "priceActionDown3Bar1", 1.5 ); 
+AddColumn( priceActionDown4Bar1, "priceActionDown4Bar1", 1.5 ); 
+AddColumn( priceActionDown3Bar2, "priceActionDown3Bar2", 1.5 ); 
+
+
+AddColumn( buyFilterCond4, "buyFilterCond4", 1.5 ); 
+
+
+
+
+AddColumn( atr14T0, "atr14T0", 1.5 ); 
+AddColumn( max3BarAtr14_1, "max3BarAtr14_1", 1.5 ); 
+AddColumn( max3BarAtr14_1_15, "max3BarAtr14_1_15", 1.5 ); 
+AddColumn( max3BarAtr14_1_20, "max3BarAtr14_1_20", 1.5 ); 
+AddColumn( buyAtr15ProfitTakePrice, "buyAtr15ProfitTakePrice", 1.5 ); 
+AddColumn( buyAtr20ProfitTakePrice, "buyAtr20ProfitTakePrice", 1.5 ); 
+AddColumn( buyAtr30ProfitTakePrice, "buyAtr30ProfitTakePrice", 1.5 ); 
+
+AddColumn( buyAtr1StopLossPrice, "buyAtr1StopLossPrice", 1.5 ); 
+AddColumn( shortAtr1StopLossPrice, "shortAtr1StopLossPrice", 1.5 ); 
+
+AddColumn( next10BarHHV_H, "next10BarHHV_H", 1.5 ); 
+AddColumn( next15BarHHV_H, "next15BarHHV_H", 1.5 ); 
+AddColumn( next20BarHHV_H, "next20BarHHV_H", 1.5 ); 
+
+AddColumn( next10BarLLV_L, "next10BarLLV_L", 1.5 ); 
+AddColumn( next15BarLLV_L, "next15BarLLV_L", 1.5 ); 
+AddColumn( next20BarLLV_L, "next20BarLLV_L", 1.5 ); 
+
+
+AddColumn( buyRtB1, "buyRtB1", 1.5 ); 
+AddColumn( buyRtB3, "buyRtB3", 1.5 ); 
+AddColumn( buyRtB5, "buyRtB5", 1.5 ); 
+AddColumn( buyRtB10, "buyRtB10", 1.5 ); 
+AddColumn( buyRtB20, "buyRtB20", 1.5 ); 
+AddColumn( buyRtB30, "buyRtB30", 1.5 ); 
+
+
+AddColumn( buyRtAtr15, "buyRtAtr15", 1.5 );
+AddColumn( buyRtAtr20, "buyRtAtr20", 1.5 );
+AddColumn( buyRtAtr30, "buyRtAtr30", 1.5 );
+
+AddColumn( buyRtAtr15_15bar, "buyRtAtr15_15bar", 1.5 );
+AddColumn( buyRtAtr20_15bar, "buyRtAtr20_15bar", 1.5 );
+AddColumn( buyRtAtr30_15bar, "buyRtAtr30_15bar", 1.5 );
+
+AddColumn( buyRtAtr15_20bar, "buyRtAtr15_20bar", 1.5 );
+AddColumn( buyRtAtr20_20bar, "buyRtAtr20_20bar", 1.5 );
+AddColumn( buyRtAtr30_20bar, "buyRtAtr30_20bar", 1.5 );
+
+AddColumn( buyRtAtr15_wo_sl, "buyRtAtr15_wo_sl", 1.5 );
+AddColumn( buyRtAtr20_wo_sl, "buyRtAtr20_wo_sl", 1.5 );
+AddColumn( buyRtAtr30_wo_sl, "buyRtAtr30_wo_sl", 1.5 );
+
+AddColumn( buyRtAtr15_15bar_wo_sl, "buyRtAtr15_15bar_wo_sl", 1.5 );
+AddColumn( buyRtAtr20_15bar_wo_sl, "buyRtAtr20_15bar_wo_sl", 1.5 );
+AddColumn( buyRtAtr30_15bar_wo_sl, "buyRtAtr30_15bar_wo_sl", 1.5 );
+
+AddColumn( buyRtAtr15_20bar_wo_sl, "buyRtAtr15_20bar_wo_sl", 1.5 );
+AddColumn( buyRtAtr20_20bar_wo_sl, "buyRtAtr20_20bar_wo_sl", 1.5 );
+AddColumn( buyRtAtr30_20bar_wo_sl, "buyRtAtr30_20bar_wo_sl", 1.5 );
+
+
+AddColumn( shortRtB1, "shortRtB1", 1.5 ); 
+AddColumn( shortRtB3, "shortRtB3", 1.5 ); 
+AddColumn( shortRtB5, "shortRtB5", 1.5 ); 
+AddColumn( shortRtB10, "shortRtB10", 1.5 ); 
+AddColumn( shortRtB20, "shortRtB20", 1.5 ); 
+AddColumn( shortRtB30, "shortRtB30", 1.5 ); 
+
+
+AddColumn( shortRtAtr15, "shortRtAtr15", 1.5 );
+AddColumn( shortRtAtr20, "shortRtAtr20", 1.5 );
+AddColumn( shortRtAtr30, "shortRtAtr30", 1.5 );
+
+AddColumn( shortRtAtr15_15bar, "shortRtAtr15_15bar", 1.5 );
+AddColumn( shortRtAtr20_15bar, "shortRtAtr20_15bar", 1.5 );
+AddColumn( shortRtAtr30_15bar, "shortRtAtr30_15bar", 1.5 );
+
+AddColumn( shortRtAtr15_20bar, "shortRtAtr15_20bar", 1.5 );
+AddColumn( shortRtAtr20_20bar, "shortRtAtr20_20bar", 1.5 );
+AddColumn( shortRtAtr30_20bar, "shortRtAtr30_20bar", 1.5 );
+
+AddColumn( shortRtAtr15_wo_sl, "shortRtAtr15_wo_sl", 1.5 );
+AddColumn( shortRtAtr20_wo_sl, "shortRtAtr20_wo_sl", 1.5 );
+AddColumn( shortRtAtr30_wo_sl, "shortRtAtr30_wo_sl", 1.5 );
+
+AddColumn( shortRtAtr15_15bar_wo_sl, "shortRtAtr15_15bar_wo_sl", 1.5 );
+AddColumn( shortRtAtr20_15bar_wo_sl, "shortRtAtr20_15bar_wo_sl", 1.5 );
+AddColumn( shortRtAtr30_15bar_wo_sl, "shortRtAtr30_15bar_wo_sl", 1.5 );
+
+AddColumn( shortRtAtr15_20bar_wo_sl, "shortRtAtr15_20bar_wo_sl", 1.5 );
+AddColumn( shortRtAtr20_20bar_wo_sl, "shortRtAtr20_20bar_wo_sl", 1.5 );
+AddColumn( shortRtAtr30_20bar_wo_sl, "shortRtAtr30_20bar_wo_sl", 1.5 );
+
+AddColumn( short01, "short01", 1.5 );
+AddColumn( short02, "short02", 1.5 );
+AddColumn( short02_2, "short02_2", 1.5 );
+
+AddColumn( short01_1, "short01_1", 1.5 );
+AddColumn( short01_2, "short01_2", 1.5 );
+AddColumn( short01_3, "short01_3", 1.5 );
+AddColumn( short01_4, "short01_4", 1.5 );
+
+
+

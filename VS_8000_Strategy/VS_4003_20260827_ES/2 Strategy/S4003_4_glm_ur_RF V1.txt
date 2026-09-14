@@ -1,0 +1,12 @@
+1. enhance file S4003_3_randomforest_glm.py
+2. Target:
+    - netprofit increase 15%
+    - win rate increase 15%
+    - average trade at least 1 time within 2 trading days
+3. Enhance existing stragegy file S4003_3_randomforest_glm.py, add below parameter
+        - parameter stn1. stop trading within a single day if more than stn1 trade with profit
+        - parameter sln1. stop trading within a single day if more than sln1 trade loss money
+the entry bar)
+4. output: 
+    - output file: S4003_4_randomforest_glm.py
+    - display best parameter in step 3 above backtest to screen

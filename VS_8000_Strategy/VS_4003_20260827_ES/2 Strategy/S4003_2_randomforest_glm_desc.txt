@@ -1,0 +1,171 @@
+S4003_2_randomforest_glm_desc.txt
+==================================
+English description of the strategy implemented in
+VS_8000_Strategy/VS_4003_20260827_ES/2 Strategy/S4003_2_randomforest_glm.py
+(base engine: S4003_1_glm.py strategyS4003V1, converted from AmiBroker AFL
+"backtest_4003_1 trim_4_python.afl"; ML layer: Random-Forest entry gate).
+
+--------------------------------------------------------------------------
+OVERVIEW
+--------------------------------------------------------------------------
+Signal fires on a completed 1-minute bar -> the S0001 feature set is
+computed at that signal bar -> a purged walk-forward Random Forest predicts
+P(Win) for the would-be trade -> the trade is entered only if P(Win) is at
+or above the gate threshold, otherwise it is skipped. All exits are
+IDENTICAL to the original S4003_1 strategy; the Random Forest only decides
+enter-vs-skip, it never modifies or adds exits.
+
+--------------------------------------------------------------------------
+INSTRUMENT / ACCOUNT
+--------------------------------------------------------------------------
+Symbol        : ES - CME E-mini S&P 500 futures (continuous contract),
+                read from MariaDB IBTradingDb.ticker1Min (ticker = 'ES').
+Time frame    : 1-minute bars.
+Position size : 1 contract per trade (num_contracts = 1),
+                ES point value = $50 per point.
+Commission    : $14.50 per round-turn trade (charged once per trade,
+                embedded in each trade's net P&L; validated against the
+                AmiBroker report: 74 trades x $14.50 = $1,073.00).
+                The backtesting.py harness attribute 'commission' is 0.0
+                (fraction) so the generic test harnesses run unburdened.
+Slippage      : Not modeled ($0). The only price adjustment is the entry
+                limit offset described below, which is an AmiBroker fill
+                convention, not slippage.
+Initial capital: $80,000 (AmiBroker report parity).
+
+--------------------------------------------------------------------------
+BUY CONDITION (long entry signal, evaluated on completed bar i)
+--------------------------------------------------------------------------
+buy00 = priceActionUp4Bar2. ALL of the following must hold:
+  1. A large bullish body at bar i-3 OR i-2:
+     body size |C-O| >= 70th percentile of body sizes over the last 100
+     bars AND body >= 65% of the bar range (H-L).
+  2. A VWAP50 cross-up at bar i-3 OR i-2:
+     close crosses above the rolling 50-bar volume-weighted average of
+     close (Sum(C*V,50)/Sum(V,50)), OR the bar straddles it (O < vwap50
+     AND C > vwap50).
+  3. A large bearish body AND a VWAP50 cross-down at bar i-1
+     (close crosses below vwap50, or O > vwap50 AND C < vwap50).
+  4. The current bar is the lowest of the last 5 bars:
+     L == lowest low of the last 5 bars OR min(C,O) == lowest min(C,O)
+     of the last 5 bars (ties resolved to the oldest occurrence,
+     AmiBroker LLVBars semantics).
+  5. The current bar is bullish: C > O.
+Entry occurs on the NEXT bar (i+1) when buy00 was true at bar i
+(AFL: Buy = Ref(buy00, -1); time filter currently always true).
+Random-Forest gate: enter only if the out-of-sample P(Win) for this
+signal is >= the long gate threshold (auto-selected, e.g. 0.35).
+
+--------------------------------------------------------------------------
+SHORT CONDITION (short entry signal, evaluated on completed bar i)
+--------------------------------------------------------------------------
+short00 = priceActionDown3Bar1 OR short02.
+
+priceActionDown3Bar1 (ALL must hold):
+  1. Bar i-2 is bullish (C > O) and bar i-1 is bearish (C < O).
+  2. Bar i-1 undercuts bar i-2: min(C,O)[i-2] > min(C,O)[i-1]
+     OR L[i-2] > L[i-1].
+  3. Bar i-1 exceeds bar i-2: max(C,O)[i-2] < max(C,O)[i-1]
+     OR H[i-2] < H[i-1].
+  4. Current bar is bearish AND close crosses below vwap50.
+
+short02 (ALL must hold):
+  1. The 3-bar linear-regression slope of vwap50 was positive on the
+     previous bar and is negative on the current bar.
+  2. At least one VWAP50 cross-down within the last 4 bars.
+  3. Current bar and previous bar are both bearish (C < O).
+  4. At least 4 of the last 5 bars have a 5-bar LinReg slope of vwap50
+     below -0.01 (persistent downtrend of vwap50).
+Entry occurs on the NEXT bar (i+1) when short00 was true at bar i.
+Random-Forest gate: enter only if out-of-sample P(Win) >= the short gate
+threshold (auto-selected, e.g. 0.30).
+
+--------------------------------------------------------------------------
+ENTRY PRICE (on entry bar i+1)
+--------------------------------------------------------------------------
+Default mode 'limit' (AmiBroker BuyPrice/ShortPrice with price-bound
+checking, validated trade-by-trade against the AmiBroker report):
+  Long entry price  = max( Open[i+1] - ATR14[bar i] / 4 ,  Low[i+1] )
+  Short entry price = min( Open[i+1] + ATR14[bar i] / 4 ,  High[i+1] )
+where ATR14 is Wilder's 14-bar ATR at the signal bar. The offset is
+clamped to the entry bar's Low (long) / High (short).
+Optional mode 'open': plain Open[i+1] for both directions.
+Note: stop-loss and take-profit levels are always anchored at the ENTRY
+BAR'S OPEN (AFL tradePrice0 convention), not at the actual fill price.
+
+--------------------------------------------------------------------------
+EXIT CONDITIONS AND EXIT PRICES (identical for the base and RF-enhanced
+strategy; checked on every bar while in a position, including the entry
+bar; stop loss is checked BEFORE take profit when both are touched in the
+same bar)
+--------------------------------------------------------------------------
+Let A = max3BarAtr14_1 = highest ATR14 of the PREVIOUS 3 bars (excluding
+the entry bar), evaluated at the entry bar, and let O = entry bar Open.
+
+SELL (close long) conditions, in order:
+  1. Stop loss   : Low <= O - 1.0 * A.
+                   Stop loss price = O - 1.0 * A   (exit at that price).
+  2. Take profit : High >= O + 1.5 * A.
+                   Take profit price = O + 1.5 * A (exit at that price).
+  3. 15-bar stop : 15 bars after the entry bar and the current bar is not
+                   another buy signal.
+                   Exit price = Open of the current bar.
+                   (The 15-bar anchor shifts +1 bar for every consecutive
+                   buy signal while long, AmiBroker sellStopNBarPeriod.)
+  4. Force exit  : a short entry signal fires while long.
+                   Exit price = Open of the current bar.
+  5. End of data : position still open at the last bar.
+                   Exit price = Close of the last bar.
+
+COVER (close short) conditions, in order:
+  1. Stop loss   : High >= O + 1.0 * A.
+                   Stop loss price = O + 1.0 * A.
+  2. Take profit : Low <= O - 1.5 * A.
+                   Take profit price = O - 1.5 * A.
+  3. 15-bar stop : 15 bars after the entry bar (fixed 15, no shifting on
+                   the short side) and the current bar is not another
+                   short signal.
+                   Exit price = Open of the current bar.
+  4. Force exit  : a buy entry signal fires while short.
+                   Exit price = Open of the current bar.
+  5. End of data : Exit price = Close of the last bar.
+
+Special rule (AmiBroker loop semantics): if the stop loss, take profit or
+force exit triggers ON THE ENTRY BAR ITSELF, the trade is CANCELLED
+entirely (the AFL zeroes the Buy/Short flag, so no trade is recorded).
+Only one position at a time; no pyramiding. A new signal in the opposite
+direction force-exits the open position at Open and enters the new
+direction on the same bar.
+
+--------------------------------------------------------------------------
+RANDOM-FOREST LAYER (S4003_2 only - decides enter vs skip)
+--------------------------------------------------------------------------
+Features   : the 150 causal features of S0001_GeneralFeature_2_glm.py
+             (returns, candles, momentum/slopes, RSI divergences, market
+             regime, rolling VWAP bands, volatility, volume, time
+             sine/cosine, statistics, market structure), computed at the
+             SIGNAL bar (entry_bar - 1), i.e. the last bar fully known
+             when the enter/skip decision is made. Sparse features are
+             dropped automatically.
+Label      : y = 1 if the base trade's net P&L > 0 (labels also store the
+             entry/exit signal, direction and prices - never used as
+             features).
+Model      : RandomForestClassifier(400 trees, max_depth 6,
+             min_samples_leaf 5, class_weight balanced).
+Validation : purged walk-forward, 5 chronological folds, expanding
+             past-only training, purge gap = max holding period + 10 bars
+             (label-horizon overlap purge); out-of-sample P(Win) per fold.
+Entry rule : enter if OOS P(Win) >= gate threshold, else SKIP the entry
+             (the 'skip' branch of the requirement; exits unchanged).
+Gate       : per-direction thresholds (long/short) selected by grid
+             search against the performance targets (net +15%, win rate
+             +15%, >= 1 trade per 2 trading days); e.g. long 0.35 /
+             short 0.30 on the full-history run. A fixed threshold can be
+             pinned with --threshold.
+
+--------------------------------------------------------------------------
+TRADE P&L
+--------------------------------------------------------------------------
+  Long : (exit price - entry price) * $50 * 1 contract - $14.50
+  Short: (entry price - exit price) * $50 * 1 contract - $14.50
+--------------------------------------------------------------------------

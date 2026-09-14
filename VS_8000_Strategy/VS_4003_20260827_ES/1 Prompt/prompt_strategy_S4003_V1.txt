@@ -1,0 +1,77 @@
+Please provide python program for algo trade strategy
+
+requirement:
+1. filename: VS_8000_Strategy/VS_4003_20260827_ES/2 Strategy/S4003_1.py
+2. S4003_1.py convert from amibroker program VS_8000_Strategy\VS_4003_20260827_ES\2 Strategy\amibroker\backtest_4003_1 trim_4_python.afl and backtest_4003_1 trim_4_python.apx
+3. Datasource is mariaDB, database name IBTradingDb, login user 'ibUser1'@'localhost', table ticker1Min. detail refer to VS_0007_dbAndFile\mariaDB
+4. in py file, create a class strategyS4003V1, strategy logic inside the class
+5. class strategyS4003V1 can be a parameter to all testing program VS_0003_test backtest.py, otherTest.py, monteCarloSimulation.py and walkforwardTest.py
+6. backtest output result 
+    - output 3 files. 
+    - 1st file is backtest statistics file
+        - in html format
+        - file in C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_4003_20260827_ES\backTestResult\S4003_1_<YYYYMMDDHH24MISS>.html
+        - at at least include below value
+            - Inital Captial
+            - End Captial
+            - Net Profit
+            - Net Profit %
+            - Explosure %
+            - Annual Return %
+            - Total Commission Cost
+            - Number of trades
+            - Number of Long trades
+            - Number of Short trades
+            - Number of wins
+            - Number of wins %
+            - Total win amount
+            - Number of loss
+            - Number of loss %
+            - Total loss amount
+            - Average Profit/loss
+            - Average Profit/loss %
+            - Maximum trade drawdown
+            - Maximum system drawdown
+            - CAR/MaxDD
+            - Profit Factor
+            - Sharpe Ratio
+            - Ulcer Index
+            - K-Ratio
+        - sharpe ratio with annual risk free rate 3%
+            
+    - 2nd file is backtest trade file
+        - in csv format 
+        - file in C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_4003_20260827_ES\backTestResult\S4003_1_<YYYYMMDDHH24MISS>.csv
+        columns:
+            - column A: symbol Name
+            - column B: Trade type. value either Long or Short
+            - column C: buy or short entry date time. format DD/MM/YYYY hh24:mi
+            - column D: buy or short entry price 
+            - column E: sell or cover exit date time. format DD/MM/YYYY hh24:mi
+            - column F: sell or cover exit price 
+            - column G: % change
+            - column H: Profit
+            - column I: % Profit
+            - column J: buyer or short Shares
+            - column K: Position values
+            - column L: Cumulative profit
+            - column M: number of bars between buy to sell or short to cover
+            - column N: MAE
+            - column O: MFE
+        - Update backtest result html file. Add equity chart
+        - records in decending order of column C
+    - 3rd file 
+        - filename: C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_4003_20260827_ES\backTestResult\S4003_1_explore_<YYYYMMDDHH24MISS>.csv
+        - - write to file every 1 minute no matter there is buy00 or short00 signal or not. 
+        - Columns of file
+            - column A: Symbol
+            - column B: value either buyer00 or short00
+            - column C: date time of buy00 or short00. format DD/MM/YYYY hh24:mi
+            - column D - G: Open, close, high, low
+            - column H - I: cCrossUpBBTop, cCrossDownBBBottom
+        - records in decending order of column C
+7. if backtest class strategyS4003V1 from 2026-07-13 to 2026-08-17, below results 
+    should be the same as backtest result from amibroker in file VS_8000_Strategy\VS_4003_20260827_ES\2 Strategy\amibroker\backtest_4003_1 - Backtest Report.html
+            - number of trades
+            - net profit
+            - win rate

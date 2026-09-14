@@ -1,0 +1,50 @@
+﻿python.exe : C:\Project\ProjectLife\VSCode Algo Workspace\VS_8000_Strategy\VS_4
+003_20260827_ES\2 Strategy\S4003_1_kimi.py:244: UserWarning: pandas only suppor
+ts SQLAlchemy connectable (engine/connection) or database string URI or sqlite3
+ DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using 
+SQLAlchemy.
+位於 線路:1 字元:1
++ python.exe "C:\Project\ProjectLife\VSCode Algo Workspace\VS_8000_Stra ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Project\Proj...ing SQLAlchemy. 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  df = pd.read_sql(query, conn, params=params or None)
+C:\Project\ProjectLife\VSCode Algo Workspace\VS_8000_Strategy\VS_4003_20260827_
+ES\2 Strategy\S4003_1_kimi.py:549: FutureWarning: Downcasting object dtype arra
+ys on .fillna, .ffill, .bfill is deprecated and will change in a future version
+. Call result.infer_objects(copy=False) instead. To opt-in to the future behavi
+or, set `pd.set_option('future.no_silent_downcasting', True)`
+  out["buy_signal"] = out["buy00"].shift(1).fillna(False).infer_objects(copy=Fa
+lse).astype(bool)
+C:\Project\ProjectLife\VSCode Algo Workspace\VS_8000_Strategy\VS_4003_20260827_
+ES\2 Strategy\S4003_1_kimi.py:550: FutureWarning: Downcasting object dtype arra
+ys on .fillna, .ffill, .bfill is deprecated and will change in a future version
+. Call result.infer_objects(copy=False) instead. To opt-in to the future behavi
+or, set `pd.set_option('future.no_silent_downcasting', True)`
+  out["short_signal"] = out["short00"].shift(1).fillna(False).infer_objects(cop
+y=False).astype(bool)
+C:\Project\ProjectLife\VSCode Algo Workspace\VS_8000_Strategy\VS_4003_20260827_
+ES\2 Strategy\S4003_1_kimi.py:549: FutureWarning: Downcasting object dtype arra
+ys on .fillna, .ffill, .bfill is deprecated and will change in a future version
+. Call result.infer_objects(copy=False) instead. To opt-in to the future behavi
+or, set `pd.set_option('future.no_silent_downcasting', True)`
+  out["buy_signal"] = out["buy00"].shift(1).fillna(False).infer_objects(copy=Fa
+lse).astype(bool)
+C:\Project\ProjectLife\VSCode Algo Workspace\VS_8000_Strategy\VS_4003_20260827_
+ES\2 Strategy\S4003_1_kimi.py:550: FutureWarning: Downcasting object dtype arra
+ys on .fillna, .ffill, .bfill is deprecated and will change in a future version
+. Call result.infer_objects(copy=False) instead. To opt-in to the future behavi
+or, set `pd.set_option('future.no_silent_downcasting', True)`
+  out["short_signal"] = out["short00"].shift(1).fillna(False).infer_objects(cop
+y=False).astype(bool)
+Running smoke backtest from DB (ticker1Min)...
+Artifacts written to:
+  HTML  -> C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_4003_20260827_ES\backTestResult\S4003_1_20260830212522.html
+  CSV   -> C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_4003_20260827_ES\backTestResult\S4003_1_20260830212522.csv
+  EXPLORE -> C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_4003_20260827_ES\backTestResult\S4003_1_explore_20260830212522.csv
+HTML: C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_4003_20260827_ES\backTestResult\S4003_1_20260830212522.html
+TradeCSV: C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_4003_20260827_ES\backTestResult\S4003_1_20260830212522.csv
+ExploreCSV: C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_4003_20260827_ES\backTestResult\S4003_1_explore_20260830212522.csv
+Trades generated: 90

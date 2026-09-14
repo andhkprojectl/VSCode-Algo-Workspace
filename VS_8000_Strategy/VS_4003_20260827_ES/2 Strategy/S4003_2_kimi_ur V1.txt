@@ -1,0 +1,21 @@
+1. S4003_1_glm.py is my existing strategy file (not S4003_1_kimi.py)
+2. Target:
+    - netprofit increase 15%
+    - win rate increase 15%
+    - average trade at least 1 time within 2 trading days
+3. Enhance existing stragegy S4003_1_glm.py usig feature engineering. Already with buy/sell, short/cover signal. And with stop loss and profit take condition
+    - feature list and how to use feature list can refer to VS_0001_GeneralStrategy\S0001_GeneralFeature_2_glm.py as sample
+    - at least label existing stragy entry, exit signal and price
+    - try random forest to enhance stragegy 
+    - Signal Fire --> Compute Features → random forest Predicts P(Win) → 
+        - If P(Win) > Threshold → Enter with same exits
+        - If P(Win) < Threshold → Skip or update exit signal
+    - purged walk-forward test
+4. time frame: 1 minute
+5. symbol: CME ES mini future
+6. output: 
+    - output file: S4003_2_randomforest_kimi.py
+    - after running S4003_2_randomforest_glm.py, output 3 files, same as input S4003_1_glm.py
+        - S4003_2_randomforest_results.csv: backtest performance metrics (sharpe ratio, win rate, profit factor, max drawdown, etc.)
+        - S4003_2_randomforest_model.pkl: trained Random Forest model with feature importance rankings
+        - S4003_2_randomforest_feature_importance.csv: feature importance values for all engineered features

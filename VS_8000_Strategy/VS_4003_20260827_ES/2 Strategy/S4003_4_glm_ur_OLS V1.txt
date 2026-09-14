@@ -1,0 +1,10 @@
+1. update file S4003_4_randomforest_glm.py
+2. Target:
+    - netprofit increase 15%
+    - win rate increase 15%
+    - average trade at least 1 time within 2 trading days
+3. change random forest to linear regression
+4. find backtest find best parameter of w1, n1, e1, stn1, stl1
+4. output: 
+    - output file: S4003_4_linearRegression_glm.py
+    - display best parameter in step 3 above backtest to screen

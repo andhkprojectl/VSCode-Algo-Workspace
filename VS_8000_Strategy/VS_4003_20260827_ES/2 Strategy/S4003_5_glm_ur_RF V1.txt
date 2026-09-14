@@ -1,0 +1,17 @@
+1. Target:
+    - increase win rate >= 65%
+2. Enhance existing stragegy file S4003_4_randomforest_glm.py, add below parameter:
+        - Analysis period change to 2026-06-01 to 2026-08-31 (3 months)
+        - Among 5 parameters w1, n1, e1, stn1, sln1, try find 2 most valuable parameters for walkforward test. other 3 parameters keep best value from backtest
+        - using 2 paarameter above, run walkforward test using VS_0003_test\walkForwardTest.py as sample
+            - in sample period from 2026-06-01 to 2026-06-07 (1 week), get best value
+            - apply to out sample period 2026-06-08 (1 day)
+            - then repeat above using rolling window, i.e. in sample period 2026-06-02 to 2026-06-08 (1 week), get best value
+            - apply to out sample period 2026-06-09 (1 day)
+            - continue rolling window until end of analysis period (2026-08-31)
+3. output: 
+    - output file: S4003_5_randomforest_glm.py
+    - add 2 parameter values to html for each out sample period 
+    - save walkforward test results to CSV files for analysis
+    - at least put walkforward test result net profit, number of trade, win rate, max sysmte drawdown, sharpe ratio to html file
+    

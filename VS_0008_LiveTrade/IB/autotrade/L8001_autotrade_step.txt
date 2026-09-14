@@ -1,0 +1,8 @@
+implement L8001_autotrade_UR_V1.txt, using glm-5.3-flash, plan mode, generate mark down md file
+md file name: .kilo\plans\1785245983679-autotrade-requirement-md.md
+implement L8001_autotrade_UR_V1.txt, using kimi3 (open router), plan mode, generate mark down md file
+md file name: L8001_autotrade_UR_V1.md
+use glm-5.3-flash to compare 2 md file, update final to 1785245983679-autotrade-requirement-md.md (L8001_autotrade_UR_V2.txt)
+implement 1785245983679-autotrade-requirement-md.md
+Here suppose 1st version of autotrade.afl, function  doTrade0 finish
+Run L8001_autotrade_UR_V3.txt. check doTrade0 functions

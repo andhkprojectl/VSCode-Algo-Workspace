@@ -1,6 +1,45 @@
+import time
+
 import pandas as pd
-from datetime import datetime, timedelta
-from ib_insync import IB, ContFuture, Stock, util
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+from ib_insync import IB, Future, Stock, util
+
+# All bar timestamps are normalized to naive US/Eastern before returning/saving,
+# matching the existing ticker1Min data (CME Globex halt = 17:00-17:59 ET, no bars).
+DB_TZ = ZoneInfo("America/New_York")
+
+
+def _thirdFriday(year: int, month: int) -> datetime:
+    d = datetime(year, month, 1)
+    first_friday = 1 + (4 - d.weekday()) % 7
+    return datetime(year, month, first_friday + 14)
+
+
+def frontMonthExpireCode(dt: datetime) -> str:
+    """
+    Front-month 'YYYYMM' for CME quarterly futures (Mar/Jun/Sep/Dec) as of date dt.
+    CME rolls ~8 days before the 3rd-Friday expiry, so pick the nearest expiry >= dt + 8 days.
+    e.g. 2026-05-01 -> '202606', 2026-06-15 -> '202609'.
+    """
+    dt = dt.replace(tzinfo=None)  # roll calendar only depends on the calendar date
+    y, m = dt.year, ((dt.month - 1) // 3) * 3 + 3
+    target = dt + timedelta(days=8)
+    while True:
+        if _thirdFriday(y, m) >= target:
+            return f"{y}{m:02d}"
+        m += 3
+        if m > 12:
+            m, y = 3, y + 1
+
+
+# Columns of the final result_df, so empty results stay shape-compatible
+_EMPTY_RESULT_COLS = ['datetime', 'date', 'time', 'high', 'low', 'close',
+                      'open', 'volume', 'symbolName']
+
+
+def _emptyResult() -> pd.DataFrame:
+    return pd.DataFrame(columns=_EMPTY_RESULT_COLS)
 
 
 # tickerType
@@ -22,17 +61,18 @@ def getAllTypesTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime,
     # 1. Handle Connection
     if conn1 is None or not conn1.isConnected():
         conn1 = IB()
-        conn1.connect('127.0.0.1', 4002, clientId=1)
+        conn1.connect('127.0.0.1', 4002, clientId=1) # IB gateway (paper)
+        # conn1.connect('127.0.0.1', 7497, clientId=1) # IB TWS (paper)
 
-    # 2. Parse Dates and Times
+    # 2. Parse Dates and Times (interpreted as US/Eastern, matching DB timestamps)
     start_time_clean = startTime.replace(':', '')
     end_time_clean = endTime.replace(':', '')
-    
+
     start_dt_str = f"{startDate}{start_time_clean}"
     end_dt_str = f"{endDate}{end_time_clean}"
-    
-    start_dt = datetime.strptime(start_dt_str, "%Y%m%d%H%M")
-    end_dt = datetime.strptime(end_dt_str, "%Y%m%d%H%M")
+
+    start_dt = datetime.strptime(start_dt_str, "%Y%m%d%H%M").replace(tzinfo=DB_TZ)
+    end_dt = datetime.strptime(end_dt_str, "%Y%m%d%H%M").replace(tzinfo=DB_TZ)
     
     # 3. Format Bar Size (period1)
     if period1 == 1:
@@ -47,40 +87,62 @@ def getAllTypesTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime,
         if (isConFuture == True):
             if futureExchange is None:
                 print(f"ERROR: For continous futures, futureExchange must be provided.")
-                return pd.DataFrame()
-            contract = ContFuture(symbolName, futureExchange)      
+                return _emptyResult()
+            # ContFuture always resolves to the front month of TODAY, so historical
+            # requests would hit a back-month contract with near-zero volume.
+            # Instead, resolve the front-month Future per chunk in the fetch loop below.
+            contract = None
         else:
             if futureExpireDate is None or futureExchange is None:
                 print(f"ERROR: For non-continous futures, both futureExpireDate and futureExchange must be provided.")
-                return pd.DataFrame()
-            contract = ContFuture(symbolName, futureExpireDate, futureExchange)                  
-            # contract = Future('NQ', '202609', 'CME')
-        contract = ContFuture(symbolName, futureExchange)
-        # This fetches the necessary details from IB to confirm the contract exists
-        conn1.qualifyContracts(contract)
+                return _emptyResult()
+            # includeExpired=True is required for past/expired contracts (IB error 200 otherwise)
+            contract = Future(symbolName, futureExpireDate, futureExchange, includeExpired=True)
+            conn1.qualifyContracts(contract)
+            if not contract.conId:
+                print(f"ERROR: Could not qualify {symbolName} {futureExpireDate} on {futureExchange}.")
+                return _emptyResult()
     else:
         print(f"ERROR: Unsupported tickerType '{tickerType}' for symbol '{symbolName}'.")
-        return pd.DataFrame()
+        return _emptyResult()
 
-    # 5. Loop and Chunk Data Fetching (Max 16 Days per request)
+    # 5. Fetch Data
     all_dfs = []
-    current_start = start_dt
-    
+
     print(f"Starting data fetch for {symbolName} from {start_dt} to {end_dt}")
-    
+
+    current_start = start_dt
+    cur_expiry = None
     while current_start < end_dt:
-        # Determine the end date for this specific chunk (max 16 days forward)
-        current_end = min(current_start + timedelta(days=16), end_dt)
+        # Determine the end date for this specific chunk (max 5 days for 1-min, 16 days otherwise)
+        chunk_days = 5 if period1 == 1 else 16
+        current_end = min(current_start + timedelta(days=chunk_days), end_dt)
+
+        # Continuous future: use the contract that was front month as of this chunk's date
+        if (tickerType == "FU") and (isConFuture == True):
+            expiry = frontMonthExpireCode(current_start)
+            if expiry != cur_expiry:
+                cur_expiry = expiry
+                # includeExpired=True is required for past/expired contracts (IB error 200 otherwise)
+                contract = Future(symbolName, expiry, futureExchange, includeExpired=True)
+                conn1.qualifyContracts(contract)
+                if not contract.conId:
+                    print(f"ERROR: Could not qualify {symbolName} {expiry} on {futureExchange}.")
+                    return _emptyResult()
+                print(f"  -> Front month as of {current_start.date()}: {contract.localSymbol}")
         
-        # IB expects endDateTime for this chunk
-        ib_end_dt = current_end.strftime("%Y%m%d %H:%M:%S")
-        
+        # IB expects endDateTime for this chunk (aware UTC so TWS interprets it
+        # deterministically regardless of gateway timezone settings)
+        ib_end_dt = current_end.astimezone(timezone.utc)
+
         # Calculate duration string for this specific chunk
         duration_delta = current_end - current_start
         days = duration_delta.days
-        
+
         if days < 1:
-            durationStr = "1 D"
+            # Sub-day stub: use hours ("1 D" can truncate to the last session segment)
+            hours = int(duration_delta.total_seconds() // 3600) + 1
+            durationStr = f"{hours} H"
         else:
             durationStr = f"{days + 1} D" # Add 1 day buffer to ensure edge coverage
             
@@ -95,22 +157,24 @@ def getAllTypesTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime,
                     durationStr=durationStr,
                     barSizeSetting=barSizeSetting,
                     whatToShow='TRADES',
-                    useRTH=False, 
-                    formatDate=1,
+                    useRTH=False,
+                    formatDate=2,
                     timeout=300
-                ))  
-            elif (tickerType == "FU"):                
+                ))
+            elif (tickerType == "FU"):
                 bars = conn1.reqHistoricalData(
                         contract,
                         endDateTime=ib_end_dt,
                         durationStr=durationStr,
-                        barSizeSetting='5 mins',
+                        barSizeSetting=barSizeSetting,
                         whatToShow='TRADES',
-                        useRTH=True
-                    )   
+                        useRTH=False,
+                        formatDate=2
+                    )
+                print(f"FU11")
             else:
                 print(f"ERROR: Unsupported tickerType '{tickerType}' for symbol '{symbolName}'.")
-                return pd.DataFrame()                   
+                return _emptyResult()                   
                           
             if bars:
                 chunk_df = util.df(bars)
@@ -118,18 +182,22 @@ def getAllTypesTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime,
                 
         except Exception as e:
             print(f"  -> An error occurred during chunk {current_start} to {current_end}: {e}")
-            # Continue to the next chunk even if one fails, or you could return/break here depending on your strictness
-            
+            # IB pacing: back off before repeating the same contract/barSize request
+            time.sleep(15)
+            # Continue to the next chunk even if one fails
+
         finally:
             # Advance the start pointer for the next loop iteration
             current_start = current_end
+            # IB pacing: avoid 6+ requests for the same contract within 2 seconds
+            time.sleep(2)
 
     print("Data fetch completed:", datetime.now().time().replace(microsecond=0))  
     
     # 6. Check if any data was retrieved across all chunks
     if not all_dfs:
         print("Warning: No data found for the requested period.")
-        return pd.DataFrame()
+        return _emptyResult()
         
     # 7. Data Processing into a single DataFrame
     # Concatenate all chunks together
@@ -137,6 +205,9 @@ def getAllTypesTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime,
     
     # Drop duplicates in case chunk boundaries overlapped slightly due to the 1 D buffer
     df.drop_duplicates(subset=['date'], inplace=True)
+
+    # formatDate=2 returns UTC; normalize to naive US/Eastern to match existing DB data
+    df['date'] = pd.to_datetime(df['date'], utc=True).dt.tz_convert(DB_TZ).dt.tz_localize(None)
     
     # Create the strict datetime column (yyyy-mm-dd hh24:mi:ss) for indexing
     df['index_datetime'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -167,92 +238,6 @@ def getAllTypesTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime,
     }, index=df.index) 
     
     return result_df
-
-
-def saveDfToTicker5Min(df, tableName="ticker5Min", isOverride=True):
-    """
-    Save the market-data DataFrame returned by getTicketDataWithTimeFromIB
-    into MariaDB table `ticker5Min` (database IBTradingDb) via mysql-connector-python.
-
-    df columns expected: symbolName, date, time, open, high, low, close, volume
-        - date : 'YYYY-MM-DD'
-        - time : 'HH:MM:SS'
-    The separate `date` and `time` values are combined into a single
-    `datetime1` column ('YYYY-MM-DD HH:MM:SS') before being written.
-
-    Behavior:
-        - If a (ticker, datetime1) record does NOT exist in the table, it is
-          inserted regardless of `isOverride`.
-        - If a (ticker, datetime1) record already exists:
-            * isOverride=True  -> update the existing record (upsert).
-            * isOverride=False -> skip it (no action).
-
-    The unique key uk_ticker_datetime1 (ticker, datetime1) prevents duplicates.
-    Returns the number of rows processed.
-    """
-    import os
-    import mysql.connector
-
-    if df is None or df.empty:
-        print("WARNING: DataFrame is empty - nothing to save to ticker5Min.")
-        return 0
-
-    df_db = df[['symbolName', 'date', 'time', 'open', 'high', 'low', 'close', 'volume']].copy()
-    df_db.columns = ['ticker', 'date', 'time', 'open', 'high', 'low', 'close', 'volume']
-
-    # Combine date + time into a single datetime value ('YYYY-MM-DD HH:MM:SS');
-    # MySQL implicitly casts this string to DATETIME on insert.
-    df_db['datetime1'] = df_db['date'].astype(str) + ' ' + df_db['time'].astype(str)
-
-    for col in ['open', 'high', 'low', 'close']:
-        df_db[col] = df_db[col].astype(float)
-    df_db['volume'] = pd.to_numeric(df_db['volume'], errors='coerce').fillna(0).astype('int64')
-    df_db = df_db.dropna(subset=['open', 'high', 'low', 'close'])
-
-    records = df_db[['ticker', 'datetime1', 'open', 'high', 'low', 'close', 'volume']].values.tolist()
-
-    conn = mysql.connector.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        port=int(os.getenv("DB_PORT", "3306")),
-        user=os.getenv("DB_USER", "ibUser1"),
-        password=os.getenv("DB_PASSWORD", ""),
-        database=os.getenv("DB_NAME", "IBTradingDb"),
-    )
-
-    if isOverride:
-        # Upsert: insert new rows and update existing (ticker, datetime1) rows.
-        action_sql = f"""
-            INSERT INTO {tableName} (ticker, datetime1, open, high, low, close, volume)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE
-                open   = VALUES(open),
-                high   = VALUES(high),
-                low    = VALUES(low),
-                close  = VALUES(close),
-                volume = VALUES(volume)
-        """
-        action_desc = "upserted on duplicate key (isOverride=True)"
-    else:
-        # Insert-or-skip: insert new rows, ignore existing (ticker, datetime1) rows.
-        action_sql = f"""
-            INSERT IGNORE INTO {tableName} (ticker, datetime1, open, high, low, close, volume)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """
-        action_desc = "inserted; existing rows skipped (isOverride=False)"
-
-    cursor = conn.cursor()
-    try:
-        cursor.executemany(action_sql, records)
-        conn.commit()
-        print(f"Saved {len(records)} rows into {tableName} ({action_desc}).")
-        return len(records)
-    except Exception as e:
-        conn.rollback()
-        print(f"ERROR saving to {tableName}: {e}")
-        raise
-    finally:
-        cursor.close()
-        conn.close()
 
 
 def getTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime, endDate, endTime, period1):

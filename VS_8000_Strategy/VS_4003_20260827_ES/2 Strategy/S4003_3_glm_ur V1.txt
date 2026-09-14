@@ -1,0 +1,23 @@
+1. enhance file S4003_2_randomforest_glm.py
+2. Target:
+    - netprofit increase 15%
+    - win rate increase 15%
+    - average trade at least 1 time within 2 trading days
+3. Enhance existing stragegy file S4003_2_randomforest_glm.py usig different parameter
+        - try below different parameter, backtest found best one
+        - Let A = max3BarAtr14_1 = highest ATR14 of the PREVIOUS 3 bars (excluding
+the entry bar)
+        - try different values of w1. Take profit when High >= O + w1 * A, w1 = 1.5, 2, 2.5. Take profit price = O + w1 * A (exit at that price)
+        - try different values of n1. n1-bar stop : n1 bars after the entry bar and the current bar is not
+                   another buy signal, n1 = 10, 15, 20, 25. Exit price = Open of the current bar.
+        - try different values of e1.   
+            - Long entry price  = max( Open[i+1] - ATR14[bar i] / e1 ,  Low[i+1] ), e1 = 4,5
+            - Short entry price = min( Open[i+1] + ATR14[bar i] / e1 ,  High[i+1] ), e1 = 4,5
+
+4. output: 
+    - output file: S4003_3_randomforest_glm.py
+    - display best parameter in step 3 above backtest to screen
+    - after running S4003_3_randomforest_glm.py, output 3 files, same as input S4003_1_glm.py
+        - S4003_2_randomforest_results.csv: backtest performance metrics (sharpe ratio, win rate, profit factor, max drawdown, etc.)
+        - S4003_2_randomforest_model.pkl: trained Random Forest model with feature importance rankings
+        - S4003_2_randomforest_feature_importance.csv: feature importance values for all engineered features

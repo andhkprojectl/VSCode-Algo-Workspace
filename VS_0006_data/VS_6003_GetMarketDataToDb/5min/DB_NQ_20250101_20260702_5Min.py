@@ -6,7 +6,11 @@ from dotenv import load_dotenv
 # Add VS_6000_DataSource dir to sys.path so ibMarketData can be imported
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "VS_6000_DataSource"))
 
+# Add VS_0007_dbAndFile/mariaDB dir to sys.path so IBDb can be imported
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent / "VS_0007_dbAndFile" / "mariaDB"))
+
 import ibMarketData
+import IBDb
 
 # --------------------------------------------
 # Load environment variables from VS_0002_config/.env
@@ -36,23 +40,25 @@ if __name__ == "__main__":
     # You can pass None to let the function create the connection
     my_ib_connection = None
 
+
     # Fetch 5-minute NVDA data
     df = ibMarketData.getAllTypesTicketDataWithTimeFromIB(
         conn1=my_ib_connection,
-        # symbolName="TSLA",
-        # symbolName="NVDA",
-        # symbolName="NQU6-CME-FUT",
-        # symbolName="NQU6",
-        symbolName="NQ",
-        startDate="20260625",
+        # symbolName="NQ",  # nasdaq e-mini future continuous contract
+        symbolName="ES",  # S&P e-mini future continuous contract
+        # symbolName="RTY", # Russell e-mini future continuous contract
+        # symbolName="YM",    # DOW e-mini future continuous contract        
+        # startDate="20251001",
+        startDate="20260701",
         startTime="0000",
-        endDate="20260703",
-        endTime="22355",
+        endDate="20260719",
+        endTime="2355",
         period1=5,
         tickerType = "FU",  # tickerType: "ST" for stock, "FU" for future
         isConFuture=True,  # True for continuous future, False for specific future contract
         futureExpireDate=None,  # e.g., "202609" for specific future contract
-        futureExchange="CME"  # e.g., "CME" for NQU
+        futureExchange="CME"  # e.g., NQ, ES, RTY come from CME; YM comes from CBOT
+        # futureExchange="CBOT"  # e.g., NQ, ES, RTY come from CME; YM comes from CBOT
     )
 
 
@@ -74,4 +80,4 @@ if __name__ == "__main__":
     # isOverride=True  -> update existing (ticker, datetime1) rows; insert new rows
     # isOverride=False -> skip existing (ticker, datetime1) rows; insert new rows
     # --------------------------------------------------------------------------------------------
-    ibMarketData.saveDfToTicker5Min(df, tableName="ticker5Min", isOverride=True)
+    IBDb.saveDfToTicker5Min(df, tableName="ticker5Min", isOverride=True)

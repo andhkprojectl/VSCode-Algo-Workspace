@@ -1,0 +1,9 @@
+`. Enhance existing stragegy file S4003_5_randomforest_kimi.py:
+        - increase win rate >= 65%
+        - compare variable stn1=1 vs do not set stn1, set to the value maximize net profit , sharpe ratio
+        - change data source to use 2026-01-01 to 2026-08-31 analysis period
+
+3. output: 
+    - output file: S4003_6_randomforest_kimi.py
+    - when run py file S4003_6_randomforest_kimi.py, output similar to S4003_5_randomforest_kimi.py
+    

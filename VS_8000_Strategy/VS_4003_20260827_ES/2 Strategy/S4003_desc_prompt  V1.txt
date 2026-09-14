@@ -1,0 +1,16 @@
+# update below, simply copy to prompt, read py file and show desc .txt file
+1. For file S4003_4_randomforest_glm.py, please describe this strategy using english
+    - State buy, short, sell, cover conditions
+    - entry price
+    - exit price
+    - condition stop loss
+    - stop loss price
+    - condition take profit
+    - take prifit price
+    - symbol
+    - time frame
+    - position size
+    - commission
+    - slippage
+    - parameter values
+2. output to file S4003_4_randomforest_glm_desc.txt

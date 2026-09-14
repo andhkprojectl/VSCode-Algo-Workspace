@@ -1,0 +1,2195 @@
+//
+// Place order
+//
+function writeline(s1) {
+// 
+// The following code writes all the above AddColumn to permanent logfile, where Filter occurs on last bar 
+// 
+
+	fh = fopen( "TWSTrade111.log", "a"); 
+	if( fh ) 
+	{ 
+		fputs( Now(), fh ); 
+		fputs( ";", fh );
+
+		fputs( "autoTrade.afl", fh ); 
+		fputs( ";", fh );
+
+		fputs(s1, fh);
+		fputs( "\n", fh );
+
+		fclose( fh ); 
+	} 
+
+}
+
+// dum all open positions
+
+// dum all open positions
+function dumAllOpenPositions(ibc2) {
+	isOpenPositionFound888 = False;
+	openSymbolList888 = ibc2.GetPositionList();
+	for( item888 = 0;  ( sym888 = StrExtract( openSymbolList888, item888 ) ) != ""; item888++ )
+	{
+		isOpenPositionFound888 = True;
+//		writeline("(testing env only) Dummed all existing filled open positions. Symbol name[" + sym888 + "]");
+	}
+	if (isOpenPositionFound888 == False) {
+		writeline("(testing env only) Dummed all existing filled open positions. No open position found. Suppose must have [USD.HKD-IDEALPRO-CASH]");
+	}
+}
+
+function dumAllOpenPositions2() {
+	ibc = GetTradingInterface("IB");
+	IBcStatus = ibc.IsConnected();
+
+	IBcStatusString = WriteIf(IBCStatus==0,"TWS Not Found", 
+							WriteIf(IBCStatus==1,"Connecting to TWS", 
+								WriteIf(IBCStatus==2,"TWS OK", 
+									WriteIf(IBCStatus==3,"TWS OK (msgs)",""))));
+	writeline("dumAllOpenPositions2. " + IBcStatusString + "Msg: [" + ibc.GetLastError(0) +"]");
+	// testing
+	//action77 = ibc.GetPositionInfo(symbol1, "ACTION");
+	//writeline("100.77[" + symbol1 + "][" + action77 +"]");
+	if (IBcStatus) {
+		dumAllOpenPositions(ibc)	;
+	}
+
+}
+
+// 
+// depreciated. do not use GetPositionList to determine quota because because at short time there may be many order pendings before open
+// run GetPositionList in another afl (from get_realize_and_unrealize_profit every 4, 8, 14, 18, ...) to override maxOpenPosition1 variable
+// 
+function getQuota(ibc1, max_open_position) {
+	// get all open positions
+	openSymbolList = ibc1.GetPositionList();
+	numOpenPositions = 0;
+//	for( item = -1; ( sym = StrExtract( openSymbolList, item ) ) != ""; item-- )
+	for( i = 0; ( sym = StrExtract( openSymbolList, i ) ) != ""; i++ )
+	{
+		numOpenPositions++;
+		// get open position
+		// openPosition=ibc1.GetPositionInfo(sym, "Position");
+		//printf( sym + "n" );
+//		StaticVarSet("IBVAR_SYM_"+sym, openPosition);
+	}
+	return Max((max_open_position - numOpenPositions), 0);
+//	StaticVarSet("IBVAR_QTA", );
+}
+
+function getQuota2(Max_OPEN_POSITION1) {
+	// get all open positions
+	quota1 = StaticVarGet("IBVAR_QTA");
+	if (IsNull(quota1)) {
+		quota1 = Max_OPEN_POSITION1;
+	}
+	return quota1;
+
+}
+
+function isSymbolHasOpenPosition(ibc1, symbolName) {
+	// get all open positions
+	openSymbolList = ibc1.GetPositionList();
+	isFound = False;
+
+	for( i = 0; ( sym = StrExtract( openSymbolList, i ) ) != ""; i++ )
+	{
+		if (symbolName == sym) {
+			isFound = True;
+			break;
+		}
+	}
+	return isFound;
+
+}
+
+
+function isSymbolHasPendingOpenPosition(ibc1, symbolName) {
+	// get all open positions
+	// 1 - return symbol name, 0 - return order id
+	openSymbolList = ibc1.GetPendingList( 1, "Pending" );
+	isFound = False;
+	for( i = 0; ( sym = StrExtract( openSymbolList, i ) ) != ""; i++ )
+	{
+		if (symbolName == sym) {
+			isFound = True;
+			break;
+		}
+
+	}
+	return isFound;
+
+}
+
+function cancelPendingOrder(ibc1, inSymbol1) {
+	writeline("cancelPendingOrder begin. [" + inSymbol1 + "]"); 
+	rs1 = False;
+	// get all open positions
+	// 1 - return symbol name, 0 - return order id
+	// pendingOrderIdList = ibc1.GetPendingList( 0 ,"Pending" );
+	pendingOrderIdList = ibc1.GetPendingList( 0, "" );
+	writeline("cancelPendingOrder. pendingOrderIdList=[" + pendingOrderIdList + "]");
+	for( i = 0; ( orderId = StrExtract( pendingOrderIdList, i ) ) != ""; i++ )
+	{
+		orderIdSymbolName = ibc1.GetExecInfo( orderId, "Symbol" );
+		orderIdStatus = ibc1.getstatus(orderId);
+		
+		
+		writeline("cancelPendingOrder. compare symbol. input symbol=[" + inSymbol1 + "]. pending symbol=[" +  orderIdSymbolName + "][" + orderIdStatus + "][" + pendingOrderIdList + "][" + orderId + "]");
+		
+		if (typeof(orderIdSymbolName) == "string") {
+	//		minLen = StrLen(inSymbol1);
+	//		if (orderIdSymbolName != "0") {
+				minLen = Min(StrLen(inSymbol1), StrLen(orderIdSymbolName));
+		//	}
+			
+			// writeline(minLen);
+			//writeline("a" + minLen + ";" + StrLen(inSymbol1)+ StrLen(orderIdSymbolName));
+			//writeline("[" + StrLeft( inSymbol1, minLen) + ";" + StrLeft( orderIdSymbolName, minLen));
+			
+			symbolNameMatch = (orderIdSymbolName == inSymbol1) 
+								OR (StrLeft( inSymbol1, minLen) == StrLeft( orderIdSymbolName, minLen) AND minLen >= 2)
+								;
+
+			// writeline(minLen + "][" + StrLeft( inSymbol1, minLen) + "][" + StrLeft( orderIdSymbolName, minLen) );
+			if (symbolNameMatch AND 
+					(
+					  orderIdStatus == "PreSubmitted"
+					  OR orderIdStatus == "Submitted"
+					)
+				) {
+	//			isPendingStatus = ibc1.IsOrderPending(orderId);
+	//			writeline("cancelPendingOrder. pending status =[" + isPendingStatus + "]");
+	//			if (isPendingStatus  == True) {
+					// cancel pending order
+					// do not break as there may be more than 1 pending order for 1 symbol
+					rs1 = ibc1.CancelOrder( orderId) ;
+					writeline("cancelPendingOrder. order cancelled. symbol=[" + inSymbol1 + "]. order id=[" +  orderId + "]. result=[" + rs1 + "]");
+
+	//			}
+			}
+		}
+		else {
+			writeline("cancelPendingOrder. null orderIdSymbolName. [" + orderIdSymbolName + "]");
+		}
+	}
+	return rs1;
+}
+
+
+function isNotIntradaySymbolFound(sym) {
+	// exclude not intraday 
+	notIntradyIdx= StaticVarGet("NOT_INTRADAY_IDX");
+	isNotIntradaySymbolFound1 = False;
+	if (NOT (IsNull(notIntradyIdx) OR notIntradyIdx <= 0)) {
+		// assume max 20 symbol
+
+		for( y = 0;  y < 20; y++ ) {
+			nonIntrayDaySymboli= StaticVarGetText("NOT_INTRADAY_SYMBOL_" + y);
+			if (nonIntrayDaySymboli == sym) {
+				isNotIntradaySymbolFound1 = True;
+				break;
+			}
+		}
+	}
+	return isNotIntradaySymbolFound1;	
+}
+
+function setNotIntradaySymbolFound(sym) {
+	notIntradyIdx= StaticVarGet("NOT_INTRADAY_IDX");
+	if (IsNull(notIntradyIdx) OR notIntradyIdx < 0) {
+		notIntradyIdx = 0;
+	}
+	else {
+		notIntradyIdx = notIntradyIdx + 1;
+	}
+	StaticVarSetText("NOT_INTRADAY_SYMBOL_" + notIntradyIdx, sym);
+	StaticVarSet("NOT_INTRADAY_IDX", notIntradyIdx);
+}	
+
+// for tick trade (very fast speed)
+// only handle buy/short, no sell/cover
+// must create bracket order
+function doTickTrade(symbol1, buy1, short1, closePrice, stpPercent, openPosition1, profitPercent ) {
+	// -----------------------------------------
+	// 1. init 
+	// -----------------------------------------
+
+	Max_POSITION_PER_TRADE=openPosition1;
+	BUY_SELL_QTY = round(Max_POSITION_PER_TRADE/closePrice);
+	isQtyValid = True;
+	if (BUY_SELL_QTY < 1) {
+		writeline("Invalid price action qty. do not buy/sell/short/cover. [" + symbol1 + "][" +  BUY_SELL_QTY + "][" + Max_POSITION_PER_TRADE + "][" + closePrice + "]");
+		isQtyValid = False;
+	}
+
+	
+	//MAX_OPEN_POSITION = StaticVarGet("MAX_OPEN_POSITION");
+	//if(IsNull(MAX_OPEN_POSITION)) {
+	//	MAX_OPEN_POSITION = 15;
+	//}
+
+	//POSITIONS=LONG_AND_SHORT;
+	MIN_LOT_SIZE=1;
+	//TRADE_PERIOD=2100_0400
+	
+	IS_DEBUG = true;
+	
+	if (IS_DEBUG) {
+		writeline("begin1[" + symbol1 + "]");
+	}
+	
+	isPerformProfitTaking = True;
+	profitPercent1=profitPercent;
+	if (profitPercent1 <= 0) {
+		isPerformProfitTaking = False;
+		profitPercent1= -1;	
+	}
+	
+	isPerformStpLoss = True;
+	stopPercent1=stpPercent;
+	if (stopPercent1 <= 0) {
+		isPerformStpLoss = False;
+		stopPercent1 = -1;  // do not stop loss
+		
+	}
+	
+	// must perform 
+	IS_PERFORM_BUY = True;
+	IS_PERFORM_SELL = True;
+	IS_PERFORM_SHORT = True;
+	IS_PERFORM_COVER = True;
+
+	
+	// if qty not valid, do  not perform any price action
+	if (isQtyValid == False 
+		OR closePrice <= 0
+		OR isPerformStpLoss == False // do not open new position if no stop loss
+		OR isPerformProfitTaking == False // no profit, do not open position
+		) {
+		IS_PERFORM_BUY = False;
+		IS_PERFORM_SHORT = False;
+	}
+
+	
+	// find limit price
+	// 1. buy/cover. min (last(C)*1.002, last(trade)*1.002, last(ask))
+	tradeBuffer = 1.0005;
+	lastTradePrice = GetRTData("Last");
+	lastAskPrice = GetRTData("Ask");
+	if (lastAskPrice != 0 AND lastTradePrice != 0) {
+		tmp1=Min(closePrice*tradeBuffer, lastTradePrice*tradeBuffer);
+		LIMIT_PRICE_BUY=Min(tmp1, lastAskPrice);
+	}
+	else {
+		LIMIT_PRICE_BUY = closePrice*tradeBuffer;
+	}
+	
+	// 2. short/sell. max (last(C)*0.998, last(trade)*0.998, last(bid))
+	lastBidPrice=GetRTData("Bid");
+	tmp1=Max(closePrice*0.9995, lastTradePrice*0.9995);
+	LIMIT_PRICE_SELL=Max(tmp1, lastBidPrice);
+	
+
+	// profit take percentage should not larger than 5%
+	if (isPerformProfitTaking) {	
+		PROFIT_TAKING_PRICE_BUY = LIMIT_PRICE_BUY*(1+(profitPercent1/100));
+		PROFIT_TAKING_PRICE_SHORT= LIMIT_PRICE_SELL*(1-(profitPercent1/100));
+		writeline("profit taking value[" + profitPercent1 + "][" + PROFIT_TAKING_PRICE_BUY + "][" + PROFIT_TAKING_PRICE_SHORT + "]");
+	}
+	else {
+		writeline("Invalid profitPercent1, do not buy/sell/short/cover. [" + symbol1 + "][" +  profitPercent1 + "]");
+	//	return -1;
+		isPerformProfitTaking = False;
+	}	
+
+	// set stop loss to large value, disable maximum stop loss checking
+	if (stopPercent1 < 20.00 AND isPerformStpLoss) {
+		// stop order limit price to ref(close price - 1)*(0.985)  (accept only 1.5% of C) 
+		//STOP_PRICE_BUY  = lmtPrice*0.996;
+		STOP_PRICE_BUY  = LIMIT_PRICE_BUY*(1-(stopPercent1/100));
+		// stop order limit price to ref(close price - 1)*(1.015)  (accept only 1.5% of C) 
+		// STOP_PRICE_SELL  = lmtPrice*1.004;
+		STOP_PRICE_SELL  = LIMIT_PRICE_SELL*(1+(stopPercent1/100));
+		writeline("stop loss value[" + stopPercent1 + "][" + STOP_PRICE_BUY + "][" + STOP_PRICE_SELL + "]");
+	}
+	else {
+		writeline("Invalid stopPercent1, should not exceed 8%. do not buy/sell/short/cover. [" + symbol1 + "][" +  stopPercent1 + "]");
+		IS_PERFORM_SHORT = False;
+		IS_PERFORM_BUY = False;
+	//	return -1;
+	}	
+	
+	
+
+	ibc = GetTradingInterface("IB");
+	IBcStatus = ibc.IsConnected();
+
+	IBcStatusString = WriteIf(IBCStatus==0,"TWS Not Found", 
+							WriteIf(IBCStatus==1,"Connecting to TWS", 
+								WriteIf(IBCStatus==2,"TWS OK", 
+									WriteIf(IBCStatus==3,"TWS OK (msgs)",""))));
+	if (IS_DEBUG) {
+		writeline(IBcStatusString);
+	}
+	// testing
+	//action77 = ibc.GetPositionInfo(symbol1, "ACTION");
+	//writeline("100.77[" + symbol1 + "][" + action77 +"]");
+	if (IBcStatus) {
+
+
+		// the number that descibes the currently held position size for Ticker. Positive numbers mean long position, negative numbers mean short position, zero means that given ticker is not held in the portfolio
+		currPositionSize = ibc.GetPositionSize( symbol1);
+		writeline("currPositionSize. [" + symbol1 + "][" + currPositionSize + "][" + LIMIT_PRICE_SELL + "]["  + LIMIT_PRICE_BUY
+						+ "]["  + lastTradePrice + "]["  + lastAskPrice + "]["  + lastBidPrice 
+					+  "]");		
+	 
+		if (currPositionSize != 0) {
+			writeline("No open new position. currPositionSize <> 0. [" + symbol1 + "][" + currPositionSize + "][" + LIMIT_PRICE_SELL + "]["  + LIMIT_PRICE_BUY
+							+ "]["  + lastTradePrice + "]["  + lastAskPrice + "]["  + lastBidPrice 
+						+  "]");		
+			IS_PERFORM_SHORT = False;
+			IS_PERFORM_BUY = False;	
+		}
+	 
+		if (isSymbolHasPendingOpenPosition (ibc, symbol1)) {
+			writeline("Not open new buy position as already has pending open position. [" + symbol1 + "][" + currPositionSize + "][" + LIMIT_PRICE_SELL + "]["  + LIMIT_PRICE_BUY
+						+ "]["  + lastTradePrice + "]["  + lastAskPrice + "]["  + lastBidPrice 
+						+  "]");	
+			IS_PERFORM_SHORT = False;
+			IS_PERFORM_BUY = False;	
+		}
+		
+		if (isSymbolHasOpenPosition (ibc, symbol1)) {
+			writeline("Not open new buy position as already has open position. [" + symbol1 + "][" + currPositionSize + "][" + LIMIT_PRICE_SELL + "]["  + LIMIT_PRICE_BUY
+						+ "]["  + lastTradePrice + "]["  + lastAskPrice + "]["  + lastBidPrice 
+						+  "]");	
+			IS_PERFORM_SHORT = False;
+			IS_PERFORM_BUY = False;	
+		}
+
+
+		// -----------------------------------------
+		// 3. place buy order. Together with stop loss order
+		// -----------------------------------------	
+		qty1 = Buy_SELL_QTY;
+		if (lastvalue(buy1) == True AND IS_PERFORM_BUY 
+			//AND currPositionSize == 0 // 20210125. only when there is no open position. assume no 加注
+		) {
+			// comment as not accurate becuase stp loss and stp profit order, sell/cover not perform here
+			//quota--;
+			// 5a.  set back quota
+			//StaticVarSet("IBVAR_QTA", Max(quota, 0));
+			//StaticVarSet("semaphore1", 0 ); // reset semaphore
+			//alreadyResetSemaphore = True;
+
+			writeline("buy. [" + symbol1 + "][" + NumToStr(qty1) + "][" + NumToStr(LIMIT_PRICE_BUY) +"][" + NumToStr(STOP_PRICE_BUY) +  "][" + NumToStr(PROFIT_TAKING_PRICE_BUY) + "][" + stpPercent + "][" + profitPercent +"]");
+			// orig wo stp order
+			// // orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "LMT", LIMIT_PRICE_BUY, 0, "Day", true );
+			//if (isMktOrder==True) {
+			//	orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "MKT", 0, 0, "Day", false);
+			//}
+			//else {
+			//	orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "LMT", LIMIT_PRICE_BUY, 0, "Day", false );
+			//}
+			orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "LMT", LIMIT_PRICE_BUY, 0, "Day", false );
+			// profit order
+			ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", 0, STOP_PRICE_BUY, "Day", false, 100, "", orderId1 );
+			// stop loss order
+			ibc.PlaceOrder(symbol1, "SELL", qty1, "LMT", PROFIT_TAKING_PRICE_BUY, 0, "Day", True, 100, "", orderId1 );			
+
+			// braket profit order
+			//if (isPerformProfitTaking) {
+			//	ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", 0, STOP_PRICE_BUY, "Day", false, 100, "", orderId1 );
+			//	ibc.PlaceOrder(symbol1, "SELL", qty1, "LMT", PROFIT_TAKING_PRICE_BUY, 0, "Day", True, 100, "", orderId1 );
+			//}
+			//else {
+			//	ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", 0, STOP_PRICE_BUY, "Day", True, 100, "", orderId1 );
+			//}
+		}
+		
+		// -----------------------------------------
+		// 4. place short order. Together with stop loss order
+		// -----------------------------------------	
+		qty1 = Buy_SELL_QTY;
+		if (lastvalue(short1) == True AND IS_PERFORM_SHORT
+			//AND currPositionSize == 0 // 20210125. only when there is no open position. assume no 加注
+		) {
+			// comment as not accurate becuase stp loss and stp profit order, sell/cover not perform here
+			//quota--;
+			// 5a.  set back quota
+			//StaticVarSet("IBVAR_QTA", Max(quota, 0));
+			//StaticVarSet("semaphore1", 0 ); // reset semaphore
+			//alreadyResetSemaphore = True;
+
+			writeline("short. [" + symbol1 + "][" + NumToStr(qty1) + "][" + NumToStr(LIMIT_PRICE_SELL) +"][" + NumToStr(STOP_PRICE_SELL) + "][" + NumToStr(PROFIT_TAKING_PRICE_SHORT) + "][" + stpPercent + "][" + profitPercent +"]");
+			// orig wo stp order
+			// orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "LMT", LIMIT_PRICE_SELL, 0, "Day", true );
+			//if (isMktOrder==True) {
+			//	orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "MKT", 0, 0, "Day", false);
+			//}
+			//else {
+			//	orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "LMT", LIMIT_PRICE_SELL, 0, "Day", false );
+			//}
+			
+			orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "LMT", LIMIT_PRICE_SELL, 0, "Day", false );
+			ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", 0, STOP_PRICE_SELL, "Day", false, 100, "", orderId1 );
+			ibc.PlaceOrder(symbol1, "BUY", qty1, "LMT", PROFIT_TAKING_PRICE_SHORT, 0, "Day", True, 100, "", orderId1 );			
+			
+			//if (isPerformProfitTaking) {
+			//	ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", 0, STOP_PRICE_SELL, "Day", false, 100, "", orderId1 );
+			//	ibc.PlaceOrder(symbol1, "BUY", qty1, "LMT", PROFIT_TAKING_PRICE_SHORT, 0, "Day", True, 100, "", orderId1 );
+			//}
+			//else {
+			//	ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", 0, STOP_PRICE_SELL, "Day", True, 100, "", orderId1 );
+			//}
+
+		}
+		
+		// -----------------------------------------
+		// 5. post action
+		// -----------------------------------------	
+		// due to stp loss and stp profit order, quota count from current open position + pending position (not filled yet)
+		/*
+		quota = 0;
+		openPosSymbolList = ibc.GetPositionList();
+		for( i = 0; ( symbol = StrExtract( openPosSymbolList, i ) ) != ""; i++ )
+		{
+		  //printf("Position " + i + "\tSymbol: " + symbol + "\tSize: " + ibc.GetPositionSize( symbol ) + "\n" );
+		  quota++;
+		}
+		pendingOrderIdList = ibc.GetPendingList( 0, "Pending" );
+		for( i = 0; ( orderId = StrExtract( pendingOrderIdList, i ) ) != ""; i++ )
+		{
+		  quota++;
+		}
+		*/	
+		
+		// final check make sure release semaphore
+		//if (alreadyResetSemaphore == False) {
+		//	StaticVarSet("semaphore1", 0 ); // reset semaphore
+		//}
+		
+		//printf( "\nGeneral Status :" +
+		//                    "\n\nLastTrade : " + LastTrade +
+		//                    "\nOrder Status: " + OrderStatus +
+		//                    "\nOrder ID: " + StaticVarGetText( VarPfx + "OrderID" ) +
+		//                    "\nNum positions: " + NumToStr( ibc.GetPositionSize( symb ), 1.0, False ) +
+		//                    "\nLast TWS Msg: " + StaticVarGet( "LastTWSMsg" ) );
+	}
+/*
+ibc = GetTradingInterface("IB");
+if( ibc.IsConnected() ) // check if connection to IB was successfull
+{
+
+   // ibc.PlaceOrder("MSFT", "BUY", 100, "MKT", 0, 0, "DAY", False ); // place order but do not transmit yet
+
+   a = 1;
+}
+*/
+
+
+
+}
+
+// symbol1. symbol name, e.g APPL
+// buy1. buy array. Ref - 1, as there is new bar
+// sell1. sell array. Ref - 1, as there is new bar
+// short1. short array. Ref - 1, as there is new bar
+// cover1. cover array. Ref - 1, as there is new bar
+// closePrice. last close price.  0 means market order
+// stopPrice. stop price
+// openPrice. open array. current open price of new bar (depreciated)
+// doTrade3(symbol1, buy1, sell1, short1, cover1, LastValue(c1), -1, stpPercent, openPosition1, profitPercent, O0 );
+function doTrade4(symbol1, buy1, sell1, short1, cover1, closePrice, stopPrice, stpPercent, openPosition1, profitPercent, openPrice, buyTradeBuffer1, shortTradeBuffer1, isIntraDay ) {
+	// -----------------------------------------
+	// 1. init 
+	// -----------------------------------------
+	rs = 0;
+
+	Max_POSITION_PER_TRADE=openPosition1;
+	BUY_SELL_QTY = round(Max_POSITION_PER_TRADE/closePrice);
+	isQtyValid = True;
+	if (BUY_SELL_QTY < 1) {
+		writeline("Invalid price action qty. do not buy/sell/short/cover. [" + symbol1 + "][" +  BUY_SELL_QTY + "][" + Max_POSITION_PER_TRADE + "][" + closePrice + "]");
+		isQtyValid = False;
+	}
+	// determine mkt order
+	isMktOrder = False;
+	if (closePrice == 0) {
+		isMktOrder = True;
+	}
+	
+	//COMMISSION=0.01%
+	//MARGIN=100
+	// 0.99 means stop loss percentage 1%
+	// STOP_LOSS_PER=0.99;
+	//STOP_PROFIT=0
+	//MAX_OPEN_POSITION=20;
+	//MAX_OPEN_POSITION=10;
+	MAX_OPEN_POSITION = StaticVarGet("MAX_OPEN_POSITION");
+	if(IsNull(MAX_OPEN_POSITION)) {
+		MAX_OPEN_POSITION = 15;
+	}
+
+	//POSITIONS=LONG_AND_SHORT;
+	MIN_LOT_SIZE=1;
+	//TRADE_PERIOD=2100_0400
+	
+	IS_DEBUG = true;
+	
+	if (IS_DEBUG) {
+		writeline("begin[" + symbol1 + "]");
+	}
+	
+	isPerformProfitTaking = True;
+	profitPercent1=profitPercent;
+	if (profitPercent1 <= 0) {
+		isPerformProfitTaking = False;
+		profitPercent1= -1;	
+	}
+	
+	isPerformStpLoss = True;
+	stopPercent1=stpPercent;
+	if (stopPercent1 <= 0) {
+		isPerformStpLoss = False;
+		stopPercent1 = -1;  // do not stop loss
+		
+	}
+	
+	// must perform 
+	IS_PERFORM_BUY = True;
+	IS_PERFORM_SELL = True;
+	IS_PERFORM_SHORT = True;
+	IS_PERFORM_COVER = True;
+	
+	// if qty not valid, do  not perform any price action
+	if (isQtyValid == False) {
+		IS_PERFORM_BUY = False;
+		IS_PERFORM_SELL = False;
+		IS_PERFORM_SHORT = False;
+		IS_PERFORM_COVER = False;
+	}
+	
+	// not open new position if stop loss is invalid, i.e. every new position must follow with stp loss order
+	if (isPerformStpLoss == False) {
+		IS_PERFORM_BUY = False;
+		IS_PERFORM_SHORT = False;
+		
+	}
+	
+	// if both buy and sell == true diable buy 
+	if (lastvalue(buy1) == True AND LastValue(sell1) == True) {
+		IS_PERFORM_BUY = False;
+		IS_PERFORM_SELL = False;
+	}
+	// if both short and cover == true, disable short
+	if (lastvalue(short1) == True AND LastValue(cover1) == True) {
+		IS_PERFORM_SHORT = False;
+		IS_PERFORM_COVER = False;
+	}
+	 
+	
+	// find limit price
+	// 1. buy/cover. min (last(C)*1.002, last(trade)*1.002, last(ask))
+	//buyTradeBuffer = 1.001;
+	// --------------------------------------------------------
+	// get current price
+	// ----------------------------------------------------
+	lastTradePrice = GetRTData("Last");
+	lastAskPrice = GetRTData("Ask");
+	lastBidPrice=GetRTData("Bid");
+	
+
+	// disable 20221016
+	//buyTradeBuffer = 1.001;
+	//if (!IsNull(buyTradeBuffer1) AND buyTradeBuffer1 > 0) {
+	//	buyTradeBuffer = buyTradeBuffer1;
+	//}
+	//if (lastAskPrice != 0 AND lastTradePrice != 0) {
+	//	tmp1=Min(closePrice*buyTradeBuffer, lastTradePrice*buyTradeBuffer);
+	//	LIMIT_PRICE_BUY=Min(tmp1, lastAskPrice);
+	//}
+	//else {
+	//	LIMIT_PRICE_BUY = closePrice*buyTradeBuffer;
+	//}
+
+
+	// 2. short/sell. max (last(C)*0.998, last(trade)*0.998, last(bid))
+
+	// disable 20221016
+	//shortTradeBuffer = 0.999;
+	//if (!IsNull(shortTradeBuffer1) AND shortTradeBuffer1 > 0) {
+	//	shortTradeBuffer = shortTradeBuffer1;
+	//}
+	//if (lastBidPrice != 0 AND lastTradePrice != 0) {	
+	//	tmp1=Max(closePrice*shortTradeBuffer, lastTradePrice*shortTradeBuffer);
+	//	LIMIT_PRICE_SELL=Max(tmp1, lastBidPrice);
+	//}
+	//else {
+	//	LIMIT_PRICE_SELL=closePrice*shortTradeBuffer1;
+	//}
+
+	tradeBuffer = 0.0007;
+	buyTradeBuffer = 1+tradeBuffer;
+	shortTradeBuffer = 1-tradeBuffer;
+	if (lastTradePrice != 0) {
+		LIMIT_PRICE_BUY=lastTradePrice*buyTradeBuffer;
+		LIMIT_PRICE_SELL=lastTradePrice*shortTradeBuffer;
+	}
+	else {
+		LIMIT_PRICE_BUY = closePrice;				
+		LIMIT_PRICE_SELL=closePrice;
+	}
+	
+	// double check buy/sell limit price > C-5% and < C+5%
+	checkBuyVal1 = abs(closePrice-LIMIT_PRICE_BUY)/closePrice;
+	checkShortVal1 = abs(closePrice-LIMIT_PRICE_SELL)/closePrice;
+	if (checkBuyVal1 > 0.05) {
+		writeline("Invalid LIMIT_PRICE_BUY, too large compare with close price, should not exceed 5%. [" + symbol1 + "][" +  LIMIT_PRICE_BUY + "][" + closeprice + "]");
+		IS_PERFORM_BUY = False;
+	}
+	if (checkShortVal1 > 0.05) {
+		writeline("Invalid LIMIT_PRICE_SELL, too large compare with close price, should not exceed 5%. [" + symbol1 + "][" +  LIMIT_PRICE_SELL + "][" + closeprice + "]");
+		IS_PERFORM_SHORT = False;
+	}	
+
+	
+	
+	// profit take percentage should not larger than 5%
+	if (isPerformProfitTaking) {	
+		PROFIT_TAKING_PRICE_BUY = LIMIT_PRICE_BUY*(1+(profitPercent1/100));
+		PROFIT_TAKING_PRICE_SHORT= LIMIT_PRICE_SELL*(1-(profitPercent1/100));
+		writeline("profit taking value[" + profitPercent1 + "][" + PROFIT_TAKING_PRICE_BUY + "][" + PROFIT_TAKING_PRICE_SHORT + "]");
+	}
+	else {
+		writeline("Invalid profitPercent1, do not buy/sell/short/cover. [" + symbol1 + "][" +  profitPercent1 + "]");
+	//	return -1;
+		isPerformProfitTaking = False;
+	}	
+
+	// set stop loss to large value, disable maximum stop loss checking
+	if (stopPercent1 < 20.00 AND isPerformStpLoss) {
+		// stop order limit price to ref(close price - 1)*(0.985)  (accept only 1.5% of C) 
+		//STOP_PRICE_BUY  = lmtPrice*0.996;
+		STOP_PRICE_BUY  = LIMIT_PRICE_BUY*(1-(stopPercent1/100));
+		// stop order limit price to ref(close price - 1)*(1.015)  (accept only 1.5% of C) 
+		// STOP_PRICE_SELL  = lmtPrice*1.004;
+		STOP_PRICE_SELL  = LIMIT_PRICE_SELL*(1+(stopPercent1/100));
+		writeline("stop loss value[" + stopPercent1 + "][" + STOP_PRICE_BUY + "][" + STOP_PRICE_SELL + "]");
+	}
+	else {
+		writeline("Invalid stopPercent1, should not exceed 8%. do not buy/sell/short/cover. [" + symbol1 + "][" +  stopPercent1 + "]");
+		IS_PERFORM_SHORT = False;
+		IS_PERFORM_BUY = False;
+	//	return -1;
+	}	
+	
+
+
+	// hardcode 1% for lmt order, i.e.
+	// buy / cover must not higher than LIMIT_PRICE_BUY price
+	// sell / short must not lower than LIMIT_PRICE_SELL price
+	// set buy limit price to ref(close price - 1)*(1.01)  (accept only 1% of C) and < last value (avoid gap up)
+	//LIMIT_PRICE_BUY  = lmtPrice*1.01;
+	// set sell limit price to ref(close price - 1)*(0.99) (accept only 1% of C) and > last value (avoid gap down)
+	//LIMIT_PRICE_SELL = lmtPrice*0.99;
+
+/*
+	// if gap up or gap down, do not perform price action
+	IS_PERFORM_BUY = True;
+	if (LIMIT_PRICE_BUY < LastValue(openPrice)) {
+		writeline("Gap up open. do not Buy[" + symbol1 + "][" +  LIMIT_PRICE_BUY + "][" + LastValue(openPrice) + "]");
+		IS_PERFORM_BUY = False;
+	}
+	
+	
+	IS_PERFORM_SELL = True;
+	if (LIMIT_PRICE_SELL > LastValue(openPrice)) {
+		writeline("Gap down open. do not SELL[" + symbol1 + "][" +  LIMIT_PRICE_SELL + "][" + LastValue(openPrice) + "]");
+		IS_PERFORM_SELL = False;
+	}
+*/
+
+
+	//ABName = StrMid(Name(),0,3) + StrMid(Name(),4,3);
+	//ABName = Name();
+	//PrevDT = StaticVarGet("DateTime"+ABName);
+	//DT = LastValue(DateTime());
+	//NewBar = DT != PrevDT;                        
+	//StaticVarSet("DateTime"+ABName,DT);
+	//if( !NewBar )
+	//{
+	//	printf("No new bar. Symbol = [" + ABName + "]. Time: [" + DT + "]");
+	//	return -1;
+	//}
+	//else {  // new bar
+
+	//crrOpenPosition = StaticVarGet("IBVAR_NOP");
+	// temp disale
+	
+
+
+	
+	//if (IsNull(quota)) {
+	//	quota = getQuota(symbol1, ibc, MAX_OPEN_POSITION);
+	//} 
+	//else {
+	//	quota = Max(quota, 0);
+	//}
+	// testing
+	//quota = 1000000;
+	
+	
+	
+
+	ibc = GetTradingInterface("IB");
+	IBcStatus = ibc.IsConnected();
+
+	IBcStatusString = WriteIf(IBCStatus==0,"TWS Not Found", 
+							WriteIf(IBCStatus==1,"Connecting to TWS", 
+								WriteIf(IBCStatus==2,"TWS OK", 
+									WriteIf(IBCStatus==3,"TWS OK (msgs)",""))));
+	if (IS_DEBUG) {
+		writeline(IBcStatusString + "Msg: [" + ibc.GetLastError(0) +"]");
+		
+	}
+	// testing
+	//action77 = ibc.GetPositionInfo(symbol1, "ACTION");
+	//writeline("100.77[" + symbol1 + "][" + action77 +"]");
+	if (IBcStatus) {
+	
+	
+// 
+// depreciated. do not use GetPositionList to determine quota because because at short time there may be many order pendings before open
+// run GetPositionList in another afl (from get_realize_and_unrealize_profit every 4, 8, 14, 18, ...) to override maxOpenPosition1 variable
+// 
+	  // try obtaining semaphore for 1000 ms
+	  for( i = 0; i < 1000; i++ ) {
+		   if( StaticVarCompareExchange( "semaphore1", 1, 0 ) == 0 )
+		   {
+				//quota = getQuota(ibc, MAX_OPEN_POSITION);		
+				quota = getQuota2(MAX_OPEN_POSITION);
+				break;
+		   }
+		   else ThreadSleep( 1 ); //sleep one millisecond
+	  }		
+			  
+
+		if (quota <= 0) {
+			IS_PERFORM_BUY = False;
+			IS_PERFORM_SHORT = False;
+			writeline("No quota. do not open new position. quota =[" + quota + "]. max allow position =[" + MAX_OPEN_POSITION +"]");
+		}
+		else {
+			writeline("quota available . quota =[" + quota + "]. max allow position =[" + MAX_OPEN_POSITION +"]");
+		}
+		if (IS_DEBUG) {
+			writeline("IS_PERFORM_SELL. [" + IS_PERFORM_SELL + "]. IS_PERFORM_BUY=[" + IS_PERFORM_BUY +"]");
+		}
+		alreadyResetSemaphore = False;
+		// -----------------------------------------
+		// 1. place sell order
+		// -----------------------------------------
+		// the number that descibes the currently held position size for Ticker. Positive numbers mean long position, negative numbers mean short position, zero means that given ticker is not held in the portfolio
+		currPositionSize = ibc.GetPositionSize( symbol1);
+		writeline("currPositionSize. [" + symbol1 + "][" + currPositionSize + "][" + LIMIT_PRICE_SELL + "]["  + LIMIT_PRICE_BUY
+						+ "]["  + lastTradePrice + "]["  + lastAskPrice + "]["  + lastBidPrice + "][" + lastvalue(buy1) + "][" + lastvalue(sell1)
+					+  "]");		
+	 
+	
+	
+
+			// currPositionSize > 0 means currently have bought symbols
+		if (lastvalue(sell1) == True AND IS_PERFORM_SELL AND currPositionSize > 0) {
+			// comment as not accurate becuase stp loss and stp profit order, sell/cover not perform here
+			quota++;
+			// 5a.  set back quota
+			StaticVarSet("IBVAR_QTA", Max(quota, 0));
+			StaticVarSet("semaphore1", 0 ); // reset semaphore
+			alreadyResetSemaphore = True;
+
+			writeline("sell. [" + symbol1 + "][" + currPositionSize + "]");
+			
+			// cancel any pending order
+			rs21 = cancelPendingOrder(ibc, symbol1);
+			if (rs21 == True) {
+				ThreadSleep( 500 );  // sleep 500 mills seconds
+			}
+			//ibc.CancelAllPendingOrders(symbol1);
+
+			
+			if (isMktOrder==True) {
+				orderId1 =  ibc.PlaceOrder( symbol1, "SELL", abs(currPositionSize), "MKT", 0, 0, "Day", True );
+			}
+			else {
+				orderId1 =  ibc.PlaceOrder( symbol1, "SELL", abs(currPositionSize), "LMT", LIMIT_PRICE_SELL, 0, "Day", True );
+			}
+			// cancel pending order
+			//ibc.CancelAllPendingOrders( symbol1 );
+
+			rs = 1;
+
+		}
+		// -----------------------------------------
+		// 2. place cover order
+		// -----------------------------------------	
+		if (lastvalue(cover1) == True AND IS_PERFORM_COVER AND currPositionSize < 0) {
+			// comment as not accurate becuase stp loss and stp profit order, sell/cover not perform here
+			quota++;
+			// 5a.  set back quota
+			StaticVarSet("IBVAR_QTA", Max(quota, 0));
+			StaticVarSet("semaphore1", 0 ); // reset semaphore
+			alreadyResetSemaphore = True;
+
+			writeline("cover. [" + symbol1 + "][" + currPositionSize + "][" + LIMIT_PRICE_BUY + "]");
+			
+			// cancel any pending order
+			rs21 = cancelPendingOrder(ibc, symbol1);
+			if (rs21 == True) {
+				ThreadSleep( 500 );  // sleep 500 mills seconds
+			}
+			
+			//ibc.CancelAllPendingOrders(symbol1);
+			
+			if (isMktOrder==True) {
+				orderId1 =  ibc.PlaceOrder( symbol1, "BUY", abs(currPositionSize), "MKT", 0, 0, "Day", True );
+			}
+			else {
+				orderId1 =  ibc.PlaceOrder( symbol1, "BUY", abs(currPositionSize), "LMT", LIMIT_PRICE_BUY, 0, "Day", True );
+			}
+
+			rs = 1;
+
+		}
+		
+		// -----------------------------------------
+		// 3. place buy order. Together with stop loss order
+		// -----------------------------------------	
+		qty1 = Buy_SELL_QTY;
+		if (lastvalue(buy1) == True AND IS_PERFORM_BUY 
+			AND currPositionSize == 0 // 20210125. only when there is no open position. assume no 加注
+		) {
+			// comment as not accurate becuase stp loss and stp profit order, sell/cover not perform here
+			quota--;
+			// 5a.  set back quota
+			StaticVarSet("IBVAR_QTA", Max(quota, 0));
+			StaticVarSet("semaphore1", 0 ); // reset semaphore
+			alreadyResetSemaphore = True;
+
+			writeline("buy. [" + symbol1 + "][" + NumToStr(qty1) + "][" + NumToStr(LIMIT_PRICE_BUY) +"][" + NumToStr(STOP_PRICE_BUY) +  "][" + NumToStr(PROFIT_TAKING_PRICE_BUY) + "][" + stpPercent + "][" + profitPercent +"]");
+			// orig wo stp order
+			// orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "LMT", LIMIT_PRICE_BUY, 0, "Day", true );
+			if (isIntraDay == True) {
+				if (isMktOrder==True) {
+					orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "MKT", 0, 0, "Day", false);
+				}
+				else {
+					orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "LMT", LIMIT_PRICE_BUY, 0, "Day", false );
+				}
+				
+				
+
+				// braket profit order
+				if (isPerformProfitTaking) {
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", 0, STOP_PRICE_BUY, "Day", false, 100, "", orderId1 );
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "LMT", PROFIT_TAKING_PRICE_BUY, 0, "Day", True, 100, "", orderId1 );
+				}
+				else {
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", 0, STOP_PRICE_BUY, "Day", True, 100, "", orderId1 );
+				}
+
+			}
+			else {
+				if (isMktOrder==True) {
+					orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "MKT", 0, 0, "GTC", false);
+				}
+				else {
+					orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "LMT", LIMIT_PRICE_BUY, 0, "GTC", false );
+				}
+
+				// braket profit order
+				if (isPerformProfitTaking) {
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", 0, STOP_PRICE_BUY, "GTC", false, 100, "", orderId1 );
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "LMT", PROFIT_TAKING_PRICE_BUY, 0, "GTC", True, 100, "", orderId1 );
+				}
+				else {
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", 0, STOP_PRICE_BUY, "GTC", True, 100, "", orderId1 );
+				}
+
+			}
+			rs = 1;
+		}
+		
+		// -----------------------------------------
+		// 4. place short order. Together with stop loss order
+		// -----------------------------------------	
+		qty1 = Buy_SELL_QTY;
+		if (lastvalue(short1) == True AND IS_PERFORM_SHORT
+			AND currPositionSize == 0 // 20210125. only when there is no open position. assume no 加注
+		) {
+			// comment as not accurate becuase stp loss and stp profit order, sell/cover not perform here
+			quota--;
+			// 5a.  set back quota
+			StaticVarSet("IBVAR_QTA", Max(quota, 0));
+			StaticVarSet("semaphore1", 0 ); // reset semaphore
+			alreadyResetSemaphore = True;
+
+			writeline("short. [" + symbol1 + "][" + NumToStr(qty1) + "][" + NumToStr(LIMIT_PRICE_SELL) +"][" + NumToStr(STOP_PRICE_SELL) + "][" + NumToStr(PROFIT_TAKING_PRICE_SHORT) + "][" + stpPercent + "][" + profitPercent +"]");
+			// orig wo stp order
+			// orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "LMT", LIMIT_PRICE_SELL, 0, "Day", true );
+			if (isIntraDay == True) {
+				if (isMktOrder==True) {
+					orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "MKT", 0, 0, "Day", false);
+				}
+				else {
+					orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "LMT", LIMIT_PRICE_SELL, 0, "Day", false );
+				}
+				
+				
+				if (isPerformProfitTaking) {
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", 0, STOP_PRICE_SELL, "Day", false, 100, "", orderId1 );
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "LMT", PROFIT_TAKING_PRICE_SHORT, 0, "Day", True, 100, "", orderId1 );
+				}
+				else {
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", 0, STOP_PRICE_SELL, "Day", True, 100, "", orderId1 );
+				}
+			}
+			else {
+				if (isMktOrder==True) {
+					orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "MKT", 0, 0, "GTC", false);
+				}
+				else {
+					orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "LMT", LIMIT_PRICE_SELL, 0, "GTC", false );
+				}
+				
+				
+				if (isPerformProfitTaking) {
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", 0, STOP_PRICE_SELL, "GTC", false, 100, "", orderId1 );
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "LMT", PROFIT_TAKING_PRICE_SHORT, 0, "GTC", True, 100, "", orderId1 );
+				}
+				else {
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", 0, STOP_PRICE_SELL, "GTC", True, 100, "", orderId1 );
+				}
+
+			}
+			rs = 1;
+
+		}
+		
+		// -----------------------------------------
+		// 5. post action
+		// -----------------------------------------	
+		// due to stp loss and stp profit order, quota count from current open position + pending position (not filled yet)
+		/*
+		quota = 0;
+		openPosSymbolList = ibc.GetPositionList();
+		for( i = 0; ( symbol = StrExtract( openPosSymbolList, i ) ) != ""; i++ )
+		{
+		  //printf("Position " + i + "\tSymbol: " + symbol + "\tSize: " + ibc.GetPositionSize( symbol ) + "\n" );
+		  quota++;
+		}
+		pendingOrderIdList = ibc.GetPendingList( 0, "Pending" );
+		for( i = 0; ( orderId = StrExtract( pendingOrderIdList, i ) ) != ""; i++ )
+		{
+		  quota++;
+		}
+		*/	
+		
+		// final check make sure release semaphore
+		if (alreadyResetSemaphore == False) {
+			StaticVarSet("semaphore1", 0 ); // reset semaphore
+		}
+		
+		//printf( "\nGeneral Status :" +
+		//                    "\n\nLastTrade : " + LastTrade +
+		//                    "\nOrder Status: " + OrderStatus +
+		//                    "\nOrder ID: " + StaticVarGetText( VarPfx + "OrderID" ) +
+		//                    "\nNum positions: " + NumToStr( ibc.GetPositionSize( symb ), 1.0, False ) +
+		//                    "\nLast TWS Msg: " + StaticVarGet( "LastTWSMsg" ) );
+	}
+	return rs;
+/*
+ibc = GetTradingInterface("IB");
+if( ibc.IsConnected() ) // check if connection to IB was successfull
+{
+
+   // ibc.PlaceOrder("MSFT", "BUY", 100, "MKT", 0, 0, "DAY", False ); // place order but do not transmit yet
+
+   a = 1;
+}
+*/
+
+
+
+}
+
+function doTrade3(symbol1, buy1, sell1, short1, cover1, closePrice, stopPrice, stpPercent, openPosition1, profitPercent, openPrice, buyTradeBuffer1, shortTradeBuffer1 ) {
+	rs = 0;
+	rs = doTrade4(symbol1, buy1, sell1, short1, cover1, closePrice, stopPrice, stpPercent, openPosition1, profitPercent, openPrice, buyTradeBuffer1, shortTradeBuffer1, True );
+	return rs;
+}
+
+function doTrade2(symbol1, buy1, sell1, short1, cover1, c1, O0, stpPercent, openPosition1, profitPercent) {
+	rs = 0;
+	rs = doTrade3(symbol1, buy1, sell1, short1, cover1, LastValue(c1), -1, stpPercent, openPosition1, profitPercent, O0 , -1, -1);
+	return rs;
+}
+
+
+function doTrade1(symbol1, buy1, sell1, short1, cover1, c1, O0, stpPercent) {
+	rs = doTrade2(symbol1, buy1, sell1, short1, cover1, c1, O0, stpPercent, 7500, -1.00);
+	return rs;
+}
+
+ function doTrade(symbol1, buy1, sell1, short1, cover1, c1, O0) {
+	rs = doTrade1(symbol1, buy1, sell1, short1, cover1, c1, O0, -1);
+	return rs;
+ }
+
+function closeAllOrderByMktPrice() {
+	writeline("clearOrder begin");
+	// -----------------------------------------
+	// 1. init 
+	// -----------------------------------------
+	
+	
+	isOtherProcessAlreadyRun = StaticVarGet("lock");
+	if (isOtherProcessAlreadyRun == True) {
+		writeline("Other process is running, abandon this process");
+	}
+	else {
+		StaticVarSet("lock", true);
+		writeline("No process is running, keep going close all open positions");
+	
+		ibc = GetTradingInterface("IB");
+		IBcStatus = ibc.IsConnected();
+
+		IBcStatusString = WriteIf(IBCStatus==0,"TWS Not Found", 
+								WriteIf(IBCStatus==1,"Connecting to TWS", 
+									WriteIf(IBCStatus==2,"TWS OK", 
+										WriteIf(IBCStatus==3,"TWS OK (msgs)",""))));
+		writeline(IBcStatusString);
+
+		if (IBcStatus) {
+			// cancel all pending orders
+			//ibc.CancelAllPendingOrders();
+			
+
+			// sleep 2 seconds
+			for (k = 0; k < 4; k++) {
+				ThreadSleep(500);
+			}		
+		
+			openSymbolList = ibc.GetPositionList();
+	//		for( item = -1; ( sym = StrExtract( openSymbolList, item ) ) != ""; item-- )
+			for( item = 0;  ( sym = StrExtract( openSymbolList, item ) ) != ""; item++ )
+			{
+				// -----------------------------------------
+				// exclude following
+				// -----------------------------------------
+				if (sym == "USD.HKD-IDEALPRO-CASH" or sym == "2342-SEHK-STK") {
+					writeline("closeAllOrderByMktPrice. skip this symbol.[" + sym + "]");
+					continue;
+				}
+				if (isNotIntradaySymbolFound(sym)) {
+					writeline("closeAllOrderByMktPrice. isNotIntradaySymbolFound. skip this symbol.[" + sym + "]");
+					continue;
+				}
+
+
+				ibc.CancelAllPendingOrders(sym);
+				
+				// -----------------------------------------
+				// 2. place sell order
+				// -----------------------------------------
+				currPositionSize = ibc.GetPositionSize( sym);	
+					// currPositionSize > 0 means currently have bought symbols
+				if (currPositionSize > 0) {
+					writeline("closeAllOrderByMktPrice.Sell.[" + sym + "][" + abs(currPositionSize)  + "]");
+					orderId1 =  ibc.PlaceOrder( sym, "SELL", abs(currPositionSize), "MKT", 0, 0, "Day", True );
+					// place order too fast cause pending transaction, sleep 300 ms after each txn
+					for (i = 0; i < 3; i++) {
+						ThreadSleep(100);
+					}
+				}
+				
+				// -----------------------------------------
+				// 3. place buy order
+				// -----------------------------------------	
+				if ( currPositionSize < 0) {
+					writeline("closeAllOrderByMktPrice.Cover. [" + sym + "][" + abs(currPositionSize)  + "]");
+					orderId1 =  ibc.PlaceOrder( sym, "BUY", abs(currPositionSize), "MKT", 0, 0, "Day", True );
+					// place order too fast cause pending transaction, sleep 300 ms after each txn
+					for (i = 0; i < 3; i++) {
+						ThreadSleep(100);
+					}
+				}
+
+			}
+			for (i = 0; i < 20; i++) {
+				ThreadSleep(100);
+			}
+
+			StaticVarRemove( "lock");
+
+		}
+	}
+}
+
+// symbol1. symbol name, e.g APPL
+// buy1. buy array. Ref - 1, as there is new bar
+// sell1. sell array. Ref - 1, as there is new bar
+// short1. short array. Ref - 1, as there is new bar
+// cover1. cover array. Ref - 1, as there is new bar
+// c1. close array.  Ref - 1, as there is new bar
+// O0. open array. current open price of new bar
+function doTrade2_simulate(symbol1, buy1, sell1, short1, cover1, C1, O0, stpPercent, openPosition1, profitPercent) {
+	// -----------------------------------------
+	// 1. init 
+	// -----------------------------------------
+
+
+	Max_POSITION_PER_TRADE=openPosition1;
+	BUY_SELL_QTY = round(Max_POSITION_PER_TRADE/LastValue(C1));
+	isQtyValid = True;
+	if (BUY_SELL_QTY < 1) {
+		writeline("doTrade2_simulate. Invalid price action qty. do not buy/sell/short/cover. [" + symbol1 + "][" +  BUY_SELL_QTY + "][" + Max_POSITION_PER_TRADE + "][" + LastValue(C1) + "]");
+		isQtyValid = False;
+	}
+	
+	//COMMISSION=0.01%
+	//MARGIN=100
+	// 0.99 means stop loss percentage 1%
+	// STOP_LOSS_PER=0.99;
+	//STOP_PROFIT=0
+	//MAX_OPEN_POSITION=6;
+	MAX_OPEN_POSITION=10;
+
+	//POSITIONS=LONG_AND_SHORT;
+	MIN_LOT_SIZE=1;
+	//TRADE_PERIOD=2100_0400
+	
+	IS_DEBUG = true;
+	
+	if (IS_DEBUG) {
+		writeline("doTrade2_simulate. begin[" + symbol1 + "]");
+	}
+	
+	isPerformProfitTaking = True;
+	profitPercent1=profitPercent;
+	if (profitPercent1 <= 0) {
+		isPerformProfitTaking = False;
+		profitPercent1= -1;	
+	}
+	
+	isPerformStpLoss = True;
+	stopPercent1=stpPercent;
+	if (stopPercent1 <= 0) {
+		isPerformStpLoss = False;
+		stopPercent1 = -1;  // do not stop loss
+		
+	}
+
+
+
+	
+	// profit take percentage should not larger than 5%
+	if (isPerformProfitTaking) {	
+		PROFIT_TAKING_PRICE_BUY = LastValue(c1)*(1+(profitPercent1/100));
+		PROFIT_TAKING_PRICE_SHORT= LastValue(c1)*(1-(profitPercent1/100));
+		writeline("doTrade2_simulate. profit taking value[" + profitPercent1 + "][" + PROFIT_TAKING_PRICE_BUY + "][" + PROFIT_TAKING_PRICE_SHORT + "]");
+	}
+	else {
+		writeline("doTrade2_simulate. Invalid profitPercent1, do not buy/sell/short/cover. [" + symbol1 + "][" +  profitPercent1 + "]");
+	//	return -1;
+		isPerformProfitTaking = False;
+	}	
+
+	
+	// set stop loss to large value, disable maximum stop loss checking
+	if (stopPercent1 < 20.00 AND isPerformStpLoss) {
+		// stop order limit price to ref(close price - 1)*(0.985)  (accept only 1.5% of C) 
+		//STOP_PRICE_BUY  = LastValue(c1)*0.996;
+		STOP_PRICE_BUY  = LastValue(c1)*(1-(stopPercent1/100));
+		// stop order limit price to ref(close price - 1)*(1.015)  (accept only 1.5% of C) 
+		// STOP_PRICE_SELL  = LastValue(c1)*1.004;
+		STOP_PRICE_SELL  = LastValue(c1)*(1+(stopPercent1/100));
+		writeline("doTrade2_simulate. stop loss value[" + stopPercent1 + "][" + STOP_PRICE_BUY + "][" + STOP_PRICE_SELL + "]");
+	}
+	else {
+		writeline("doTrade2_simulate. Invalid stopPercent1, should not exceed 8%. do not buy/sell/short/cover. [" + symbol1 + "][" +  stopPercent1 + "]");
+		isPerformStpLoss = False;
+	//	return -1;
+	}
+
+	// hardcode 1% for lmt order, i.e.
+	// buy / cover must not higher than LIMIT_PRICE_BUY price
+	// sell / short must not lower than LIMIT_PRICE_SELL price
+	// set buy limit price to ref(close price - 1)*(1.01)  (accept only 1% of C) and < last valueO0 (avoid gap up)
+	LIMIT_PRICE_BUY  = LastValue(c1)*1.01;
+	// set sell limit price to ref(close price - 1)*(0.99) (accept only 1% of C) and > last valueO0 (avoid gap down)
+	LIMIT_PRICE_SELL = LastValue(c1)*0.99;
+
+
+
+	// must perform 
+	IS_PERFORM_BUY = True;
+	IS_PERFORM_SELL = True;
+	IS_PERFORM_SHORT = True;
+	IS_PERFORM_COVER = True;
+	
+	// if qty not valid, do  not perform any price action
+	if (isQtyValid == False) {
+		IS_PERFORM_BUY = False;
+		IS_PERFORM_SELL = False;
+		IS_PERFORM_SHORT = False;
+		IS_PERFORM_COVER = False;
+	}
+	
+	// not open new position if stop loss is invalid, i.e. every new position must follow with stp loss order
+	if (isPerformStpLoss == False) {
+		IS_PERFORM_BUY = False;
+		IS_PERFORM_SHORT = False;
+		
+	}
+	
+	currpositionsize =0;
+
+	
+
+		// -----------------------------------------
+		// 1. place sell order
+		// -----------------------------------------
+		// the number that descibes the currently held position size for Ticker. Positive numbers mean long position, negative numbers mean short position, zero means that given ticker is not held in the portfolio
+		writeline("doTrade2_simulate. currPositionSize. [" + symbol1 + "][" + currPositionSize + "][" + LIMIT_PRICE_SELL + "][" + NumToStr(LastValue(c1))  + "]");		
+		if (lastvalue(sell1) == True AND IS_PERFORM_SELL AND currPositionSize > 0) {
+			writeline("doTrade2_simulate. sell. [" + symbol1 + "][" + currPositionSize + "]");
+		}
+		// -----------------------------------------
+		// 2. place cover order
+		// -----------------------------------------	
+		writeline("doTrade2_simulate. cover. [" + symbol1 + "][" + currPositionSize + "][" + LIMIT_PRICE_BUY + "][" + NumToStr(LastValue(c1)) + "]");
+		
+		// -----------------------------------------
+		// 3. place buy order. Together with stop loss order
+		// -----------------------------------------	
+		qty1 = Buy_SELL_QTY;
+		if (lastvalue(buy1) == True AND IS_PERFORM_BUY 
+		) {
+			writeline("doTrade2_simulate. buy. [" + symbol1 + "][" + NumToStr(qty1) + "][" + NumToStr(LIMIT_PRICE_BUY) +"][" + NumToStr(LastValue(c1)) + "][" + NumToStr(STOP_PRICE_BUY) +  "][" + NumToStr(PROFIT_TAKING_PRICE_BUY) + "][" + stpPercent + "][" + profitPercent +"]");
+		}
+		
+		// -----------------------------------------
+		// 4. place short order. Together with stop loss order
+		// -----------------------------------------	
+		qty1 = Buy_SELL_QTY;
+		if (lastvalue(short1) == True AND IS_PERFORM_SHORT
+		) {
+			writeline("doTrade2_simulate. short. [" + symbol1 + "][" + NumToStr(qty1) + "][" + NumToStr(LIMIT_PRICE_SELL) +"][" + NumToStr(LastValue(c1)) + "][" + NumToStr(STOP_PRICE_SELL) + "][" + NumToStr(PROFIT_TAKING_PRICE_SHORT) + "][" + stpPercent + "][" + profitPercent +"]");
+		}
+		
+	
+}
+
+function closeOrdersByLMTPrice(symbolNameList, threshold1) {
+	rs = 0;
+	writeline("closeOrdersByLMTPrice begin");
+	// -----------------------------------------
+	// 1. init 
+	// -----------------------------------------
+
+	writeline("No process is running, keep going close all open positions");
+	isOtherProcessAlreadyRun = StaticVarGet("lock");
+	if (isOtherProcessAlreadyRun == True) {
+		writeline("Other process is running, abandon this process");
+		for (i = 0; i < 20; i++) {
+			ThreadSleep(100);
+		}
+
+	}
+
+	// get 2nd time
+	isOtherProcessAlreadyRun = StaticVarGet("lock");
+	if (isOtherProcessAlreadyRun != True) {
+		StaticVarSet("lock", true);
+
+		// --------------------------------------------------------
+		// get current price
+		// ----------------------------------------------------
+		lastTradePrice = GetRTData("Last");
+		lastAskPrice = GetRTData("Ask");
+		lastBidPrice=GetRTData("Bid");
+
+		LIMIT_PRICE_COVER = (lastAskPrice + lastBidPrice)/2 - threshold1;
+		LIMIT_PRICE_SELL = (lastAskPrice + lastBidPrice)/2  + threshold1;
+		
+		// --------------------------------------------------------------------------------
+		// if C price diff (LIMIT_PRICE_COVER or LIMIT_PRICE_SELL) more than 2% do not sell
+		// --------------------------------------------------------------------------------
+		diff_per1 = abs((C - LIMIT_PRICE_COVER)/C);
+		diff_per2 = abs((C - LIMIT_PRICE_SELL)/C);
+		if (diff_per1 > 0.02 OR diff_per2 >= 0.02) {
+			writeline("closeOrdersByLMTPrice. Difference between C price and sell/cover price more than 2%, do not sell/cover. [" 
+			+ diff_per1 + "][" + diff_per2 + "]"
+			);
+			rs = 1;
+		}
+		
+
+		ibc = GetTradingInterface("IB");
+		IBcStatus = ibc.IsConnected();
+
+		IBcStatusString = WriteIf(IBCStatus==0,"TWS Not Found", 
+								WriteIf(IBCStatus==1,"Connecting to TWS", 
+									WriteIf(IBCStatus==2,"TWS OK", 
+										WriteIf(IBCStatus==3,"TWS OK (msgs)",""))));
+		writeline(IBcStatusString);
+		if (IBcStatus AND rs == 0 ) {
+			// cancel all pending orders
+			//ibc.CancelAllPendingOrders();
+			
+			// sleep 2 seconds
+			for (k = 0; k < 4; k++) {
+				ThreadSleep(500);
+			}		
+
+			if (IsNull(symbolNameList)) {
+				openSymbolList = ibc.GetPositionList();
+			}
+			else {
+				openSymbolList = symbolNameList;
+			}
+			for( item = 0;  ( sym = StrExtract( openSymbolList, item ) ) != ""; item++ )
+			{
+				if (StrFind( symbolNameList, sym )) {
+					
+					// -----------------------------------------
+					// exclude following
+					// -----------------------------------------
+					if (sym == "USD.HKD-IDEALPRO-CASH" or sym == "2342-SEHK-STK") {
+						writeline("closeOrdersByLMTPrice. skip this symbol.[" + sym + "]");
+						continue;
+					}
+					
+					if (isNotIntradaySymbolFound(sym)) {
+						writeline("closeOrdersByLMTPrice. isNotIntradaySymbolFound. skip this symbol.[" + sym + "]");
+						continue;
+					}					
+					
+					// cancel all pending orders
+					ibc.CancelAllPendingOrders(sym);
+
+					// -----------------------------------------
+					// 2. place sell order
+					// -----------------------------------------
+					currPositionSize = ibc.GetPositionSize( sym);
+					
+						// currPositionSize > 0 means currently have bought symbols
+					if (currPositionSize > 0) {
+						writeline("closeOrdersByLMTPrice. Sell.[" + sym + "][" + abs(currPositionSize)  + "]");
+						//orderId1 =  ibc.PlaceOrder( sym, "SELL", abs(currPositionSize), "MKT", 0, 0, "Day", True );
+						orderId1 =  ibc.PlaceOrder( sym, "SELL", abs(currPositionSize), "LMT", LIMIT_PRICE_SELL, 0, "Day", True );
+						// place order too fast cause pending transaction, sleep 300 ms after each txn
+						for (i = 0; i < 3; i++) {
+							ThreadSleep(100);
+						}
+					}
+					
+					// -----------------------------------------
+					// 3. place buy order
+					// -----------------------------------------	
+					if ( currPositionSize < 0) {
+						writeline("closeOrdersByLMTPrice. Cover. [" + sym + "][" + abs(currPositionSize)  + "]");
+						//orderId1 =  ibc.PlaceOrder( sym, "BUY", abs(currPositionSize), "MKT", 0, 0, "Day", True );
+						orderId1 =  ibc.PlaceOrder( sym, "BUY", abs(currPositionSize), "LMT", LIMIT_PRICE_COVER, 0, "Day", True );
+						// place order too fast cause pending transaction, sleep 300 ms after each txn
+						for (i = 0; i < 3; i++) {
+							ThreadSleep(100);
+						}
+					}
+				} // if (StrFind( symbolNameList, sym )) {
+			
+			} // for( item = 0;  ( sym = StrExtract
+		
+		} // if (IBcStatus) {
+
+		StaticVarRemove( "lock");
+
+	} // if (isOtherProcessAlreadyRun != True) {
+	return rs;
+}
+
+
+function closeOrdersByLMTPrice2(symbolNameList) {
+	return closeOrdersByLMTPrice(symbolNameList, 0.05);
+}
+
+function closeOrdersByLMTPrice3(threshold1) {
+	return closeOrdersByLMTPrice(null, threshold1);
+}
+
+function closeOrdersByLMTPrice4() {
+	return closeOrdersByLMTPrice(null, 0.05);
+}
+
+// type1
+// 1. round to closeest. E.g. roundTo = 0.25. 256.45 round to 256.50. 256.55 round to 256.50
+// 2. round up. E.g. roundTo = 0.25. 256.55 round to 256.75
+// 3. round down. E.g. roundTo = 0.25. 256.45 round to 256.25
+function getNearestRoundToPrice(price1, roundTo, type1) {
+	roundToPrice = price1;
+	frp = price1 % roundTo;
+
+	// 1. round to closeest. E.g. roundTo = 0.25. 256.45 round to 256.50. 256.55 round to 256.50	
+	if (type1 == 1) {
+		roundedNo = price1 - frp;
+		if (abs(roundedNo - price1) > abs(roundedNo + roundTo - price1)) {
+			roundToPrice = roundedNo + roundTo;
+		}
+		
+	}
+	// 2. round up. E.g. roundTo = 0.25. 256.55 round to 256.75
+	else if (type1 == 2) {
+		roundToPrice = price1 - frp + roundTo;
+	}
+	// 3. round down. E.g. roundTo = 0.25. 256.45 round to 256.25
+	else if (type1 == 3) {
+		roundToPrice = price1 - frp;
+	}	
+	return roundToPrice;	
+}
+
+
+
+// symbol1. symbol name, e.g APPL
+// buy1. buy array. Ref - 1, as there is new bar
+// sell1. sell array. Ref - 1, as there is new bar
+// short1. short array. Ref - 1, as there is new bar
+// cover1. cover array. Ref - 1, as there is new bar
+// limitPrice. limitPrice for limit order.  0 means market order
+// stpPercent. stop percent, e.g. 2 means 2%
+// profitPercent. stop profit. e.g. 4 means 4%
+// numContracts. number contracts buy/short
+// isIntraDay. True: intraday. False: not intraday. 
+// isMktOrder. True: buy/short for market order.  false: limit order
+// maxNumTickSize4BuyShortSlippage. for limit order.  max num 
+// sybmolType: 1: future. 2: stock
+// 
+function doTrade00(symbol1, buy1, sell1, short1, cover1, limitPrice, stopLossPrice0, profitTakePrice0, numContracts, ibControllerTickSize, isIntraDay, isMktOrder, maxNumTickSize4BuyShortSlippage, maxNumTickSize4StpLmtOrderSlippage, sybmolType) {
+	// -----------------------------------------
+	// 1. init 
+	// -----------------------------------------
+	
+	rs = 0;
+	
+	MAX_OPEN_POSITION = StaticVarGet("MAX_OPEN_POSITION");
+	if(IsNull(MAX_OPEN_POSITION)) {
+		MAX_OPEN_POSITION = 15;
+	}
+	// quota = MAX_OPEN_POSITION;
+	quota = 20;
+
+
+	IS_DEBUG = true;
+	
+	if (IS_DEBUG) {
+		writeline("begin2[" + symbol1 + "]");
+	}
+	
+	stopLossPrice = stopLossPrice0;
+	profitTakePrice = profitTakePrice0;
+	isPerformStpLoss = True;
+	// stopPercent1=stpPercent;
+	
+	// audit. validate stopLossPrice
+	if (isMktOrder == False
+		AND (
+			lastvalue(buy1) == True AND stopLossPrice >= limitPrice
+			OR lastvalue(short1) == True AND stopLossPrice <= limitPrice
+			)
+		)
+	{
+		isPerformStpLoss = False;
+	}
+	
+	// must perform 
+	IS_PERFORM_BUY = True;
+	IS_PERFORM_SELL = True;
+	IS_PERFORM_SHORT = True;
+	IS_PERFORM_COVER = True;
+	
+	
+	// not open new position if stop loss is invalid, i.e. every new position must follow with stp loss order
+	if (isPerformStpLoss == False) {
+		IS_PERFORM_BUY = False;
+		IS_PERFORM_SHORT = False;
+		
+	}
+	
+	// if both buy and sell == true diable buy 
+	if (lastvalue(buy1) == True AND LastValue(sell1) == True) {
+		IS_PERFORM_BUY = False;
+		IS_PERFORM_SELL = False;
+	}
+	// if both short and cover == true, disable short
+	if (lastvalue(short1) == True AND LastValue(cover1) == True) {
+		IS_PERFORM_SHORT = False;
+		IS_PERFORM_COVER = False;
+	}
+	 
+	
+	// find limit price
+	// 1. buy/cover. min (last(C)*1.002, last(trade)*1.002, last(ask))
+	//buyTradeBuffer = 1.001;
+	// --------------------------------------------------------
+	// get findal limit price
+	// ----------------------------------------------------
+	lastTradePrice = GetRTData("Last");
+	lastAskPrice = GetRTData("Ask");
+	lastBidPrice=GetRTData("Bid");
+	
+
+
+	// cannot use multplier for future. IB controller show error 
+	// "The price does not conform to the minimum price variation for this contract"
+	// below only use when isMktOrder == false
+	// 20231109
+	//tmpTradePrice = limitPrice;
+	//if (lastTradePrice > 0) {
+	//	tmpTradePrice = lastTradePrice;
+	//}
+	
+	//writeline("testing. [" + NumToStr(limitPrice, 1.5) +"]");
+
+	tmpTradePrice = limitPrice;
+	
+	actualFutureTickSize = ibControllerTickSize/10000;
+	maxAllowSlippage = maxNumTickSize4BuyShortSlippage*actualFutureTickSize;
+	
+	LIMIT_PRICE_BUY = limitPrice + maxAllowSlippage;
+	LIMIT_PRICE_SELL = limitPrice - maxAllowSlippage;
+
+
+	stpLmtOrderPrice = 0;
+	if (lastvalue(buy1) == True
+		) {
+		//if (sybmolType == 1) { // future
+			// round down according to ticksize
+			stopLossPrice = getNearestRoundToPrice(stopLossPrice0, actualFutureTickSize, 3);
+			// round up according to ticksize
+			if (profitTakePrice0 > 0) {
+				profitTakePrice = getNearestRoundToPrice(profitTakePrice0, actualFutureTickSize, 2);
+			}
+			if (maxNumTickSize4StpLmtOrderSlippage >= 1) {
+				stpLmtOrderPrice = getNearestRoundToPrice((stopLossPrice0 - actualFutureTickSize*maxNumTickSize4StpLmtOrderSlippage), actualFutureTickSize, 3);
+			}
+		//}
+		//else {
+			// assume else is sybmolType == 2, stock
+		//	stopLossPrice = stopLossPrice0;
+		//	profitTakePrice = profitTakePrice0;
+		//	stpLmtOrderPrice = stopLossPrice0 - actualFutureTickSize*maxNumTickSize4StpLmtOrderSlippage;
+		//}
+		
+	}
+	else if (lastvalue(short1) == True) {
+		// if (sybmolType == 1) { // future
+			// round up according to ticksize
+			stopLossPrice = getNearestRoundToPrice(stopLossPrice0, actualFutureTickSize, 2);
+			// round down according to ticksize
+			if (profitTakePrice0 > 0) {
+				profitTakePrice = getNearestRoundToPrice(profitTakePrice0, actualFutureTickSize, 3);
+			}
+			if (maxNumTickSize4StpLmtOrderSlippage >= 1) {
+				stpLmtOrderPrice = getNearestRoundToPrice((stopLossPrice0 + actualFutureTickSize*maxNumTickSize4StpLmtOrderSlippage), actualFutureTickSize, 2);
+			}		
+		//}
+		//else {
+			// assume else is sybmolType == 2, stock
+		//	stopLossPrice = stopLossPrice0;
+		//	profitTakePrice = profitTakePrice0;
+		//	stpLmtOrderPrice = stopLossPrice0 + actualFutureTickSize*maxNumTickSize4StpLmtOrderSlippage;
+		//}		
+
+			
+	}
+	writeline("stop loss/ stop profit price. [" + stopLossPrice0 + "][" +  stopLossPrice + "][" + profitTakePrice0 + "][" + profitTakePrice + "][" + stopLossPrice + "]");
+	// writeline("lastTradePrice=[" + lastTradePrice + "]. lastAskPrice=[" +  lastAskPrice + "]. lastBidPrice=[" + lastBidPrice + "]");
+
+
+	// tmp comment to test 5 decimal place price (UB)
+	//if (lastvalue(buy1) == True OR LastValue(cover1) == True) {
+	//	LIMIT_PRICE_BUY = limitPrice + maxAllowSlippage;
+	//}
+	//else if (lastvalue(short1) == True OR LastValue(sell1) == True) {
+	//	LIMIT_PRICE_SELL = limitPrice - maxAllowSlippage;
+			
+	//}
+
+	
+	// comment, ignore bid and ask price, only concern limit Price 
+	// tmp comment to test 5 decimal place price (UB)
+	//if (lastvalue(buy1) == True OR LastValue(cover1) == True) {
+	//	if (lastBidPrice > 0) {
+	//		tmpTradePrice = lastBidPrice;
+	//	}		
+	//}
+	//else if (lastvalue(short1) == True OR LastValue(sell1) == True) {
+	//	if (lastAskPrice > 0) {
+	//		tmpTradePrice = lastAskPrice;
+	//	}			
+	//}
+	
+
+	
+
+	// round up for buy/cover, i.e. buy/cover at higher price to ensure order filled
+	// LIMIT_PRICE_BUY  = getNearestRoundToPrice(tmpTradePrice, minChangePrice, 2);
+	
+	// round down for short/sell, i.e. short/sell at lower price to ensure order filled
+	// LIMIT_PRICE_SELL = getNearestRoundToPrice(tmpTradePrice, minChangePrice, 3);
+	
+	//LIMIT_PRICE_BUY  = lastAskPrice;
+	
+	// round down for short/sell, i.e. short/sell at lower price to ensure order filled
+	//LIMIT_PRICE_SELL = lastBidPrice;	
+	
+	// end comment 20231126
+	
+	// testing only	
+	//LIMIT_PRICE_BUY = tmpTradePrice;
+	//LIMIT_PRICE_SELL = tmpTradePrice;
+	
+	
+	
+
+	
+	//LIMIT_PRICE_BUY=tmpTradePrice + minChangePrice ;
+	//LIMIT_PRICE_SELL=tmpTradePrice - minChangePrice ;
+
+
+	// stop loss price
+	STOP_PRICE_BUY = stopLossPrice;
+	STOP_PRICE_SELL = stopLossPrice;
+	
+	
+	PROFIT_TAKING_PRICE_BUY = profitTakePrice;
+	PROFIT_TAKING_PRICE_SHORT = profitTakePrice;
+	isPerformProfitTaking = True;
+	if (profitTakePrice <= 0) {
+		isPerformProfitTaking = False;
+	}
+	
+	
+	// profit take percentage should not larger than 5%
+
+	ibc = GetTradingInterface("IB");
+	IBcStatus = ibc.IsConnected();
+
+	IBcStatusString = WriteIf(IBCStatus==0,"TWS Not Found", 
+							WriteIf(IBCStatus==1,"Connecting to TWS", 
+								WriteIf(IBCStatus==2,"TWS OK", 
+									WriteIf(IBCStatus==3,"TWS OK (msgs)",""))));
+
+	if (IS_DEBUG) {
+		writeline(IBcStatusString + "Msg: [" + ibc.GetLastError(0) +"]");
+	}
+
+	// testing
+	//action77 = ibc.GetPositionInfo(symbol1, "ACTION");
+	//writeline("100.77[" + symbol1 + "][" + action77 +"]");
+	if (IBcStatus) {
+	
+	
+// 
+// depreciated. do not use GetPositionList to determine quota because because at short time there may be many order pendings before open
+// run GetPositionList in another afl (from get_realize_and_unrealize_profit every 4, 8, 14, 18, ...) to override maxOpenPosition1 variable
+// 
+	  
+		alreadyResetSemaphore = False;
+		
+		
+		// -----------------------------------------
+		// Get position size
+		// the number that descibes the currently held position size for Ticker. Positive numbers mean long position, negative numbers mean short position, zero means that given ticker is not held in the portfolio
+		// -----------------------------------------
+		currPositionSize = ibc.GetPositionSize( symbol1);
+
+		// not sure why sometimes there is open position but GetPositionSize return 0
+		// try 2 times, if current position is 0 for sell or cover
+		if (
+				(lastvalue(sell1) == True  OR lastvalue(cover1) == True)
+				AND currPositionSize == 0
+			) {
+				ii = 0;
+				while( currPositionSize == 0 AND ii < 2)
+				{
+					ThreadSleep(1000); // sleep 1 sec
+					ii++;
+					currPositionSize = ibc.GetPositionSize( symbol1);
+					writeline("try call GetPositionSize again. sell/cover but GetPositionSize return 0 position");
+				}
+				
+				if (currPositionSize == 0) {
+					ibc.Reconnect();
+					writeline("try 3 times. sell or cover but currPositionSize is still 0, why???. reconnect and then try another 3 times");
+					ii = 0;
+					while( currPositionSize == 0 AND ii < 2)
+					{
+						ThreadSleep(1000); // sleep 1 sec
+						ii++;
+						currPositionSize = ibc.GetPositionSize( symbol1);
+						writeline("try call GetPositionSize again 2. sell/cover but GetPositionSize return 0 position");
+					}				
+					writeline("try 3 times. sell or cover but currPositionSize is still 0, why???. Dummed all positions");
+					openSymbolList555 = ibc.GetPositionList();
+					for( item555 = 0;  ( sym555 = StrExtract( openSymbolList555, item555 ) ) != ""; item555++ )
+					{
+						writeline("Symbol name[" + sym555 + "]");
+
+					}					
+				}
+			}		
+		// -----------------------------------------
+		// write log
+		// -----------------------------------------
+		writeline("currPositionSize. [" + symbol1 + "]. currPositionSize=[" + currPositionSize + "]. LIMIT_PRICE_SELL=[" + NumToStr(LIMIT_PRICE_SELL, 1.4) + "]. LIMIT_PRICE_BUY=["  + NumToStr(LIMIT_PRICE_BUY, 1.4)
+						+ "]. lastTradePrice=["  + NumToStr(lastTradePrice, 1.4) + "]. lastAskPrice=["  + NumToStr(lastAskPrice, 1.4) + "]. lastBidPrice=["  + NumToStr(lastBidPrice, 1.4) + "]. buy1=[" + lastvalue(buy1) + "]. sell1=[" + lastvalue(sell1)
+						+ "]. short1=["  + lastvalue(short1) + "]. cover1=[" + lastvalue(cover1) + "]. IS_PERFORM_BUY=["  +  IS_PERFORM_BUY + "]. IS_PERFORM_SELL=["  + IS_PERFORM_SELL + "]. isPerformProfitTaking=["  + isPerformProfitTaking
+						+ "]. IS_PERFORM_SHORT=["  + IS_PERFORM_SHORT + "]. IS_PERFORM_COVER=[" + IS_PERFORM_COVER + "]. tmpTradePrice=["  + NumToStr(tmpTradePrice, 1.4) + "]. maxNumTickSize4BuyShortSlippage=["  + NumToStr(maxNumTickSize4BuyShortSlippage, 1.4)
+						+ "]. ibControllerTickSize=["  + NumToStr(ibControllerTickSize, 1.4) + "]. actualFutureTickSize=[" + NumToStr(actualFutureTickSize, 1.4) + "]. maxAllowSlippage=["  + NumToStr(maxAllowSlippage, 1.4)
+						+ "]. limitPrice=["  + NumToStr(limitPrice, 1.4) + "]. numContracts=["  + NumToStr(numContracts, 1.2)
+						+ "]. stpLmtOrderPrice=[" + NumToStr(stpLmtOrderPrice, 1.4)
+						+ "]");		
+						
+		// display order status
+		// orderStatus1 = ibc.getStatus( string OrderId, true);
+
+		// execution list
+		execlist1 = ibc.GetExecList(0,""); // list all orders from executions page
+		for( i = 0; ( orderIdExec = StrExtract( execlist1, i ) ) != ""; i++ )
+		{
+		   execinfo1 = "Execution List. Order Id: " + orderIdExec + ". Symbol: " + ibc.GetExecInfo( orderIdExec, "Symbol" ) +
+					 ". Filled: " + ibc.GetExecInfo( orderIdExec, "Filled" ) +
+					 ". Avg. price: " + ibc.GetExecInfo( orderIdExec, "Avg. price" ) +
+					 ". Order status: [" + ibc.getStatus( orderIdExec, true) + "]";
+		   writeline (execinfo1);
+
+		}
+		// pending list		
+		pendinglist1 = ibc.GetPendingList( 0, "" );
+		pendinglistByName = ibc.GetPendingList( 1, "" );
+		for( i = 0; ( orderIdPending = StrExtract( pendinglist1, i ) ) != ""; i++ )
+		{
+		   symbolName = StrExtract( pendinglistByName, i );
+		   pendingInfo1 = "Pending List. Order Id: " + orderIdPending + 
+					 ". Symbol: [" + symbolName + "]" +
+					 ". Order status: [" + ibc.getStatus( orderIdPending, true) + 
+					 "]";
+		   writeline (pendingInfo1);		
+		}	
+		// end display order status			
+
+		orderId1 = -2; // init
+		// -----------------------------------------
+		// 1. place sell order. sell and no short
+		// -----------------------------------------
+		// currPositionSize > 0 means currently have bought symbols
+		if (lastvalue(sell1) == True 
+			AND LastValue(short1) == False
+			AND IS_PERFORM_SELL 
+			AND currPositionSize > 0
+			) {
+			// comment as not accurate becuase stp loss and stp profit order, sell/cover not perform here
+			quota++;
+			// 5a.  set back quota
+			StaticVarSet("IBVAR_QTA", Max(quota, 0));
+			StaticVarSet("semaphore1", 0 ); // reset semaphore
+			alreadyResetSemaphore = True;
+
+			writeline("sell. [" + symbol1 + "][" + currPositionSize + "][" + NumToStr(LIMIT_PRICE_SELL, 1.4) + "]");
+			
+			// cancel any pending order
+			rs21 = cancelPendingOrder(ibc, symbol1);
+			if (rs21 == True) {
+				ThreadSleep( 500 );  // sleep 500 mills seconds
+			}
+			//ibc.CancelAllPendingOrders(symbol1);
+
+			
+			if (isMktOrder==True) {
+				orderId1 =  ibc.PlaceOrder( symbol1, "SELL", abs(currPositionSize), "MKT", 0, 0, "Day", True );
+			}
+			else {
+				orderId1 =  ibc.PlaceOrder( symbol1, "SELL", abs(currPositionSize), "LMT", LIMIT_PRICE_SELL, 0, "Day", True, ibControllerTickSize);
+			}
+			// cancel pending order
+			//ibc.CancelAllPendingOrders( symbol1 );
+			
+			writeline ("After sell. return rs = 1. Sell order id = [" + orderId1 + "]. orderstatus = [" + ibc.GetStatus( orderId1) + "]");
+			
+			
+
+			rs = 1;
+
+		}
+		// -----------------------------------------
+		// 2. place cover order. cover and no buy
+		// -----------------------------------------	
+		if (lastvalue(cover1) == True 
+			AND LastValue(buy1) == False
+			AND IS_PERFORM_COVER 
+			AND currPositionSize < 0
+			) {
+			// comment as not accurate becuase stp loss and stp profit order, sell/cover not perform here
+			quota++;
+			// 5a.  set back quota
+			StaticVarSet("IBVAR_QTA", Max(quota, 0));
+			StaticVarSet("semaphore1", 0 ); // reset semaphore
+			alreadyResetSemaphore = True;
+		
+			writeline("cover. [" + symbol1 + "][" + currPositionSize + "][" + NumToStr(LIMIT_PRICE_BUY, 1.4) + "]");
+			
+			// cancel any pending order
+			rs21 = cancelPendingOrder(ibc, symbol1);
+			if (rs21 == True) {
+				ThreadSleep( 500 );  // sleep 500 mills seconds
+			}
+			
+			//ibc.CancelAllPendingOrders(symbol1);
+
+
+			if (isMktOrder==True) {
+				orderId1 =  ibc.PlaceOrder( symbol1, "BUY", abs(currPositionSize), "MKT", 0, 0, "Day", True );
+			}
+			else {
+				orderId1 =  ibc.PlaceOrder( symbol1, "BUY", abs(currPositionSize), "LMT", LIMIT_PRICE_BUY, 0, "Day", True, ibControllerTickSize );
+			}
+			
+			writeline ("After cover. return rs = 1. Cover order id = [" + orderId1 + "]. orderstatus = [" + ibc.GetStatus( orderId1) + "]");
+			rs = 1;
+
+		}
+		
+		// -------------------------------------------------
+		// 3. place buy order. Together with stop loss order
+		// -------------------------------------------------
+		qty1 = numContracts;
+		if (lastvalue(buy1) == True AND IS_PERFORM_BUY == True AND currPositionSize == 0
+		) {
+			writeline("buy. begin");
+			// comment as not accurate becuase stp loss and stp profit order, sell/cover not perform here
+			quota--;
+			// 5a.  set back quota
+			StaticVarSet("IBVAR_QTA", Max(quota, 0));
+			StaticVarSet("semaphore1", 0 ); // reset semaphore
+			alreadyResetSemaphore = True;
+
+			writeline("buy. [" + symbol1 + "][" + NumToStr(qty1, 1.4) + "][" + NumToStr(LIMIT_PRICE_BUY, 1.4) +"][" + NumToStr(STOP_PRICE_BUY, 1.4) +  "][" + NumToStr(PROFIT_TAKING_PRICE_BUY, 1.4) 
+						+ "][" + NumToStr(stopLossPrice, 1.4) + "][" + NumToStr(profitTakePrice, 1.4)
+						+ "][" + NumToStr(stpLmtOrderPrice, 1.4)
+						+"]"
+						);
+			// orig wo stp order
+			// orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "LMT", LIMIT_PRICE_BUY, 0, "Day", true );
+			if (isIntraDay == True) {
+				if (isMktOrder==True) {
+					orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "MKT", 0, 0, "Day", false);
+				}
+				else {
+					// orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "LMT", LIMIT_PRICE_BUY, 0, "Day", false );
+					orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "LMT", LIMIT_PRICE_BUY, 0, "Day", false , ibControllerTickSize);
+					
+				}
+				
+				// braket profit order
+				if (isPerformProfitTaking) {
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", stpLmtOrderPrice, STOP_PRICE_BUY, "Day", false, ibControllerTickSize, "", orderId1 );
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "LMT", PROFIT_TAKING_PRICE_BUY, 0, "Day", True, ibControllerTickSize, "", orderId1 );
+				}
+				else {
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", stpLmtOrderPrice, STOP_PRICE_BUY, "Day", True, ibControllerTickSize, "", orderId1 );
+				}
+
+			}
+			else {
+			
+		// --------------------------------------------------------
+		// get current price
+		// ----------------------------------------------------
+//		lastTradePrice = GetRTData("Last");
+//		lastAskPrice = GetRTData("Ask");
+//		lastBidPrice=GetRTData("Bid");
+// writeline("buy2. [" + symbol1 +"][" + NumToStr(lastTradePrice) + "][" 				+ NumToStr(lastTradePrice) + "][" 				+ NumToStr(lastAskPrice) + "][" 				+ NumToStr(lastBidPrice) 		);
+				// tickSize1 = 100;
+				// tickSize1 = 10000;  // 100 means min price 1/100 = 0.01. 10000 means min price 1/10000 = 0.0001
+				if (isMktOrder==True) {
+					orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "MKT", 0, 0, "GTC", false);
+				}
+				else {
+					orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty1, "LMT", LIMIT_PRICE_BUY, 0, "GTC", False, ibControllerTickSize);
+				}
+
+				// braket profit order
+				if (isPerformProfitTaking) {
+					
+					
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", stpLmtOrderPrice, STOP_PRICE_BUY, "GTC", false, ibControllerTickSize, "", orderId1 );
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "LMT", PROFIT_TAKING_PRICE_BUY, 0, "GTC", True, ibControllerTickSize, "", orderId1 );
+	
+				}
+				else {
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", stpLmtOrderPrice, STOP_PRICE_BUY, "GTC", True, ibControllerTickSize, "", orderId1 );
+				}
+
+			}
+			writeline ("After buy. return rs = 1. Buy order id = [" + orderId1 + "]. orderstatus = [" + ibc.GetStatus( orderId1) + "]");
+			rs = 1;
+		}
+		
+		// ---------------------------------------------------
+		// 4. place short order. Together with stop loss order
+		// ---------------------------------------------------
+		qty1 = numContracts;
+		if (lastvalue(short1) == True AND IS_PERFORM_SHORT
+			AND currPositionSize == 0 // 20210125. only when there is no open position. assume no 加注
+		) {
+			// comment as not accurate becuase stp loss and stp profit order, sell/cover not perform here
+			quota--;
+			// 5a.  set back quota
+			StaticVarSet("IBVAR_QTA", Max(quota, 0));
+			StaticVarSet("semaphore1", 0 ); // reset semaphore
+			alreadyResetSemaphore = True;
+
+			writeline("short. [" + symbol1 + "][" + NumToStr(qty1, 1.4) + "][" + NumToStr(LIMIT_PRICE_SELL, 1.4) +"][" + NumToStr(STOP_PRICE_SELL, 1.4) 
+						+ "][" + NumToStr(PROFIT_TAKING_PRICE_SHORT, 1.4) + "][" + NumToStr(stopLossPrice, 1.4) + "][" + NumToStr(profitTakePrice, 1.4)
+						+ "][" + NumToStr(stpLmtOrderPrice, 1.4)
+						+"]");
+			// orig wo stp order
+			// orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "LMT", LIMIT_PRICE_SELL, 0, "Day", true );
+			if (isIntraDay == True) {
+				if (isMktOrder==True) {
+					orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "MKT", 0, 0, "Day", false);
+				}
+				else {
+					orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "LMT", LIMIT_PRICE_SELL, 0, "Day", False, ibControllerTickSize );
+				}
+				
+				
+				if (isPerformProfitTaking) {
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", stpLmtOrderPrice, STOP_PRICE_SELL, "Day", false, ibControllerTickSize, "", orderId1 );
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "LMT", PROFIT_TAKING_PRICE_SHORT, 0, "Day", True, ibControllerTickSize, "", orderId1 );
+				}
+				else {
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", stpLmtOrderPrice, STOP_PRICE_SELL, "Day", True, ibControllerTickSize, "", orderId1 );
+				}
+			}
+			else {
+				if (isMktOrder==True) {
+					orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "MKT", 0, 0, "GTC", false);
+				}
+				else {
+					orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty1, "LMT", LIMIT_PRICE_SELL, 0, "GTC", false, ibControllerTickSize  );
+				}
+				
+				
+				if (isPerformProfitTaking) {
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", stpLmtOrderPrice, STOP_PRICE_SELL, "GTC", false, ibControllerTickSize, "", orderId1 );
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "LMT", PROFIT_TAKING_PRICE_SHORT, 0, "GTC", True, ibControllerTickSize, "", orderId1 );
+				}
+				else {
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", stpLmtOrderPrice, STOP_PRICE_SELL, "GTC", True, ibControllerTickSize, "", orderId1 );
+				}
+			}
+			writeline ("After short. return rs = 1. Short order id = [" + orderId1 + "]. orderstatus = [" + ibc.GetStatus( orderId1) + "]");
+			rs = 1;
+		}
+		
+		// ----------------------------------------------------
+		// 5. place buy order and place cover at the same time
+		// ----------------------------------------------------
+		qty1 = numContracts;
+		if (lastvalue(buy1) == True 
+			AND lastvalue(cover1) == True
+			AND IS_PERFORM_BUY == True 
+			AND IS_PERFORM_COVER == True
+			AND currPositionSize < 0
+		) {
+			writeline("buy and cover at the same time begin");
+			// comment as not accurate becuase stp loss and stp profit order, sell/cover not perform here
+			// quota--;
+			// 5a.  set back quota
+			StaticVarSet("IBVAR_QTA", Max(quota, 0));
+			StaticVarSet("semaphore1", 0 ); // reset semaphore
+			alreadyResetSemaphore = True;
+			
+			// cancel any pending order
+			rs21 = cancelPendingOrder(ibc, symbol1);
+			if (rs21 == True) {
+				ThreadSleep( 500 );  // sleep 500 mills seconds
+			}
+
+
+			writeline("buy and cover. [" + symbol1 + "][" + NumToStr(qty1, 1.4) + "][" + NumToStr(LIMIT_PRICE_BUY, 1.4) +"][" + NumToStr(STOP_PRICE_BUY, 1.4) +  "][" + NumToStr(PROFIT_TAKING_PRICE_BUY, 1.4) 
+						+ "][" + NumToStr(stopLossPrice, 1.4) + "][" + NumToStr(profitTakePrice, 1.4)
+					    + "][" + NumToStr(stpLmtOrderPrice, 1.4)
+						+"]"
+						);
+			
+			
+			
+			if (isIntraDay == True) {
+				// place 2 buy order
+				qty2 = 2*qty1;
+				if (isMktOrder==True) {
+					orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty2, "MKT", 0, 0, "Day", false);
+				}
+				else {
+					orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty2, "LMT", LIMIT_PRICE_BUY, 0, "Day", false , ibControllerTickSize);
+				}
+				
+				// place stop loss and stop profit 1 order
+				// braket profit order
+				if (isPerformProfitTaking) {
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", 0, STOP_PRICE_BUY, "Day", false, ibControllerTickSize, "", orderId1 );
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "LMT", PROFIT_TAKING_PRICE_BUY, 0, "Day", True, ibControllerTickSize, "", orderId1 );
+				}
+				else {
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", 0, STOP_PRICE_BUY, "Day", True, ibControllerTickSize, "", orderId1 );
+				}
+
+			}
+			else {
+				// place 2 buy order
+				qty2 = 2*qty1;
+				if (isMktOrder==True) {
+					orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty2, "MKT", 0, 0, "GTC", false);
+				}
+				else {
+					orderId1 =  ibc.PlaceOrder( symbol1, "BUY", qty2, "LMT", LIMIT_PRICE_BUY, 0, "GTC", False, ibControllerTickSize);
+				}
+				
+				// place stop loss and stop profit 1 order
+				// braket profit order
+				if (isPerformProfitTaking) {
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", 0, STOP_PRICE_BUY, "GTC", false, ibControllerTickSize, "", orderId1 );
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "LMT", PROFIT_TAKING_PRICE_BUY, 0, "GTC", True, ibControllerTickSize, "", orderId1 );
+	
+				}
+				else {
+					ibc.PlaceOrder(symbol1, "SELL", qty1, "STP", 0, STOP_PRICE_BUY, "GTC", True, ibControllerTickSize, "", orderId1 );
+				}
+
+			}
+			writeline ("After buy and cover. return rs = 1. Buy and cover order id = [" + orderId1 + "]. orderstatus = [" + ibc.GetStatus( orderId1) + "]");
+			rs = 1;
+		}		
+		// ---------------------------------------------------
+		// 6. place short and sell order at the same time
+		// ---------------------------------------------------
+		qty1 = numContracts;
+		if (lastvalue(short1) == True 
+			AND lastvalue(sell1) == True 
+			AND IS_PERFORM_SHORT == True
+			AND IS_PERFORM_SELL == True
+			AND currPositionSize > 0 
+		) {
+			// comment as not accurate becuase stp loss and stp profit order, sell/cover not perform here
+			// quota--;
+			// 5a.  set back quota
+			StaticVarSet("IBVAR_QTA", Max(quota, 0));
+			StaticVarSet("semaphore1", 0 ); // reset semaphore
+			alreadyResetSemaphore = True;
+			
+			writeline("short and sell. [" + symbol1 + "][" + currPositionSize + "][" + NumToStr(LIMIT_PRICE_SELL, 1.4) + "]");
+			
+			// cancel any pending order
+			rs21 = cancelPendingOrder(ibc, symbol1);
+			if (rs21 == True) {
+				ThreadSleep( 500 );  // sleep 500 mills seconds
+			}
+			
+			writeline("short and sell. [" + symbol1 + "][" + NumToStr(qty1, 1.4) + "][" + NumToStr(LIMIT_PRICE_SELL, 1.4) +"][" + NumToStr(STOP_PRICE_SELL, 1.4) + "][" + NumToStr(PROFIT_TAKING_PRICE_SHORT, 1.4) + "][" + NumToStr(stopLossPrice, 1.4) + "][" + NumToStr(profitTakePrice, 1.4) +"]");
+			if (isIntraDay == True) {
+				// place 2 short order
+				qty2 = 2*qty1;
+				if (isMktOrder==True) {
+					orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty2, "MKT", 0, 0, "Day", false);
+				}
+				else {
+					orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty2, "LMT", LIMIT_PRICE_SELL, 0, "Day", False, ibControllerTickSize );
+				}
+				
+				// place stop loss and stop profit 1 order
+				if (isPerformProfitTaking) {
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", 0, STOP_PRICE_SELL, "Day", false, ibControllerTickSize, "", orderId1 );
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "LMT", PROFIT_TAKING_PRICE_SHORT, 0, "Day", True, ibControllerTickSize, "", orderId1 );
+				}
+				else {
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", 0, STOP_PRICE_SELL, "Day", True, ibControllerTickSize, "", orderId1 );
+				}
+			}
+			else {
+				// place 2 short order
+				qty2 = 2*qty1;
+				if (isMktOrder==True) {
+					orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty2, "MKT", 0, 0, "GTC", false);
+				}
+				else {
+					orderId1 =  ibc.PlaceOrder( symbol1, "SELL", qty2, "LMT", LIMIT_PRICE_SELL, 0, "GTC", false, ibControllerTickSize  );
+				}
+				
+				// place stop loss and stop profit 1 order
+				if (isPerformProfitTaking) {
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", 0, STOP_PRICE_SELL, "GTC", false, ibControllerTickSize, "", orderId1 );
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "LMT", PROFIT_TAKING_PRICE_SHORT, 0, "GTC", True, ibControllerTickSize, "", orderId1 );
+				}
+				else {
+					ibc.PlaceOrder(symbol1, "BUY", qty1, "STP", 0, STOP_PRICE_SELL, "GTC", True, ibControllerTickSize, "", orderId1 );
+				}
+			}
+			
+			writeline ("After short and sell. return rs = 1. Short and sell order id = [" + orderId1 + "]. orderstatus = [" + ibc.GetStatus( orderId1) + "]");
+			rs = 1;
+		}		
+
+		
+		// final check make sure release semaphore
+		if (alreadyResetSemaphore == False) {
+			StaticVarSet("semaphore1", 0 ); // reset semaphore
+		}
+		
+		//printf( "\nGeneral Status :" +
+		//                    "\n\nLastTrade : " + LastTrade +
+		//                    "\nOrder Status: " + OrderStatus +
+		//                    "\nOrder ID: " + StaticVarGetText( VarPfx + "OrderID" ) +
+		//                    "\nNum positions: " + NumToStr( ibc.GetPositionSize( symb ), 1.0, False ) +
+		//                    "\nLast TWS Msg: " + StaticVarGet( "LastTWSMsg" ) );
+	}
+	else {
+		writeline("Cannot connect IB. IBcStatus = [" + IBcStatus  + "]");	
+	}
+
+	return rs;
+}
+
+
+function doTradeStock0(symbol1, buy1, sell1, short1, cover1, limitPrice, stopLossPrice0, profitTakePrice0, numContracts, ibControllerTickSize, isIntraDay, isMktOrder, maxNumTickSize4BuyShortSlippage, maxNumTickSize4StpLmtOrderSlippage) {
+	rs1 = doTrade00(symbol1, buy1, sell1, short1, cover1, limitPrice, stopLossPrice0, profitTakePrice0, numContracts, ibControllerTickSize, isIntraDay, isMktOrder, maxNumTickSize4BuyShortSlippage, maxNumTickSize4StpLmtOrderSlippage, 2);
+	return rs1;
+}
+
+function doTradeFuture0(symbol1, buy1, sell1, short1, cover1, limitPrice, stopLossPrice0, profitTakePrice0, numContracts, ibControllerTickSize, isIntraDay, isMktOrder, maxNumTickSize4BuyShortSlippage, maxNumTickSize4StpLmtOrderSlippage) {
+	rs1 = doTrade00(symbol1, buy1, sell1, short1, cover1, limitPrice, stopLossPrice0, profitTakePrice0, numContracts, ibControllerTickSize, isIntraDay, isMktOrder, maxNumTickSize4BuyShortSlippage, maxNumTickSize4StpLmtOrderSlippage, 1);
+	return rs1;
+}
+
+
+// not stop limit price
+function doTradeFuture(symbol1, buy1, sell1, short1, cover1, limitPrice, stopLossPrice0, profitTakePrice0, numContracts, ibControllerTickSize, isIntraDay, isMktOrder, maxNumTickSize4BuyShortSlippage) {
+	rs1 = doTradeFuture0(symbol1, buy1, sell1, short1, cover1, limitPrice, stopLossPrice0, profitTakePrice0, numContracts, ibControllerTickSize, isIntraDay, isMktOrder, maxNumTickSize4BuyShortSlippage, -1);
+	return rs1;
+}
+

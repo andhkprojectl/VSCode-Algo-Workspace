@@ -1,0 +1,8 @@
+1. update file S4003_5_randomforest_glm.py
+2. Target:
+    - win rate increase 15%
+3. change random forest to linear regression
+5. output: 
+    - output file: S4003_5_linearRegression_glm.py
+    - run S4003_5_linearRegression_glm.py output same file as S4003_5_randomforest_glm.py
+    - In html file S4003_5_linearRegression_glm.py, put file program name on top of html file

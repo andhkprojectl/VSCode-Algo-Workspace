@@ -1,0 +1,8 @@
+`. Enhance existing stragegy file S4003_6_randomforest_glm.py:
+    - increase win rate >= 65%
+    - change data source to use 2025-08-01 to 2026-09-11 analysis period
+
+3. output: 
+    - output file: S4003_7_randomforest_glm.py
+    - when run py file S4003_7_randomforest_glm.py, output similar to S4003_6_randomforest_glm.py
+    

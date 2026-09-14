@@ -1,0 +1,2 @@
+IB\autotrade\amibroker\autoTrade.afl is amibroker afl program
+Convert function doTrade00 in afl program autoTrade.afl to python program IB\autotrade\autotrade.py, function doTrade0

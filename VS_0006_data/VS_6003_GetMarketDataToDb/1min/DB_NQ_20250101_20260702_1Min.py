@@ -40,21 +40,32 @@ if __name__ == "__main__":
     # You can pass None to let the function create the connection
     my_ib_connection = None
 
+
     # Fetch 5-minute NVDA data
-    df = ibMarketData.getTicketDataWithTimeFromIB(
+    df = ibMarketData.getAllTypesTicketDataWithTimeFromIB(
         conn1=my_ib_connection,
-        # symbolName="TSLA",
-        symbolName="NVDA",
-        # symbolName="NQU6-CME-FUT",
-        # symbolName="NQU6",
-        startDate="20260705",
-        startTime="0355",
-        endDate="20260716",
-        endTime="2005",
-        period1=5
+        # symbolName="NQ",  # nasdaq e-mini future continuous contract
+        symbolName="ES",  # S&P e-mini future continuous contract
+        # symbolName="RTY", # Russell e-mini future continuous contract
+        # symbolName="YM",    # DOW e-mini future continuous contract        
+        # startDate="20251001",
+        startDate="20250701",
+        startTime="0000",
+        endDate="20250831",
+        endTime="2359",
+        period1=1,
+        tickerType = "FU",  # tickerType: "ST" for stock, "FU" for future
+        isConFuture=True,  # True for continuous future, False for specific future contract
+        futureExpireDate=None,  # e.g., "202609" for specific future contract
+        futureExchange="CME"  # e.g., NQ, ES, RTY come from CME; YM comes from CBOT
+        # futureExchange="CBOT"  # e.g., NQ, ES, RTY come from CME; YM comes from CBOT
     )
 
+
     print(df.head())
+    if df.empty:
+        print("ERROR: No data fetched from IB - nothing saved to DB.")
+        sys.exit(1)
     # df.to_csv(outcsvFileName, index=False)
 
     # --------------------------------------------------------------------------------------------
@@ -68,8 +79,8 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------------------------
 
     # --------------------------------------------------------------------------------------------
-    # Save to MariaDB table ticker5Min (IBTradingDb) for AmiBroker ODBC read
+    # Save to MariaDB tableticker5Min (IBTradingDb) for AmiBroker ODBC read
     # isOverride=True  -> update existing (ticker, datetime1) rows; insert new rows
     # isOverride=False -> skip existing (ticker, datetime1) rows; insert new rows
     # --------------------------------------------------------------------------------------------
-    IBDb.saveDfToTicker5Min(df, tableName="ticker5Min", isOverride=True)
+    IBDb.saveDfToTicker5Min(df, tableName="ticker1Min", isOverride=True)
