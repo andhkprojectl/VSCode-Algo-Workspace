@@ -1,0 +1,342 @@
+2026-09-16 04:20:48;autotrade.py;connect error attempt 1/3: ['IB' object has no attribute 'is_connected']
+2026-09-16 04:20:50;autotrade.py;connect error attempt 2/3: ['IB' object has no attribute 'is_connected']
+2026-09-16 04:20:52;autotrade.py;connect error attempt 3/3: ['IB' object has no attribute 'is_connected']
+2026-09-16 04:24:56;autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-16 04:24:57;autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-16 04:24:57;autotrade.py;begin2[ES]
+2026-09-16 04:24:58;autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7660.5000]. LIMIT_PRICE_BUY=[7661.0000]. lastTradePrice=[nan]. lastAskPrice=[nan]. lastBidPrice=[nan]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7660.7500]. numContracts=[1]. stpLmtOrderPrice=[7610.2500]
+2026-09-16 04:26:16;autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-16 04:26:16;autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-16 04:26:17;autotrade.py;begin2[ES]
+2026-09-16 04:26:17;autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7660.5000]. LIMIT_PRICE_BUY=[7661.0000]. lastTradePrice=[nan]. lastAskPrice=[nan]. lastBidPrice=[nan]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7660.7500]. numContracts=[1]. stpLmtOrderPrice=[7610.2500]
+2026-09-16 04:26:17;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:26:17;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:26:17;autotrade.py;buy. [ES][1][7661.0000][7610.7500][7861.0000][7610.7500][7861.0000][7610.2500]
+2026-09-16 04:26:17;autotrade.py;After buy. return rs = 1. Buy order id = [5]
+2026-09-16 04:27:19;autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-16 04:27:19;autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-16 04:27:19;autotrade.py;begin2[ES]
+2026-09-16 04:27:20;autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7660.5000]. LIMIT_PRICE_BUY=[7661.0000]. lastTradePrice=[nan]. lastAskPrice=[nan]. lastBidPrice=[nan]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7660.7500]. numContracts=[1]. stpLmtOrderPrice=[7610.2500]
+2026-09-16 04:27:20;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:27:20;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:27:20;autotrade.py;buy. [ES][1][7661.0000][7610.7500][7861.0000][7610.7500][7861.0000][7610.2500]
+2026-09-16 04:27:20;autotrade.py;After buy. return rs = 1. Buy order id = [10]
+2026-09-16 04:48:58;autotrade.py;begin2[ES]
+2026-09-16 04:48:59;autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7660.5000]. LIMIT_PRICE_BUY=[7661.0000]. lastTradePrice=[nan]. lastAskPrice=[nan]. lastBidPrice=[nan]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7660.7500]. numContracts=[1]. stpLmtOrderPrice=[7610.2500]
+2026-09-16 04:48:59;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:48:59;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:48:59;autotrade.py;buy. [ES][1][7661.0000][7610.7500][7861.0000][7610.7500][7861.0000][7610.2500]
+2026-09-16 04:48:59;autotrade.py;After buy. return rs = 1. Buy order id = [15]
+2026-09-16 04:53:00;autotrade.py;begin2[ES]
+2026-09-16 04:53:00;autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7660.5000]. LIMIT_PRICE_BUY=[7661.0000]. lastTradePrice=[nan]. lastAskPrice=[nan]. lastBidPrice=[nan]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7660.7500]. numContracts=[1]. stpLmtOrderPrice=[7610.2500]
+2026-09-16 04:53:00;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:53:00;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:53:00;autotrade.py;buy. [ES][1][7661.0000][7610.7500][7861.0000][7610.7500][7861.0000][7610.2500]
+2026-09-16 04:53:00;autotrade.py;After buy. return rs = 1. Buy order id = [20]
+2026-09-16 04:54:50;autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-16 04:54:50;autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-16 04:54:50;autotrade.py;begin2[ES]
+2026-09-16 04:54:51;autotrade.py;currPositionSize. [ES]. currPositionSize=[1.0]. LIMIT_PRICE_SELL=[7660.5000]. LIMIT_PRICE_BUY=[7661.0000]. lastTradePrice=[nan]. lastAskPrice=[nan]. lastBidPrice=[nan]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7660.7500]. numContracts=[1]. stpLmtOrderPrice=[7610.2500]
+2026-09-16 04:54:51;autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:54:51;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:54:51;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:54:51;autotrade.py;Pending List. Order Id: 21. Symbol: [ES]. Order status: [Submitted]
+2026-09-16 04:54:51;autotrade.py;Pending List. Order Id: 22. Symbol: [ES]. Order status: [Submitted]
+2026-09-16 04:55:51;autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-16 04:55:51;autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-16 04:55:51;autotrade.py;begin2[ES]
+2026-09-16 04:55:52;autotrade.py;currPositionSize. [ES]. currPositionSize=[1.0]. LIMIT_PRICE_SELL=[7660.5000]. LIMIT_PRICE_BUY=[7661.0000]. lastTradePrice=[nan]. lastAskPrice=[nan]. lastBidPrice=[nan]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7660.7500]. numContracts=[1]. stpLmtOrderPrice=[7610.2500]
+2026-09-16 04:55:52;autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:55:52;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 04:55:52;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 05:00:45;autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-16 05:00:45;autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-16 05:00:46;autotrade.py;begin2[ES]
+2026-09-16 05:00:46;autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7660.5000]. LIMIT_PRICE_BUY=[7661.0000]. lastTradePrice=[nan]. lastAskPrice=[nan]. lastBidPrice=[nan]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7660.7500]. numContracts=[1]. stpLmtOrderPrice=[7610.2500]
+2026-09-16 05:00:46;autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 05:00:46;autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 05:00:46;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 05:00:46;autotrade.py;Execution List. Order Id: 0. Symbol: NQ. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-16 05:00:46;autotrade.py;buy. [ES][1][7661.0000][7610.7500][7861.0000][7610.7500][7861.0000][7610.2500]
+2026-09-16 05:00:46;autotrade.py;After buy. return rs = 1. Buy order id = [27]
+2026-09-16 23:35:34;autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-16 23:35:35;autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-16 23:35:35;autotrade.py;begin2[ES]
+2026-09-16 23:35:36;autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7660.5000]. LIMIT_PRICE_BUY=[7661.0000]. lastTradePrice=[nan]. lastAskPrice=[nan]. lastBidPrice=[nan]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7660.7500]. numContracts=[1]. stpLmtOrderPrice=[7610.2500]
+2026-09-16 23:35:36;autotrade.py;buy. [ES][1][7661.0000][7610.7500][7861.0000][7610.7500][7861.0000][7610.2500]
+2026-09-16 23:35:36;autotrade.py;After buy. return rs = 1. Buy order id = [32]
+2026-09-17 00:37:51;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 00:37:51;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 00:37:51;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 00:37:52;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7684.0000]. LIMIT_PRICE_BUY=[7684.5000]. lastTradePrice=[nan]. lastAskPrice=[nan]. lastBidPrice=[nan]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7684.2500]. numContracts=[1]. stpLmtOrderPrice=[7633.7500]
+2026-09-17 00:37:52;VS_8101_autotrade.py;buy. [ES][1][7684.5000][7634.2500][7884.5000][7634.2500][7884.5000][7633.7500]
+2026-09-17 00:37:52;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [37]
+2026-09-17 00:41:56;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 00:41:56;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 00:41:57;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 00:41:57;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7684.0000]. LIMIT_PRICE_BUY=[7684.5000]. lastTradePrice=[7614.5000]. lastAskPrice=[7614.5000]. lastBidPrice=[7614.2500]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7684.2500]. numContracts=[1]. stpLmtOrderPrice=[7633.7500]
+2026-09-17 00:41:57;VS_8101_autotrade.py;buy. [ES][1][7684.5000][7634.2500][7884.5000][7634.2500][7884.5000][7633.7500]
+2026-09-17 00:41:57;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [42]
+2026-09-17 00:44:35;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 00:44:36;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 00:44:36;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 00:44:37;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7684.0000]. LIMIT_PRICE_BUY=[7684.5000]. lastTradePrice=[7612.5000]. lastAskPrice=[7612.5000]. lastBidPrice=[7612.2500]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7684.2500]. numContracts=[1]. stpLmtOrderPrice=[7633.7500]
+2026-09-17 00:44:37;VS_8101_autotrade.py;buy. [ES][1][7684.5000][7634.2500][7884.5000][7634.2500][7884.5000][7633.7500]
+2026-09-17 00:44:37;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [47]
+2026-09-17 00:46:19;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 00:46:19;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 00:46:19;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 00:46:20;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7684.0000]. LIMIT_PRICE_BUY=[7684.5000]. lastTradePrice=[7613.2500]. lastAskPrice=[7613.2500]. lastBidPrice=[7613.0000]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7684.2500]. numContracts=[1]. stpLmtOrderPrice=[7633.7500]
+2026-09-17 00:46:20;VS_8101_autotrade.py;buy. [ES][1][7684.5000][7634.2500][7884.5000][7634.2500][7884.5000][7633.7500]
+2026-09-17 00:46:20;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [52]
+2026-09-17 00:55:19;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 00:55:19;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 00:57:01;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 00:57:01;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 00:57:02;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 00:57:03;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7615.7500]. LIMIT_PRICE_BUY=[7616.2500]. lastTradePrice=[7616.0000]. lastAskPrice=[7616.2500]. lastBidPrice=[7615.7500]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7616.0000]. numContracts=[1]. stpLmtOrderPrice=[7565.5000]
+2026-09-17 00:57:03;VS_8101_autotrade.py;buy. [ES][1][7616.2500][7566.0000][7816.2500][7566.0000][7816.2500][7565.5000]
+2026-09-17 00:57:03;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [58]
+2026-09-17 00:59:37;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 00:59:37;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 00:59:45;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 00:59:54;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7615.7500]. LIMIT_PRICE_BUY=[7616.2500]. lastTradePrice=[nan]. lastAskPrice=[nan]. lastBidPrice=[nan]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7616.0000]. numContracts=[1]. stpLmtOrderPrice=[7565.5000]
+2026-09-17 00:59:54;VS_8101_autotrade.py;buy. [ES][1][7616.2500][7566.0000][7816.2500][7566.0000][7816.2500][7565.5000]
+2026-09-17 00:59:54;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [58]
+2026-09-17 01:03:04;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 01:03:04;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 01:03:05;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 01:03:05;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7612.5000]. LIMIT_PRICE_BUY=[7613.0000]. lastTradePrice=[7612.7500]. lastAskPrice=[7612.5000]. lastBidPrice=[7612.2500]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7612.7500]. numContracts=[1]. stpLmtOrderPrice=[7562.2500]
+2026-09-17 01:03:05;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:03:05;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:03:05;VS_8101_autotrade.py;buy. [ES][1][7613.0000][7562.7500][7813.0000][7562.7500][7813.0000][7562.2500]
+2026-09-17 01:03:05;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [66]
+2026-09-17 01:05:41;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 01:05:41;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 01:05:42;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 01:05:43;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7613.7500]. LIMIT_PRICE_BUY=[7614.2500]. lastTradePrice=[7614.0000]. lastAskPrice=[7614.2500]. lastBidPrice=[7614.0000]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7614.0000]. numContracts=[1]. stpLmtOrderPrice=[7563.5000]
+2026-09-17 01:05:43;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:05:43;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:05:43;VS_8101_autotrade.py;buy. [ES][1][7614.2500][7564.0000][7814.2500][7564.0000][7814.2500][7563.5000]
+2026-09-17 01:05:43;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [66]
+2026-09-17 01:06:48;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 01:06:48;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 01:06:49;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 01:06:50;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7614.0000]. LIMIT_PRICE_BUY=[7614.5000]. lastTradePrice=[7613.7500]. lastAskPrice=[7613.7500]. lastBidPrice=[7613.5000]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7614.2500]. numContracts=[1]. stpLmtOrderPrice=[7563.7500]
+2026-09-17 01:06:50;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:06:50;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:06:50;VS_8101_autotrade.py;buy. [ES][1][7614.5000][7564.2500][7814.5000][7564.2500][7814.5000][7563.7500]
+2026-09-17 01:06:50;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [66]
+2026-09-17 01:09:32;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 01:09:32;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 01:09:33;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 01:09:34;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7612.7500]. LIMIT_PRICE_BUY=[7613.2500]. lastTradePrice=[7613.0000]. lastAskPrice=[7613.2500]. lastBidPrice=[7613.0000]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7613.0000]. numContracts=[1]. stpLmtOrderPrice=[7562.5000]
+2026-09-17 01:09:34;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:09:34;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:09:34;VS_8101_autotrade.py;buy. [ES][1][7613.2500][7563.0000][7813.2500][7563.0000][7813.2500][7562.5000]
+2026-09-17 01:09:34;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [66]
+2026-09-17 01:19:20;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 01:19:20;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 01:19:22;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 01:19:22;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7609.5000]. LIMIT_PRICE_BUY=[7610.0000]. lastTradePrice=[7609.7500]. lastAskPrice=[7610.0000]. lastBidPrice=[7609.7500]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7609.7500]. numContracts=[1]. stpLmtOrderPrice=[7559.2500]
+2026-09-17 01:19:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:19:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:19:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:19:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:19:22;VS_8101_autotrade.py;buy. [ES][1][7610.0000][7559.7500][7810.0000][7559.7500][7810.0000][7559.2500]
+2026-09-17 01:19:22;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [74]
+2026-09-17 01:20:46;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 01:20:46;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 01:20:47;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 01:20:48;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7609.5000]. LIMIT_PRICE_BUY=[7610.0000]. lastTradePrice=[7609.7500]. lastAskPrice=[7610.0000]. lastBidPrice=[7609.7500]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7609.7500]. numContracts=[1]. stpLmtOrderPrice=[7559.2500]
+2026-09-17 01:20:48;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:20:48;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:20:48;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:20:48;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:20:48;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:20:48;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:20:48;VS_8101_autotrade.py;buy. [ES][1][7610.0000][7559.7500][7810.0000][7559.7500][7810.0000][7559.2500]
+2026-09-17 01:20:48;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [82]
+2026-09-17 01:26:11;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 01:26:11;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 01:26:12;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 01:26:12;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7678.2500]. LIMIT_PRICE_BUY=[7678.7500]. lastTradePrice=[7678.5000]. lastAskPrice=[7678.7500]. lastBidPrice=[7678.5000]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7678.5000]. numContracts=[1]. stpLmtOrderPrice=[7628.0000]
+2026-09-17 01:26:12;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:26:12;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:26:12;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:26:12;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:26:12;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:26:12;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:26:12;VS_8101_autotrade.py;buy. [ES][1][7678.7500][7628.5000][7878.7500][7628.5000][7878.7500][7628.0000]
+2026-09-17 01:26:12;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [90]
+2026-09-17 01:33:20;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 01:33:21;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 01:33:22;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 01:33:22;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7677.5000]. LIMIT_PRICE_BUY=[7678.0000]. lastTradePrice=[7677.7500]. lastAskPrice=[7677.7500]. lastBidPrice=[7677.5000]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7677.7500]. numContracts=[1]. stpLmtOrderPrice=[7627.2500]
+2026-09-17 01:33:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:33:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:33:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:33:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:33:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:33:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:33:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:33:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:33:22;VS_8101_autotrade.py;buy. [ES][1][7678.0000][7627.7500][7878.0000][7627.7500][7878.0000][7627.2500]
+2026-09-17 01:33:22;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [98]
+2026-09-17 01:39:58;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 01:39:59;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 01:39:59;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 01:40:00;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7680.5000]. LIMIT_PRICE_BUY=[7681.0000]. lastTradePrice=[7680.7500]. lastAskPrice=[7681.0000]. lastBidPrice=[7680.7500]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7680.7500]. numContracts=[1]. stpLmtOrderPrice=[7630.2500]
+2026-09-17 01:40:00;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:40:00;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:40:00;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:40:00;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:40:00;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:40:00;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:40:00;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:40:00;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:40:00;VS_8101_autotrade.py;buy. [ES][1][7681.0000][7630.7500][7881.0000][7630.7500][7881.0000][7630.2500]
+2026-09-17 01:40:00;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [106]
+2026-09-17 01:41:20;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 01:41:21;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 01:41:21;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 01:41:22;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7679.2500]. LIMIT_PRICE_BUY=[7679.7500]. lastTradePrice=[7679.5000]. lastAskPrice=[7679.7500]. lastBidPrice=[7679.5000]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7679.5000]. numContracts=[1]. stpLmtOrderPrice=[7629.0000]
+2026-09-17 01:41:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:41:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:41:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:41:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:41:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:41:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:41:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:41:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:41:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:41:22;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 01:41:22;VS_8101_autotrade.py;buy. [ES][1][7679.7500][7629.5000][7879.7500][7629.5000][7879.7500][7629.0000]
+2026-09-17 01:41:22;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [114]
+2026-09-17 22:00:02;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 22:00:03;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 22:00:04;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 22:00:04;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7694.2500]. LIMIT_PRICE_BUY=[7694.7500]. lastTradePrice=[7694.5000]. lastAskPrice=[7694.5000]. lastBidPrice=[7694.2500]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7694.5000]. numContracts=[1]. stpLmtOrderPrice=[7644.0000]
+2026-09-17 22:00:04;VS_8101_autotrade.py;buy. [ES][1][7694.7500][7644.5000][7894.7500][7644.5000][7894.7500][7644.0000]
+2026-09-17 22:00:04;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [122]
+2026-09-17 22:11:42;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 22:11:42;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 22:12:26;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 22:12:26;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 22:15:33;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 22:15:34;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 22:15:34;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 22:15:35;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[1.0]. LIMIT_PRICE_SELL=[7685.0000]. LIMIT_PRICE_BUY=[7685.5000]. lastTradePrice=[7685.2500]. lastAskPrice=[7685.5000]. lastBidPrice=[7685.2500]. buy1=[0]. sell1=[1]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[False]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7685.2500]. numContracts=[1]. stpLmtOrderPrice=[0.0000]
+2026-09-17 22:15:35;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:15:35;VS_8101_autotrade.py;Pending List. Order Id: 123. Symbol: [ES]. Order status: [PreSubmitted]
+2026-09-17 22:15:35;VS_8101_autotrade.py;Pending List. Order Id: 124. Symbol: [ES]. Order status: [Submitted]
+2026-09-17 22:15:35;VS_8101_autotrade.py;sell. [ES][1.0][7685.0000]
+2026-09-17 22:15:35;VS_8101_autotrade.py;cancelPendingOrder begin. [ES]
+2026-09-17 22:15:35;VS_8101_autotrade.py;cancelPendingOrder. compare symbol. input symbol=[ES]. pending symbol=[ES][PreSubmitted]
+2026-09-17 22:15:35;VS_8101_autotrade.py;cancelPendingOrder. order cancelled. symbol=[ES]. order id=[123]
+2026-09-17 22:15:35;VS_8101_autotrade.py;cancelPendingOrder. compare symbol. input symbol=[ES]. pending symbol=[ES][Submitted]
+2026-09-17 22:15:35;VS_8101_autotrade.py;cancelPendingOrder. order cancelled. symbol=[ES]. order id=[124]
+2026-09-17 22:15:35;VS_8101_autotrade.py;After sell. return rs = 1. Sell order id = [Trade(contract=Future(conId=515416632, symbol='ES', lastTradeDateOrContractMonth='20261218', multiplier='50', exchange='CME', currency='USD', localSymbol='ESZ6', tradingClass='ES'), order=LimitOrder(orderId=130, clientId=1, action='SELL', totalQuantity=1, lmtPrice=7685.0, tif='Day'), orderStatus=OrderStatus(orderId=130, status='PendingSubmit', filled=0.0, remaining=0.0, avgFillPrice=0.0, permId=0, parentId=0, lastFillPrice=0.0, clientId=0, whyHeld='', mktCapPrice=0.0), fills=[], log=[TradeLogEntry(time=datetime.datetime(2026, 9, 17, 14, 15, 35, 931039, tzinfo=datetime.timezone.utc), status='PendingSubmit', message='', errorCode=0)], advancedError='')]
+2026-09-17 22:17:29;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 22:17:29;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 22:17:31;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 22:17:32;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7683.0000]. LIMIT_PRICE_BUY=[7683.5000]. lastTradePrice=[7683.2500]. lastAskPrice=[7683.2500]. lastBidPrice=[7683.0000]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7683.2500]. numContracts=[1]. stpLmtOrderPrice=[7632.7500]
+2026-09-17 22:17:32;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:17:32;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:17:32;VS_8101_autotrade.py;buy. [ES][1][7683.5000][7633.2500][7883.5000][7633.2500][7883.5000][7632.7500]
+2026-09-17 22:17:32;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [136]
+2026-09-17 22:30:49;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 22:30:49;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 22:34:57;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 22:34:58;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 22:34:58;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 22:34:59;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[1.0]. LIMIT_PRICE_SELL=[7700.5000]. LIMIT_PRICE_BUY=[7701.0000]. lastTradePrice=[7700.7500]. lastAskPrice=[7700.7500]. lastBidPrice=[7700.5000]. buy1=[0]. sell1=[1]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[False]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7700.7500]. numContracts=[1]. stpLmtOrderPrice=[0.0000]
+2026-09-17 22:34:59;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:34:59;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:34:59;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:34:59;VS_8101_autotrade.py;Pending List. Order Id: 137. Symbol: [ES]. Order status: [PreSubmitted]
+2026-09-17 22:34:59;VS_8101_autotrade.py;Pending List. Order Id: 138. Symbol: [ES]. Order status: [Submitted]
+2026-09-17 22:34:59;VS_8101_autotrade.py;sell. [ES][1.0][7700.5000]
+2026-09-17 22:34:59;VS_8101_autotrade.py;cancelPendingOrder begin. [ES]
+2026-09-17 22:34:59;VS_8101_autotrade.py;cancelPendingOrder. compare symbol. input symbol=[ES]. pending symbol=[ES][PreSubmitted]
+2026-09-17 22:34:59;VS_8101_autotrade.py;cancelPendingOrder. order cancelled. symbol=[ES]. order id=[137]
+2026-09-17 22:34:59;VS_8101_autotrade.py;cancelPendingOrder. compare symbol. input symbol=[ES]. pending symbol=[ES][Submitted]
+2026-09-17 22:34:59;VS_8101_autotrade.py;cancelPendingOrder. order cancelled. symbol=[ES]. order id=[138]
+2026-09-17 22:34:59;VS_8101_autotrade.py;After sell. return rs = 1. Sell order id = [144]
+2026-09-17 22:36:47;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 22:36:47;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 22:36:48;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 22:36:49;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7700.5000]. LIMIT_PRICE_BUY=[7701.0000]. lastTradePrice=[7700.7500]. lastAskPrice=[7700.7500]. lastBidPrice=[7700.5000]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7700.7500]. numContracts=[1]. stpLmtOrderPrice=[7650.2500]
+2026-09-17 22:36:49;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:36:49;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:36:49;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:36:49;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:36:49;VS_8101_autotrade.py;buy. [ES][1][7701.0000][7650.7500][7901.0000][7650.7500][7901.0000][7650.2500]
+2026-09-17 22:36:49;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [150]
+2026-09-17 22:37:08;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-17 22:37:08;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-17 22:37:09;VS_8101_autotrade.py;begin2[ES]
+2026-09-17 22:37:10;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[1.0]. LIMIT_PRICE_SELL=[7701.5000]. LIMIT_PRICE_BUY=[7702.0000]. lastTradePrice=[7701.7500]. lastAskPrice=[7701.7500]. lastBidPrice=[7701.5000]. buy1=[0]. sell1=[1]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[False]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7701.7500]. numContracts=[1]. stpLmtOrderPrice=[0.0000]
+2026-09-17 22:37:10;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:37:10;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:37:10;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:37:10;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:37:10;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-17 22:37:10;VS_8101_autotrade.py;Pending List. Order Id: 151. Symbol: [ES]. Order status: [PreSubmitted]
+2026-09-17 22:37:10;VS_8101_autotrade.py;Pending List. Order Id: 152. Symbol: [ES]. Order status: [Submitted]
+2026-09-17 22:37:10;VS_8101_autotrade.py;sell. [ES][1.0][7701.5000]
+2026-09-17 22:37:10;VS_8101_autotrade.py;cancelPendingOrder begin. [ES]
+2026-09-17 22:37:10;VS_8101_autotrade.py;cancelPendingOrder. compare symbol. input symbol=[ES]. pending symbol=[ES][PreSubmitted]
+2026-09-17 22:37:10;VS_8101_autotrade.py;cancelPendingOrder. order cancelled. symbol=[ES]. order id=[151]
+2026-09-17 22:37:10;VS_8101_autotrade.py;cancelPendingOrder. compare symbol. input symbol=[ES]. pending symbol=[ES][Submitted]
+2026-09-17 22:37:10;VS_8101_autotrade.py;cancelPendingOrder. order cancelled. symbol=[ES]. order id=[152]
+2026-09-17 22:37:10;VS_8101_autotrade.py;After sell. return rs = 1. Sell order id = [158]
+2026-09-18 05:42:10;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-18 05:42:10;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-18 05:42:19;VS_8101_autotrade.py;begin2[ES]
+2026-09-18 05:42:27;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7702.0000]. LIMIT_PRICE_BUY=[7702.5000]. lastTradePrice=[7702.2500]. lastAskPrice=[-1.0000]. lastBidPrice=[-1.0000]. buy1=[0]. sell1=[0]. short1=[1]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7702.2500]. numContracts=[1]. stpLmtOrderPrice=[7753.0000]
+2026-09-18 05:42:27;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-18 05:42:27;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-18 05:42:27;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-18 05:42:27;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-18 05:42:27;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-18 05:42:27;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-18 05:42:27;VS_8101_autotrade.py;short. [ES][1][7702.0000][7752.5000][7502.2500][7752.5000][7502.2500][7753.0000]
+2026-09-18 05:42:27;VS_8101_autotrade.py;After short. return rs = 1. Short order id = [164]
+2026-09-18 05:49:30;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-18 05:49:30;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-18 05:49:32;VS_8101_autotrade.py;try call GetPositionSize again. sell/cover but GetPositionSize return 0 position
+2026-09-18 05:49:33;VS_8101_autotrade.py;try call GetPositionSize again. sell/cover but GetPositionSize return 0 position
+2026-09-18 05:49:33;VS_8101_autotrade.py;try 3 times. sell or cover but currPositionSize is still 0, why???. reconnect and then try another 3 times
+2026-09-18 05:49:34;VS_8101_autotrade.py;try call GetPositionSize again 2. sell/cover but GetPositionSize return 0 position
+2026-09-18 05:49:35;VS_8101_autotrade.py;try call GetPositionSize again 2. sell/cover but GetPositionSize return 0 position
+2026-09-18 05:49:35;VS_8101_autotrade.py;try 3 times. sell or cover but currPositionSize is still 0, why???. Dummed all positions
+2026-09-18 05:49:35;VS_8101_autotrade.py;Symbol name[USD]
+2026-09-18 21:17:41;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-18 21:17:42;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-18 21:17:43;VS_8101_autotrade.py;begin2[ES]
+2026-09-18 21:17:43;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7700.2500]. LIMIT_PRICE_BUY=[7700.7500]. lastTradePrice=[7700.5000]. lastAskPrice=[7700.5000]. lastBidPrice=[7700.2500]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7700.5000]. numContracts=[1]. stpLmtOrderPrice=[7650.0000]
+2026-09-18 21:17:43;VS_8101_autotrade.py;buy. [ES][1][7700.7500][7650.5000][7900.7500][7650.5000][7900.7500][7650.0000]
+2026-09-18 21:17:43;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [172]
+2026-09-18 21:20:56;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-18 21:20:56;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-18 21:20:57;VS_8101_autotrade.py;begin2[ES]
+2026-09-18 21:20:57;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[1.0]. LIMIT_PRICE_SELL=[7701.5000]. LIMIT_PRICE_BUY=[7702.0000]. lastTradePrice=[7701.7500]. lastAskPrice=[7702.0000]. lastBidPrice=[7701.7500]. buy1=[0]. sell1=[1]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[False]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7701.7500]. numContracts=[1]. stpLmtOrderPrice=[0.0000]
+2026-09-18 21:20:57;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-18 21:20:57;VS_8101_autotrade.py;Pending List. Order Id: 173. Symbol: [ES]. Order status: [PreSubmitted]
+2026-09-18 21:20:57;VS_8101_autotrade.py;Pending List. Order Id: 174. Symbol: [ES]. Order status: [Submitted]
+2026-09-18 21:20:57;VS_8101_autotrade.py;sell. [ES][1.0][7701.5000]
+2026-09-18 21:20:57;VS_8101_autotrade.py;cancelPendingOrder begin. [ES]
+2026-09-18 21:20:57;VS_8101_autotrade.py;cancelPendingOrder. compare symbol. input symbol=[ES]. pending symbol=[ES][PreSubmitted]
+2026-09-18 21:20:57;VS_8101_autotrade.py;cancelPendingOrder. order cancelled. symbol=[ES]. order id=[173]
+2026-09-18 21:20:57;VS_8101_autotrade.py;cancelPendingOrder. compare symbol. input symbol=[ES]. pending symbol=[ES][Submitted]
+2026-09-18 21:20:57;VS_8101_autotrade.py;cancelPendingOrder. order cancelled. symbol=[ES]. order id=[174]
+2026-09-18 21:20:58;VS_8101_autotrade.py;After sell. return rs = 1. Sell order id = [180]
+2026-09-18 21:24:13;VS_8101_autotrade.py;connect attempt 1/3 to 127.0.0.1:7497 clientId=1
+2026-09-18 21:24:13;VS_8101_autotrade.py;connect OK to 127.0.0.1:7497 clientId=1
+2026-09-18 21:24:15;VS_8101_autotrade.py;begin2[ES]
+2026-09-18 21:24:16;VS_8101_autotrade.py;currPositionSize. [ES]. currPositionSize=[0.0]. LIMIT_PRICE_SELL=[7701.1234]. LIMIT_PRICE_BUY=[7701.6234]. lastTradePrice=[7701.2500]. lastAskPrice=[7701.5000]. lastBidPrice=[7701.2500]. buy1=[1]. sell1=[0]. short1=[0]. cover1=[0]. IS_PERFORM_BUY=[True]. IS_PERFORM_SELL=[True]. isPerformProfitTaking=[True]. IS_PERFORM_SHORT=[True]. IS_PERFORM_COVER=[True]. maxNumTickSize4BuyShortSlippage=[1]. ibControllerTickSize=[2500]. actualFutureTickSize=[0.25]. maxAllowSlippage=[0.2500]. limitPrice=[7701.3734]. numContracts=[1]. stpLmtOrderPrice=[7650.7500]
+2026-09-18 21:24:16;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-18 21:24:16;VS_8101_autotrade.py;Execution List. Order Id: 0. Symbol: ES. Filled: 1.0. Avg. price: 0.0. Order status: [Filled]
+2026-09-18 21:24:16;VS_8101_autotrade.py;buy. [ES][1][7701.6234][7651.2500][7901.5000][7651.2500][7901.5000][7650.7500]
+2026-09-18 21:24:16;VS_8101_autotrade.py;After buy. return rs = 1. Buy order id = [186]

@@ -1,9 +1,9 @@
 """
-autotrade.py
-============
+VS_8101_autotrade.py
+===================
 Python port of the AmiBroker AFL trade-execution function `doTrade00`
 (autoTrade.afl lines 1480-2176) as function `doTrade0`, per requirement
-autotradeURV1.txt / L8001_autotrade_UR_V1.txt (see autotradeV1.md).
+autotradeURV1.txt / L8001_autotrade_UR_V1.txt (see VS_8101_autotradeV1.md).
 
 Safety: test against paper TWS/Gateway only (port 7497 / 4002); never
 transmit real orders from tests. autoTrade.afl remains the single source
@@ -16,7 +16,14 @@ import time
 from ib_insync import IB, LimitOrder, MarketOrder, StopLimitOrder, StopOrder
 
 LOG_FILE = "TWSTrade111.log"
-PROGRAM_NAME = "autotrade.py"
+PROGRAM_NAME = "VS_8101_autotrade.py"
+
+
+def _ib_is_connected(ib):
+    # ib_insync >= 1.0 renamed isConnected() -> is_connected(); support both
+    if hasattr(ib, "is_connected"):
+        return bool(ib.is_connected())
+    return bool(ib.isConnected())
 
 
 class AutoTrade:
@@ -44,20 +51,32 @@ class AutoTrade:
         client_id = self.client_id if client_id is None else client_id
         for attempt in range(1, retries + 1):
             try:
-                if self.ib.is_connected():
+                if _ib_is_connected(self.ib):
+                    self._set_delayed_market_data()
                     return True
                 self.write_line(f"connect attempt {attempt}/{retries} to "
                                 f"{host}:{port} clientId={client_id}")
                 self.ib.connect(host, port, clientId=client_id)
-                if self.ib.is_connected():
+                if _ib_is_connected(self.ib):
                     self.write_line(f"connect OK to {host}:{port} "
                                     f"clientId={client_id}")
+                    self._set_delayed_market_data()
                     return True
                 self.write_line(f"connect attempt {attempt}/{retries}: not connected")
             except Exception as e:
                 self.write_line(f"connect error attempt {attempt}/{retries}: [{e}]")
             time.sleep(sleep_sec)
-        return bool(self.ib.is_connected())
+        return bool(_ib_is_connected(self.ib))
+
+    def _set_delayed_market_data(self):
+        """Accounts without a live subscription: request delayed market data
+        so log-only quote snapshots do not raise errors 354/10168."""
+        req = getattr(self.ib, "reqMarketDataType", None)
+        if req is not None:
+            try:
+                req(3)  # 3 = delayed data when live is not subscribed
+            except Exception as e:
+                self.write_line(f"reqMarketDataType(3) error. [{e}]")
 
     # ---------------------------------------------------------------
     # AFL writeline(s1): append <Now>;autoTrade.afl;<msg> to TWSTrade111.log
@@ -152,13 +171,23 @@ class AutoTrade:
     # ---------------------------------------------------------------
     # AFL execution/pending list dumps, lines 1770-1793
     # ---------------------------------------------------------------
+    @staticmethod
+    def _fill_quantity(fill):
+        # ib_insync 1.0: fill.quantity; 0.9.x: fill.execution.shares
+        q = getattr(fill, "quantity", None)
+        if q is None:
+            q = getattr(getattr(fill, "execution", None), "shares", 0)
+        return float(q or 0)
+
     def log_order_status(self):
         for trade in self.ib.trades():
             if trade.fills:
-                filled = sum(f.quantity for f in trade.fills)
+                filled = sum(self._fill_quantity(f) for f in trade.fills)
+                avg = getattr(trade.orderStatus, "avgFillPrice",
+                              getattr(trade, "avgFillPrice", 0.0))
                 self.write_line(f"Execution List. Order Id: {trade.order.orderId}. "
                                 f"Symbol: {trade.contract.symbol}. Filled: {filled}. "
-                                f"Avg. price: {trade.avgFillPrice}. "
+                                f"Avg. price: {avg}. "
                                 f"Order status: [{trade.orderStatus.status}]")
         for trade in self.ib.openTrades():
             self.write_line(f"Pending List. Order Id: {trade.order.orderId}. "
@@ -169,14 +198,32 @@ class AutoTrade:
     # AFL GetRTData("Last"/"Ask"/"Bid"): fetched for logging only, the
     # bid/ask-based limit logic is commented out in the AFL
     # ---------------------------------------------------------------
-    def get_rt_data(self, contract):
+    def get_rt_data(self, contract, wait_sec=8.0):
+        """Last/Ask/Bid snapshot (delayed data when live is not subscribed).
+        Polls up to `wait_sec` seconds for the first valid delayed ticks."""
+        import math
+
+        quotes = {"last": float("nan"), "ask": float("nan"), "bid": float("nan")}
+
+        def _valid(v):
+            return v is not None and not (isinstance(v, float) and math.isnan(v)) and v > 0
+
+        req = getattr(self.ib, "reqMktData", None)
+        cancel = getattr(self.ib, "cancelMktData", None)
+        if req is None:
+            return quotes
         try:
-            ticker = self.ib.reqMktData(contract, "", False, False)
-            self.ib.sleep(0.5)
-            return {"last": ticker.last, "ask": ticker.ask, "bid": ticker.bid}
+            ticker = req(contract, "", False, False)
+            for _ in range(int(wait_sec / 0.5)):
+                self.ib.sleep(0.5)
+                quotes = {"last": ticker.last, "ask": ticker.ask, "bid": ticker.bid}
+                if _valid(ticker.last) and _valid(ticker.bid) and _valid(ticker.ask):
+                    break
+            if cancel is not None:
+                cancel(contract)
         except Exception as e:
             self.write_line(f"get_rt_data error. [{e}]")
-            return {"last": 0.0, "ask": 0.0, "bid": 0.0}
+        return quotes
 
 
 def _round_child_prices(price, tick):
@@ -241,6 +288,8 @@ def doTrade0(auto_trade, contract, buy, sell, short, cover, limit_price,
                               f"IBcStatus = [0]")
         return 0
     ib = auto_trade.ib
+    if not getattr(contract, "conId", 0):
+        ib.qualifyContracts(contract)
     symbol1 = contract.symbol
     rs = 0
     quota = 20
@@ -305,7 +354,7 @@ def doTrade0(auto_trade, contract, buy, sell, short, cover, limit_price,
     PROFIT_TAKING_PRICE_SHORT = profit_take_price
     is_perform_profit_taking = profit_take_price > 0
 
-    if not ib.is_connected():
+    if not _ib_is_connected(ib):
         auto_trade.write_line("Cannot connect IB. IBcStatus = [0]")
         return rs
 
@@ -344,10 +393,11 @@ def doTrade0(auto_trade, contract, buy, sell, short, cover, limit_price,
             ib.sleep(0.5)
         qty = int(abs(curr_position_size))
         if is_mkt_order:
-            order_id = ib.placeOrder(contract, MarketOrder("SELL", qty, tif=tif))
+            sell_trade = ib.placeOrder(contract, MarketOrder("SELL", qty, tif=tif))
         else:
-            order_id = ib.placeOrder(
+            sell_trade = ib.placeOrder(
                 contract, LimitOrder("SELL", qty, _round_child_prices(LIMIT_PRICE_SELL, tick), tif=tif))
+        order_id = sell_trade.order.orderId
         auto_trade.write_line(f"After sell. return rs = 1. Sell order id = [{order_id}]")
         rs = 1
 
@@ -361,10 +411,11 @@ def doTrade0(auto_trade, contract, buy, sell, short, cover, limit_price,
             ib.sleep(0.5)
         qty = int(abs(curr_position_size))
         if is_mkt_order:
-            order_id = ib.placeOrder(contract, MarketOrder("BUY", qty, tif=tif))
+            cover_trade = ib.placeOrder(contract, MarketOrder("BUY", qty, tif=tif))
         else:
-            order_id = ib.placeOrder(
+            cover_trade = ib.placeOrder(
                 contract, LimitOrder("BUY", qty, _round_child_prices(LIMIT_PRICE_BUY, tick), tif=tif))
+        order_id = cover_trade.order.orderId
         auto_trade.write_line(f"After cover. return rs = 1. Cover order id = [{order_id}]")
         rs = 1
 

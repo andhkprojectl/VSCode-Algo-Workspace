@@ -3,7 +3,7 @@ S0001_GeneralFeature_2_glm.py
 =============================
 Feature engineering for 1-minute ES futures. Derived from
 S0001_GeneralFeature_1_kimi.py per requirement
-VS_8000_Strategy/VS_0001_GeneralStrategy/S0001_GeneralFeature_2_ur.txt.
+VS_8000_Strategy/VS_4001_GeneralStrategy/S0001_GeneralFeature_2_ur.txt.
 
 Changes vs S0001_GeneralFeature_1_kimi.py:
 
@@ -58,7 +58,7 @@ import pandas as pd
 import mysql.connector
 
 OUTPUT_DIR = os.path.join(
-    r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile", "VS_0001_GeneralStrategy")
+    r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile", "VS_4001_GeneralStrategy")
 
 
 # ===========================================================================

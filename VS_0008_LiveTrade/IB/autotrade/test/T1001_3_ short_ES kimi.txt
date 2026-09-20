@@ -1,0 +1,3 @@
+please generate py program IB\autotrade\test\T1001_3_ short_ES_glm.py
+call autotrade.py function dotrade0, short 1 contract CME future ES
+Parameter can reference T1001_1_buy_ES.py

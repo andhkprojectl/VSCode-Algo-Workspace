@@ -49,9 +49,9 @@ if __name__ == "__main__":
         # symbolName="RTY", # Russell e-mini future continuous contract
         # symbolName="YM",    # DOW e-mini future continuous contract        
         # startDate="20251001",
-        startDate="20250701",
+        startDate="20260905",
         startTime="0000",
-        endDate="20250831",
+        endDate="20260920",
         endTime="2359",
         period1=1,
         tickerType = "FU",  # tickerType: "ST" for stock, "FU" for future

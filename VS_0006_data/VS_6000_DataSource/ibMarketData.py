@@ -61,8 +61,8 @@ def getAllTypesTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime,
     # 1. Handle Connection
     if conn1 is None or not conn1.isConnected():
         conn1 = IB()
-        conn1.connect('127.0.0.1', 4002, clientId=1) # IB gateway (paper)
-        # conn1.connect('127.0.0.1', 7497, clientId=1) # IB TWS (paper)
+        # conn1.connect('127.0.0.1', 4002, clientId=1) # IB gateway (paper)
+        conn1.connect('127.0.0.1', 7497, clientId=1) # IB TWS (paper)
 
     # 2. Parse Dates and Times (interpreted as US/Eastern, matching DB timestamps)
     start_time_clean = startTime.replace(':', '')

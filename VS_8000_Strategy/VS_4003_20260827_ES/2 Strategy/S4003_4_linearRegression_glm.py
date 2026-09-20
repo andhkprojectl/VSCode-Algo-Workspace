@@ -57,7 +57,7 @@ except ImportError:
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _FEATURES_DIR = os.path.normpath(os.path.join(
-    _HERE, '..', '..', 'VS_0001_GeneralStrategy'))
+    _HERE, '..', '..', 'VS_4001_GeneralStrategy'))
 for _p in (_HERE, _FEATURES_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)

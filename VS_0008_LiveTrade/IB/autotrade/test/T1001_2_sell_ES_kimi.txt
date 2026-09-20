@@ -1,0 +1,13 @@
+- please generate py program IB\autotrade\test\T1001_2_sell_ES_kimi.py
+- call autotrade.py function dotrade0, if there is 1 contract CME future ES position open sell this 1 contract
+-- Parameter:
+    - sell = 1
+    - buy, short, cover = 0
+    - limit_price = get current price
+    - num_contracts = 1
+    - ib_controller_tick_size = 2500
+    - max_num_tick_size4_buy_short_slippage = 1
+    - port = 7497
+    - host = "127.0.0.1"
+    - connect_retries = 3
+    

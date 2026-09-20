@@ -20,7 +20,7 @@ Pipeline:
      direction, entry price and exit price as LABELS alongside the sample
      (never used as features - unknown at decision time).
   3. Compute features (see build_features, list following the style of
-     VS_0001_GeneralStrategy/S0001_GeneralFeature_2_glm.py) at each trade's
+     VS_4001_GeneralStrategy/S0001_GeneralFeature_2_glm.py) at each trade's
      SIGNAL bar (entry_bar - 1, the last completed bar when the enter/skip
      decision is made). All features are causal (past/current bars only).
   4. Label each base trade: y = 1 if trade P&L (net) > 0.

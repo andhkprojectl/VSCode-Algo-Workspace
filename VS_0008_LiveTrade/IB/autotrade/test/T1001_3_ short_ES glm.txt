@@ -1,0 +1,2 @@
+please generate py program IB\autotrade\test\T1001_4_cover_ES_glm.py
+call autotrade.py function dotrade0, if there is open position of 1 CME future ES contract, cover the contract

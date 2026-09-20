@@ -1,0 +1,22 @@
+please generate py program IB\autotrade\test\T1001_1_ buy_ES.py
+call autotrade.py function dotrade0, buy 1 contract CME future ES
+Parameter:
+    - buy = 1
+    - sell, short, cover = 0
+    - limit_price = last bar close price
+    - stop_loss_price = last bar close price - 50
+    - profit_take_price = last bar close price + 200
+    - num_contracts = 1
+    - ib_controller_tick_size = 2500
+    - is_intra_day = True
+    - is_mkt_order = false
+    - max_num_tick_size4_buy_short_slippage = 1
+    - max_num_tick_size4_stp_lmt_order_slippage = 2
+    - symbol_type = "ES"
+    - contract = Future("ES", "202609", "CME")
+    - auto_trade = None
+    - port = 7497
+    - host = "127.0.0.1"
+    - client_id = 1
+    - connect_retries = 3
+    - connect_sleep_sec = 2

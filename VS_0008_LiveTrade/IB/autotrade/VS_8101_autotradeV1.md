@@ -1,7 +1,7 @@
 ## Requirement: autoTrade V1 (per autotradeURV1.txt / L8001_autotrade_UR_V1.txt)
 
 Convert the AmiBroker AFL trade-execution function `doTrade00` to Python function
-`doTrade0` in a new program `IB\autotrade\autotrade.py`, using ib_insync.
+`doTrade0` in a new program `IB\autotrade\VS_8101_autotrade.py`, using ib_insync.
 
 **Original requirement (verbatim)**
 1. IB\autotrade\amibroker\autoTrade.afl is amibroker afl program
@@ -17,7 +17,8 @@ Convert the AmiBroker AFL trade-execution function `doTrade00` to Python functio
   connected to the IB Gateway, default port 4002, with retry logic:
   `connect_retries` attempts, `connect_sleep_sec` between attempts; a raw
   ib_insync `IB` instance is also accepted and wrapped), and `ensure_connected`
-  reconnects with the same retry logic when disconnected; position size via
+  reconnects with the same retry logic when disconnected; the contract is
+  qualified automatically after connect when it has no conId; position size via
   GetPositionSize (+long/-short/0) with the retry+reconnect rule when sell/cover
   is requested but size reads 0; exits first (`cancel_pending_order` then MKT/LMT
   sell/cover of the current position), then bracket entries: parent LMT/MKT
@@ -48,9 +49,9 @@ Convert the AmiBroker AFL trade-execution function `doTrade00` to Python functio
   cancelled) and the execution/pending list status dump (`log_order_status`).
 
 **Implementation steps**
-1. Create `VS_0008_LiveTrade/IB/autotrade/autotrade.py` with an `AutoTrade` class:
+1. Create `VS_0008_LiveTrade/IB/autotrade/VS_8101_autotrade.py` with an `AutoTrade` class:
    holds the connected `ib_insync.IB` (default host 127.0.0.1, port 4002 IB
-   Gateway), `write_line(message)` appending `<timestamp>;autotrade.py;<message>`
+   Gateway), `write_line(message)` appending `<timestamp>;VS_8101_autotrade.py;<message>`
    to `TWSTrade111.log` (AFL format: `Now();autoTrade.afl;<msg>`),
    `ensure_connected` (connect/retry gate: `connect_retries` attempts with
    `connect_sleep_sec` between attempts), and methods
@@ -83,7 +84,7 @@ Convert the AmiBroker AFL trade-execution function `doTrade00` to Python functio
    where the AFL checks `ibc.IsConnected()`.
 6. Convenience wrappers `do_trade_stock0(...)` / `do_trade_future0(...)`
    mirroring the AFL wrappers (symbol_type 2 / 1).
-7. Logging: mirror writeline - append `<timestamp>;autotrade.py;<message>` to
+7. Logging: mirror writeline - append `<timestamp>;VS_8101_autotrade.py;<message>` to
    `TWSTrade111.log` (AFL writes `Now();autoTrade.afl;<msg>`).
 8. Return: `doTrade0` returns 1 if any order action was placed, else 0.
 9. Structural reference only:
@@ -91,7 +92,7 @@ Convert the AmiBroker AFL trade-execution function `doTrade00` to Python functio
    `autoTrade.afl` remains the single source of truth.
 
 **AFL -> Python mapping**
-| AFL (autoTrade.afl) | Python (autotrade.py) |
+| AFL (autoTrade.afl) | Python (VS_8101_autotrade.py) |
 |---|---|
 | `writeline(s1)` -> append TWSTrade111.log | `AutoTrade.write_line(msg)` |
 | `GetTradingInterface("IB")` / `ibc.IsConnected()` | `ib_insync.IB` / `ib.isConnected()` |
@@ -155,7 +156,7 @@ Returns `1` if an order was placed, else `0`.
 **Usage example (IB Gateway paper)**
 ```python
 from ib_insync import Stock
-from autotrade import AutoTrade, doTrade0
+from VS_8101_autotrade import AutoTrade, doTrade0
 
 at = AutoTrade(host='127.0.0.1', port=4002, client_id=1)  # IB Gateway paper
 contract = Stock('AAPL', 'SMART', 'USD')
@@ -184,7 +185,7 @@ rs = doTrade0(None, contract,
 ```
 
 **Verification**
-1. `python -m py_compile autotrade.py` passes.
+1. `python -m py_compile VS_8101_autotrade.py` passes.
 2. `doTrade0` exists with the full parameter set; unit-check
    `get_nearest_round_to_price` (tick 0.25): 256.45 -> 256.50 type 1
    (ceil closer); 256.55 -> 256.55 type 1 (floor closer - AFL quirk, see
