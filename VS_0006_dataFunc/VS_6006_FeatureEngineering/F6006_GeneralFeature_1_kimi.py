@@ -1,4 +1,4 @@
-import pandas as pd
+F6006_GeneralFeature_1_kimi.pyimport pandas as pd
 import numpy as np
 from scipy.stats import linregress, skew, kurtosis
 

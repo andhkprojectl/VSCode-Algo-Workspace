@@ -1,0 +1,71 @@
+"I am starting a new web application project. My stack will be React (Vite, TypeScript, Tailwind CSS) for the frontend, Node.js with Express and TypeScript for the backend, and PostgreSQL with Prisma. Generate a structured CONTEXT.md file outlining project architecture, coding standards, directory conventions, and error-handling rules."
+
+
+please provide step how do i create md files? please give sample md file.  i want to build a project from scratch to have algo trade stragey. CME ES future. 1 minute time frame. data source read from interactive broker (IB). After get data from IB do below
+1) if not live trade, save data to local database
+2) save strategy in individual class strategy1
+3) backtest using strategy1. data source from local database. backtest may do multiple time with different period, e.g. 3 months, 6 months, 1 year
+4) if 3) backtest pass, do walkforward test using strategy1. walkforward test may do multiple time with different period, e.g. 3 months, 6 months, 1 year
+5) if 4) pass, save walkforward parameter. do live trade. get data from IB using reqHistoricalData, keepUpToDate=true, save data to local dataframe variable, run stratgy1 when call back function is triggered, if buy/short/sell/cover signal triggered, send buy/short/sell/cover signal to IB to place order
+
+
+
+Review @docs/PRD.md
+
+please rename VS_4000_Strategy\VS_8001_20260204_NVDA to VS_4000_Strategy\VS_4001_20260204_NVDA and rename VS_4000_Strategy\VS_8002_20260620_NVDA to VS_4000_Strategy\VS_4002_20260620_NVDA. Update any file in workspace that access files or sub-folder from the folder
+
+
+please rename VS_4000_Strategy to VS_4000_strategy (strategy lowercase) and rename VS_0008_LiveTrade to VS_0008_liveTrade (livetrade lowercase). Update any file in workspace that access files or sub-folder from the folder
+
+
+please rename VS_4000_Strategy\VS_4001_20260204_NVDA to VS_4000_Strategy\VS_4004_20260204_NVDA. Update any file in workspace that access files or sub-folder from the folder
+
+
+
+under folder VS_6005_GetLiveTradeData, VS_6005_2_1min_glm.txt describe VS_6005_1_1min_glm.py. please change VS_6005_2_1min_glm.txt to mark down file format and rename VS_6005_2_1min_glm.txt to VS_6005_2_1min_glm.md (no need to keep file VS_6005_2_1min_glm.txt)
+
+under folder VSCode Algo Workspace\VS_0008_liveTrade\IB\autotrade, L8001_autotrade_UR_V1.txt, L8001_autotrade_UR_V2.txt, L8001_autotrade_UR_V3.txt describe VS_8101_autotrade.py. Please consolidate content of 3 txt file into 1 VS_8101_autotrade.md mark down file and remove the 3 txt files
+
+
+under folder VS_4001_GeneralStrategy, S0001_GeneralFeature_2_ur V1.txt, S0001_GeneralFeature_2_ur V2.txt describe S0001_GeneralFeature_1_kimi.py. Please understand 2 txt files and consolidate content txt files into 1 S0001_GeneralFeature_2_glm.md file, in mark down file format, then remove the 2 txt files
+
+
+under folder VS_4004_20260204_NVDA\1 Prompt, prompt_backtest_S8001_V1.md, prompt_backtest_S8001_V2.md, prompt_backtest_S8001_V3.md, prompt_backtest_S8001_V4.md, prompt_backtest_S8001_V5.md, prompt_backtest_S8001_V6.md describe VS_4004_20260204_NVDA/3 BackTest/backtest_S8004_v1.py. Please understand 6 md files and consolidate content into 1 prompt_backtest_S8001.md, in mark down file format, then remove the 6 md files
+
+
+please understand content of VS_4004_20260204_NVDA\1 Prompt\prompt_lookAheadTest_S8001_V1.md and update to mark down format
+please understand content of VS_4004_20260204_NVDA\1 Prompt\prompt_montecarlo_S8001_V1.md and update to mark down format
+
+
+
+
+under folder VS_4004_20260204_NVDA\1 Prompt, prompt_strategy_S8001_V1.md, prompt_strategy_S8001_V2.md, prompt_strategy_S8001_V3.md describe VS_4000_strategy/VS_4004_20260204_NVDA/1 Prompt And Strategy/strategyIRB1000_V1.py. Please understand 3 md files and consolidate content into 1 prompt_strategy_S8001.md, in mark down file format, then remove the 3 md files
+
+under folder VSCode Algo Workspace\VS_0007_dbAndFile\mariaDB, requirement1.txt, requirement2.txt describe operation to MariaDB. Please understand 2 txt files and consolidate content into 1 mariaDb.md, in mark down file format, then remove the 2 txt files
+
+under VSCode Algo Workspace\VS_0007_dbAndFile\mariaDB, rename IBDb.py to mariaDb.py. Modify any file within workspace that access this file
+
+
+under VSCode Algo Workspace\VS_0007_dbAndFile\mariaDB, rename IBDb.py to mariaDb.py. Modify any file within workspace that access this file
+
+under folder VS_4000_strategy\VS_4004_20260204_NVDA, rename folder "1 Prompt" to "1 Prelimary Test", "3 OtherTest" to "5 OtherTest". Modify any file within workspace that access this file
+
+
+under folder VS_4000_strategy\VS_4004_20260204_NVDA, rename folder "5 Limited Test" to "5 OtherTest". Modify any file within workspace that access this file
+
+
+
+under folder VS_4000_strategy\VS_4002_20260620_NVDA, rename folder "1 Prompt" to "1 Prelimary Test", "5 Incubation" to "7 liveTrade". Modify any file within workspace that access this file
+
+
+under folder VS_4000_strategy\VS_4003_20260827_ES, rename folder "1 Prompt" to "1 Prelimary Test", "3 OtherTest" to "5 OtherTest", "4 Live" to "7 liveTrade". Modify any file within workspace that access this file
+
+
+rename VSCode Algo Workspace\VS_0006_data to VSCode Algo Workspace\VS_0006_dataFunc. Modify any file within workspace that access this folder
+
+
+
+rename VSCode Algo Workspace\VS_4000_strategy\VS_4001_GeneralStrategy to VSCode Algo Workspace\VS_0006_dataFunc\VS_6006_FeatureEngineering, name file name "S0001_GeneralFeature_1_kimi.py" to F6006_GeneralFeature_1_kimi.py, "S0001_GeneralFeature_2_glm.md" to "F6006_GeneralFeature_2_glm.md", "S0001_GeneralFeature_2_glm.py" to "F6006_GeneralFeature_2_glm.py", "S0002_FeatureScoreRanker_1_glm.py" to "F6006_FeatureScoreRanker_1_glm.py". Modify any file within workspace that access this files and folder
+
+
+under 

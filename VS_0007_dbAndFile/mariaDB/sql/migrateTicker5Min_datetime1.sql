@@ -32,12 +32,21 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ------------------------------------------------------------
 -- 2. Backfill datetime1 from the existing date + time values
---    (only rows that are not yet populated)
+--    (only if the legacy date/time columns still exist)
 -- ------------------------------------------------------------
-UPDATE ticker5Min
-   SET datetime1 = CAST(CONCAT(date, ' ', time) AS DATETIME)
- WHERE date IS NOT NULL
-   AND time IS NOT NULL;
+SET @date_col_exists := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME   = 'ticker5Min'
+      AND COLUMN_NAME  = 'date'
+);
+SET @sql := IF(@date_col_exists > 0,
+    'UPDATE ticker5Min
+        SET datetime1 = CAST(CONCAT(date, '' '', time) AS DATETIME)
+      WHERE date IS NOT NULL
+        AND time IS NOT NULL',
+    'SELECT ''date/time columns already dropped; backfill skipped'' AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ------------------------------------------------------------
 -- 3. Drop indexes that depend on the old date/time columns
@@ -59,8 +68,10 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ------------------------------------------------------------
 -- 4. Drop the now-obsolete date and time columns
+--    (guarded on the date column actually still existing, so a
+--     re-run after a partial migration can finish the job)
 -- ------------------------------------------------------------
-SET @sql := IF(@col_exists = 0,
+SET @sql := IF(@date_col_exists > 0,
     'ALTER TABLE ticker5Min DROP COLUMN date, DROP COLUMN time',
     'SELECT ''date/time already dropped'' AS msg');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
