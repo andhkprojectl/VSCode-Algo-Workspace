@@ -40,7 +40,7 @@ except ImportError:
         pass
 
 
-# Load VS_0002_config/.env (repo convention, same as IBDb.py / DB_NQ_*.py) so
+# Load VS_0002_config/.env (repo convention, same as mariaDb.py / DB_NQ_*.py) so
 # DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME env vars are available.
 try:
     from pathlib import Path as _Path

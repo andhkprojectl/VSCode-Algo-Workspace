@@ -14,7 +14,7 @@ Build `S6002_1_GenStatisticsRelationCsvFile.py` to read NVDA 1-min CSV, compute 
 ## Steps
 
 ### Phase A — Scaffolding & I/O
-1. Create `VS_0006_data\VS_6002_findAlpha\2 Strategy\S6002_1_GenStatisticsRelationCsvFile.py`.
+1. Create `VS_0006_dataFunc\VS_6002_findAlpha\2 Strategy\S6002_1_GenStatisticsRelationCsvFile.py`.
 2. Constants at top: `INPUT_CSV`, `OUTPUT_DIR` (explicit absolute paths from requirement, NOT .env `csvExcelPath` since VS_6002 subfolder differs). `onlyRegularPeriod="Y"` parameter with default Y.
 3. `load_data()`: `pd.read_csv(INPUT_CSV)`; rename cols A-I → Datetime/Date/Time/High/Low/Close/Open/Volume/Symbol (reuse pattern from `lookAheadTest_S8004_v1.py` L120-136); `pd.to_datetime(Datetime, format='%m/%d/%Y %H:%M')`; set index; sort.
 4. `filter_regular(df)`: if onlyRegularPeriod=Y, keep 09:30 <= time < 16:00 using index time. **Decision: treat filtered series as continuous — rolling windows span overnight gap (no per-day reset).**
@@ -46,7 +46,7 @@ Build `S6002_1_GenStatisticsRelationCsvFile.py` to read NVDA 1-min CSV, compute 
 22. `main()` orchestrates A→E with progress prints.
 
 ### Phase F — Tests (4g) — *parallel with E once functions exist*
-23. Create `VS_0006_data\VS_6002_findAlpha\2 Strategy\test_S6002_1_GenStatisticsRelationCsvFile.py` (pytest).
+23. Create `VS_0006_dataFunc\VS_6002_findAlpha\2 Strategy\test_S6002_1_GenStatisticsRelationCsvFile.py` (pytest).
 24. Tests (synthetic small dataframes with known values):
     - test_atr_true_range: known H/L/C → expected atr.
     - test_rsi: monotonic up series → rsi~100.
@@ -59,19 +59,19 @@ Build `S6002_1_GenStatisticsRelationCsvFile.py` to read NVDA 1-min CSV, compute 
 25. Run `pytest` and ensure all pass.
 
 ## Relevant files
-- `VS_0006_data\VS_6002_findAlpha\2 Strategy\S6002_1_GenStatisticsRelationCsvFile.py` — NEW main program.
-- `VS_0006_data\VS_6002_findAlpha\2 Strategy\test_S6002_1_GenStatisticsRelationCsvFile.py` — NEW pytest suite.
+- `VS_0006_dataFunc\VS_6002_findAlpha\2 Strategy\S6002_1_GenStatisticsRelationCsvFile.py` — NEW main program.
+- `VS_0006_dataFunc\VS_6002_findAlpha\2 Strategy\test_S6002_1_GenStatisticsRelationCsvFile.py` — NEW pytest suite.
 - `VS_4000_strategy\VS_4004_20260204_NVDA\2 Strategy\S8001_2_ConvertFromGemini.py` — IRB threshold pattern (iRbBullish/Bearish, 0.45).
 - `VS_4000_strategy\VS_4004_20260204_NVDA\2 Strategy\S8001_4_GenerateFromPromptQwen37Max.py` — manual ATR (TR) pattern.
 - `VS_9999_test_program\MachineLearning\NVDA_irb_20260209_V1.py` — manual RSI + BB (20,2std) pattern.
 - `VS_9999_test_program\MachineLearning\test_dia_ym_correlation1.py` — correlation matrix + rolling quantile pattern; `performCorrelation()` L663.
 - `VS_9999_test_program\percentile_strategy_backtest.py` — `rolling(days).apply(lambda x: np.percentile(x.dropna(),90))` pattern.
-- `VS_4000_strategy\VS_4004_20260204_NVDA\5 Limited Test\lookAheadTest_S8004_v1.py` L120-136 — CSV col rename pattern; L452-508 — plotly `fig.to_html` pattern.
-- `VS_0006_data\VS_6001_GetMarketDataToCsv\NVDA_20260101_20260615_1Min.py` — source of input CSV (confirms col layout).
+- `VS_4000_strategy\VS_4004_20260204_NVDA\5 OtherTest\lookAheadTest_S8004_v1.py` L120-136 — CSV col rename pattern; L452-508 — plotly `fig.to_html` pattern.
+- `VS_0006_dataFunc\VS_6001_GetMarketDataToCsv\NVDA_20260101_20260615_1Min.py` — source of input CSV (confirms col layout).
 
 ## Verification
 1. `python S6002_1_GenStatisticsRelationCsvFile.py` runs end-to-end, prints row counts after filter and after dropna.
-2. `pytest VS_0006_data\VS_6002_findAlpha\2 Strategy\test_S6002_1_GenStatisticsRelationCsvFile.py -v` — all tests pass.
+2. `pytest VS_0006_dataFunc\VS_6002_findAlpha\2 Strategy\test_S6002_1_GenStatisticsRelationCsvFile.py -v` — all tests pass.
 3. Confirm 3 output files exist in `...\VS_6002_findAlpha\csvExcel`: `S6002_1_statistics_revenue.csv` (cols = 9 input + 112 stats + 4 rt = 125), `S6002_1_relation_summary.csv`, `S6002_1_scatter_plots.html`.
 4. Open `S6002_1_statistics_revenue.csv` — first ~100 rows have NaN in percentile cols (warmup), later rows populated; last 9 rows have NaN in rt8.
 5. Open `S6002_1_scatter_plots.html` in browser — scatter plots render for strong relations; if none pass threshold, HTML states "no strong relation found" (possible on noisy 1-min data).

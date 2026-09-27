@@ -65,7 +65,7 @@
 - `VS_0003_test/monteCarloSimulation.py` — needs `run_backtest(df, init_balance, position_size)`→P&L list
 - `VS_0003_test/walkForwardTest.py` — uses `Backtest.optimize`; needs class attributes as optimize params
 - `VS_4000_strategy/VS_4004_20260204_NVDA/2 Strategy/S8001_2_ConvertFromGemini.py` — **REFERENCE** for manual loop pattern, ATR stop, N-bar exit, force close
-- `VS_0006_data/ibMarketData.py` — data format: `datetime, date, time, high, low, close, open, volume, symbolName`
+- `VS_0006_dataFunc/ibMarketData.py` — data format: `datetime, date, time, high, low, close, open, volume, symbolName`
 
 ---
 

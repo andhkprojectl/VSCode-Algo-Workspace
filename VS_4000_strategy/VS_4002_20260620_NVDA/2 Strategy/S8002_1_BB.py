@@ -369,7 +369,7 @@ if __name__ == "__main__":
     # Locate a sample NVDA 5-min CSV
     candidate = os.path.join(
         os.path.dirname(__file__), '..', '..', '..',
-        'VS_0006_data', 'VS_6001_GetMarketDataToCsv', 'NVDA_20250101_20260430_5Min.csv'
+        'VS_0006_dataFunc', 'VS_6001_GetMarketDataToCsv', 'NVDA_20250101_20260430_5Min.csv'
     )
     # Fallback to data file directory
     if not os.path.exists(candidate):

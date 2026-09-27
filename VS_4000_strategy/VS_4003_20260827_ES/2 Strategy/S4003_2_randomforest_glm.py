@@ -66,14 +66,14 @@ except ImportError:
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _FEATURES_DIR = os.path.normpath(os.path.join(
-    _HERE, '..', '..', 'VS_4001_GeneralStrategy'))
+    _HERE, '..', '..', 'VS_0006_dataFunc/VS_6006_FeatureEngineering'))
 for _p in (_HERE, _FEATURES_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
 from S4003_1_glm import (strategyS4003V1, load_data_from_db, OUTPUT_DIR,
                          DT_FORMAT, _load_db_env)
-from S0001_GeneralFeature_2_glm import ESFeatureEngineer
+from F6006_GeneralFeature_2_glm import ESFeatureEngineer
 
 RF_RESULTS_CSV = 'S4003_2_randomforest_results.csv'
 RF_MODEL_PKL = 'S4003_2_randomforest_model.pkl'
@@ -579,7 +579,7 @@ class RandomForestEnhancer:
         add('model', 'oos_auc_folds',
             ';'.join(f"{f['auc']:.3f}" for f in self.fold_report))
         add('model', 'label_definition', 'y=1 if base trade pnl>0 (net)')
-        add('model', 'feature_source', 'S0001_GeneralFeature_2_glm.ESFeatureEngineer')
+        add('model', 'feature_source', 'F6006_GeneralFeature_2_glm.ESFeatureEngineer')
         add('model', 'base_strategy', 'S4003_1_glm.strategyS4003V1')
         add('model', 'features_dropped_sparse',
             ';'.join(self.dropped_feature_cols) if self.dropped_feature_cols else '')

@@ -1,11 +1,11 @@
 ## Plan: Generate NVDA 1-Minute Data Fetch Script
 
-Create a new Python script `NVDA_20260101_20260615_1Min.py` under `VS_0006_data/VS_6001_GetMarketDataToCsv/` to fetch 1-minute NVDA data from 2026-01-01 to 2026-06-15, based on the existing `NVDA_20250101_20260430_5Min.py`.
+Create a new Python script `NVDA_20260101_20260615_1Min.py` under `VS_0006_dataFunc/VS_6001_GetMarketDataToCsv/` to fetch 1-minute NVDA data from 2026-01-01 to 2026-06-15, based on the existing `NVDA_20250101_20260430_5Min.py`.
 
 **Steps**
 
 1. **Create `NVDA_20260101_20260615_1Min.py`** — Copy the structure from `NVDA_20250101_20260430_5Min.py` and modify the following parameters:
-   - File: `VS_0006_data/VS_6001_GetMarketDataToCsv/NVDA_20260101_20260615_1Min.py`
+   - File: `VS_0006_dataFunc/VS_6001_GetMarketDataToCsv/NVDA_20260101_20260615_1Min.py`
    - Change `outcsvFileName` to `NVDA_20260101_20260615_1Min.csv`
    - Change `startDate` from `"20250501"` to `"20260101"`
    - Change `endDate` from `"20260430"` to `"20260615"`
@@ -13,8 +13,8 @@ Create a new Python script `NVDA_20260101_20260615_1Min.py` under `VS_0006_data/
    - Remove the commented-out dead code block (old conn1/symbolName variables) to keep the file clean
 
 **Relevant files**
-- `c:\Project\ProjectLife\VSCode Algo Workspace\VS_0006_data\VS_6001_GetMarketDataToCsv\NVDA_20250101_20260430_5Min.py` — source template to copy from
-- `c:\Project\ProjectLife\VSCode Algo Workspace\VS_0006_data\VS_6001_GetMarketDataToCsv\NVDA_20260101_20260615_1Min.py` — new file to create
+- `c:\Project\ProjectLife\VSCode Algo Workspace\VS_0006_dataFunc\VS_6001_GetMarketDataToCsv\NVDA_20250101_20260430_5Min.py` — source template to copy from
+- `c:\Project\ProjectLife\VSCode Algo Workspace\VS_0006_dataFunc\VS_6001_GetMarketDataToCsv\NVDA_20260101_20260615_1Min.py` — new file to create
 
 **Changes summary**
 

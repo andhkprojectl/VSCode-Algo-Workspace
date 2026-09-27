@@ -20,7 +20,7 @@ Pipeline:
      direction, entry price and exit price as LABELS alongside the sample
      (never used as features - unknown at decision time).
   3. Compute features (see build_features, list following the style of
-     VS_4001_GeneralStrategy/S0001_GeneralFeature_2_glm.py) at each trade's
+     VS_0006_dataFunc/VS_6006_FeatureEngineering/F6006_GeneralFeature_2_glm.py) at each trade's
      SIGNAL bar (entry_bar - 1, the last completed bar when the enter/skip
      decision is made). All features are causal (past/current bars only).
   4. Label each base trade: y = 1 if trade P&L (net) > 0.
@@ -253,7 +253,7 @@ class RandomForestEnhancer:
     def build_features(self):
         """Feature set per bar (all causal - current/past bars only).
 
-        Feature list (style of S0001_GeneralFeature_2_glm, scaled down to
+        Feature list (style of F6006_GeneralFeature_2_glm, scaled down to
         the S4003_1 signal context; tree models are scale-invariant so no
         normalization is applied):
 
@@ -723,7 +723,7 @@ class RandomForestEnhancer:
             ';'.join(f"{f['auc']:.3f}" for f in self.fold_report))
         add('model', 'label_definition', 'y=1 if base trade pnl>0 (net)')
         add('model', 'feature_source', 'S4003_2_randomforest_kimi.build_features '
-            '(style of S0001_GeneralFeature_2_glm)')
+            '(style of F6006_GeneralFeature_2_glm)')
         add('model', 'base_strategy', 'S4003_1_glm.strategyS4003V1')
         add('model', 'features_dropped_sparse',
             ';'.join(self.dropped_feature_cols) if self.dropped_feature_cols else '')

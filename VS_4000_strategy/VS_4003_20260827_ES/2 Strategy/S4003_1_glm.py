@@ -19,9 +19,9 @@ Dual-mode (pattern follows S8002_1_BB.py):
   - run_full_backtest(df) drives the custom AFL-faithful engine and the 3 output files
 
 Data source: MariaDB IBTradingDb.ticker1Min (ticker 'ES'), credentials via env
-vars loaded from VS_0002_config/.env (same convention as IBDb.py / DB_NQ_*.py).
+vars loaded from VS_0002_config/.env (same convention as mariaDb.py / DB_NQ_*.py).
 
-Plan: VS_4000_strategy/VS_4003_20260827_ES/1 Prompt/prompt_strategy_S4003_fm_glm_V1.md
+Plan: VS_4000_strategy/VS_4003_20260827_ES/1 Prelimary Test/prompt_strategy_S4003_fm_glm_V1.md
 """
 
 import os

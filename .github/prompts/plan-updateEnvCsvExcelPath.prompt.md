@@ -13,7 +13,7 @@ Update the workspace `.env` file to use an absolute path for `csvExcelPath`, and
 
 **Relevant files**
 - `c:\Project\ProjectLife\VSCode Algo Workspace\VS_0002_config\.env` — update `csvExcelPath` value
-- `c:\Project\ProjectLife\VSCode Algo Workspace\VS_0006_data\VS_6001_GetMarketDataToCsv\NVDA_20250101_20260430_5Min.py` — remove dead `absolute_csv_path` code block
+- `c:\Project\ProjectLife\VSCode Algo Workspace\VS_0006_dataFunc\VS_6001_GetMarketDataToCsv\NVDA_20250101_20260430_5Min.py` — remove dead `absolute_csv_path` code block
 
 **Verification**
 1. Run `NVDA_20250101_20260430_5Min.py` and confirm the console prints `Successfully retrieved csvExcelPath: C:\Project\ProjectLife\VSCode Algo Workspace DataFile\csvExcelAll`

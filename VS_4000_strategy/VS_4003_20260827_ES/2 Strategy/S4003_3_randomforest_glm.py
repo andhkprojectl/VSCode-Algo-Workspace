@@ -63,14 +63,14 @@ except ImportError:
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _FEATURES_DIR = os.path.normpath(os.path.join(
-    _HERE, '..', '..', 'VS_4001_GeneralStrategy'))
+    _HERE, '..', '..', 'VS_0006_dataFunc/VS_6006_FeatureEngineering'))
 for _p in (_HERE, _FEATURES_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
 from S4003_1_glm import (strategyS4003V1, load_data_from_db, OUTPUT_DIR,
                          DT_FORMAT, _load_db_env)
-from S0001_GeneralFeature_2_glm import ESFeatureEngineer
+from F6006_GeneralFeature_2_glm import ESFeatureEngineer
 from S4003_2_randomforest_glm import write_backtest_trio
 
 try:
@@ -466,7 +466,7 @@ class GridSearchEnhancer:
         aucs = [f['auc'] for f in self.fold_report if not np.isnan(f['auc'])]
         add('model', 'oos_auc_mean', float(np.mean(aucs)) if aucs else np.nan)
         add('model', 'label_definition', 'y=1 if trade pnl>0 (net, $14.50 exit cost)')
-        add('model', 'feature_source', 'S0001_GeneralFeature_2_glm.ESFeatureEngineer')
+        add('model', 'feature_source', 'F6006_GeneralFeature_2_glm.ESFeatureEngineer')
         add('model', 'base_strategy', 'S4003_1_glm.strategyS4003V1')
 
         results_path = os.path.join(out_dir, RF_RESULTS_CSV)

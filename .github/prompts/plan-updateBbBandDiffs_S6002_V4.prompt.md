@@ -1,6 +1,6 @@
 # Plan: Replace BB Cross Diffs with BB Band Diffs in S6002_1
 
-**Target**: `VS_0006_data/VS_6002_findAlpha/2 Strategy/S6002_1_GenStatisticsRelationCsvFile.py`
+**Target**: `VS_0006_dataFunc/VS_6002_findAlpha/2 Strategy/S6002_1_GenStatisticsRelationCsvFile.py`
 **Function**: `compute_statistics()`, lines 197-225 (Bollinger Band group section)
 
 ---

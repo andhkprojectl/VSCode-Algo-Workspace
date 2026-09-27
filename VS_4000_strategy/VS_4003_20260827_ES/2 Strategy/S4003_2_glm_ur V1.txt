@@ -4,7 +4,7 @@
     - win rate increase 15%
     - average trade at least 1 time within 2 trading days
 3. Enhance existing stragegy S4003_1_glm.py usig feature engineering. Already with buy/sell, short/cover signal. And with stop loss and profit take condition
-    - feature list and how to use feature list can refer to VS_4001_GeneralStrategy\S0001_GeneralFeature_2_glm.py as sample
+    - feature list and how to use feature list can refer to VS_0006_dataFunc/VS_6006_FeatureEngineering\F6006_GeneralFeature_2_glm.py as sample
     - at least label existing stragy entry, exit signal and price
     - try random forest to enhance stragegy 
     - Signal Fire --> Compute Features → random forest Predicts P(Win) → 

@@ -140,7 +140,7 @@ direction on the same bar.
 --------------------------------------------------------------------------
 RANDOM-FOREST LAYER (S4003_2 only - decides enter vs skip)
 --------------------------------------------------------------------------
-Features   : the 150 causal features of S0001_GeneralFeature_2_glm.py
+Features   : the 150 causal features of F6006_GeneralFeature_2_glm.py
              (returns, candles, momentum/slopes, RSI divergences, market
              regime, rolling VWAP bands, volatility, volume, time
              sine/cosine, statistics, market structure), computed at the

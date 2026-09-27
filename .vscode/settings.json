@@ -3,11 +3,11 @@
     // `from VS_6004_GetDataFromMariaDb import ...`) that are added to sys.path
     // at runtime. Pylance resolves them statically via these extra paths.
     "python.analysis.extraPaths": [
-        "${workspaceFolder}/VS_0006_data/VS_6000_DataSource",
-        "${workspaceFolder}/VS_0006_data/VS_6004_GetDataFromMariaDb",
-        "${workspaceFolder}/VS_0006_data/VS_6005_GetLiveTradeData",
+        "${workspaceFolder}/VS_0006_dataFunc/VS_6000_DataSource",
+        "${workspaceFolder}/VS_0006_dataFunc/VS_6004_GetDataFromMariaDb",
+        "${workspaceFolder}/VS_0006_dataFunc/VS_6005_GetLiveTradeData",
         "${workspaceFolder}/VS_0007_dbAndFile/mariaDB",
-        "${workspaceFolder}/VS_4000_strategy/VS_4001_GeneralStrategy",
+        "${workspaceFolder}/VS_0006_dataFunc/VS_6006_FeatureEngineering",
         "${workspaceFolder}/VS_4000_strategy/VS_4003_20260827_ES/2 Strategy",
         "${workspaceFolder}/VS_0008_liveTrade/IB/autotrade",
         "${workspaceFolder}/VS_0008_liveTrade/IB/autotrade/test"

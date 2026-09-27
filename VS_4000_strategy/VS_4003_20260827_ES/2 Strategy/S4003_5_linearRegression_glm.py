@@ -54,7 +54,7 @@ except ImportError:
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _FEATURES_DIR = os.path.normpath(os.path.join(
-    _HERE, '..', '..', 'VS_4001_GeneralStrategy'))
+    _HERE, '..', '..', 'VS_0006_dataFunc/VS_6006_FeatureEngineering'))
 for _p in (_HERE, _FEATURES_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)
@@ -69,7 +69,7 @@ from S4003_5_randomforest_glm import (simulate_window, window_metrics,
                                       _sharpe_from_eq, _max_dd_from_eq,
                                       ANALYSIS_START, ANALYSIS_END, IS_DAYS,
                                       MIN_IS_TRADES, PARAM_GRIDS)
-from S0001_GeneralFeature_2_glm import ESFeatureEngineer
+from F6006_GeneralFeature_2_glm import ESFeatureEngineer
 
 PROGRAM_NAME = 'S4003_5_linearRegression_glm.py'
 WIN_RATE_TARGET_INCREASE = 0.15
