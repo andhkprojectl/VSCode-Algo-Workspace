@@ -1,6 +1,6 @@
 # Plan: S8002_1_BB.py — Bollinger Band Cross Strategy (NVDA 5-min)
 
-**TL;DR** — Create `VS_8000_Strategy/VS_8002_20260620_NVDA/2 Strategy/S8002_1_BB.py` with class `strategyS8002BBV1` implementing a BB-cross strategy on NVDA 5-min bars. The class subclasses `backtesting.Strategy` (for `backtest.py`/`walkForwardTest.py`/`monkeyTest`) and additionally exposes `generate_signals(df)` and `run_backtest(df, init_balance, position_size)` methods (for `lookAheadBiasTest`/`monteCarloSimulation`). Live trade (item 4) is excluded per your instruction.
+**TL;DR** — Create `VS_4000_strategy/VS_4002_20260620_NVDA/2 Strategy/S8002_1_BB.py` with class `strategyS8002BBV1` implementing a BB-cross strategy on NVDA 5-min bars. The class subclasses `backtesting.Strategy` (for `backtest.py`/`walkForwardTest.py`/`monkeyTest`) and additionally exposes `generate_signals(df)` and `run_backtest(df, init_balance, position_size)` methods (for `lookAheadBiasTest`/`monteCarloSimulation`). Live trade (item 4) is excluded per your instruction.
 
 ---
 
@@ -59,12 +59,12 @@
 
 ## Relevant files
 
-- `VS_8000_Strategy/VS_8002_20260620_NVDA/2 Strategy/S8002_1_BB.py` — **NEW**, the strategy class
+- `VS_4000_strategy/VS_4002_20260620_NVDA/2 Strategy/S8002_1_BB.py` — **NEW**, the strategy class
 - `VS_0003_test/backtest.py` — uses `Backtest(df, strategy1, ...)`; expects `Strategy` subclass with `init`/`next`, `commission` attr
 - `VS_0003_test/otherTest.py` — `lookAheadBiasTest` needs `generate_signals(df)`→`signal` col; `monkeyTest` needs `Strategy` subclass
 - `VS_0003_test/monteCarloSimulation.py` — needs `run_backtest(df, init_balance, position_size)`→P&L list
 - `VS_0003_test/walkForwardTest.py` — uses `Backtest.optimize`; needs class attributes as optimize params
-- `VS_8000_Strategy/VS_8001_20260204_NVDA/2 Strategy/S8001_2_ConvertFromGemini.py` — **REFERENCE** for manual loop pattern, ATR stop, N-bar exit, force close
+- `VS_4000_strategy/VS_4004_20260204_NVDA/2 Strategy/S8001_2_ConvertFromGemini.py` — **REFERENCE** for manual loop pattern, ATR stop, N-bar exit, force close
 - `VS_0006_data/ibMarketData.py` — data format: `datetime, date, time, high, low, close, open, volume, symbolName`
 
 ---

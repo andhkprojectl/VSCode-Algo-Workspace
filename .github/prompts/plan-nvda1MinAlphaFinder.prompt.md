@@ -61,12 +61,12 @@ Build `S6002_1_GenStatisticsRelationCsvFile.py` to read NVDA 1-min CSV, compute 
 ## Relevant files
 - `VS_0006_data\VS_6002_findAlpha\2 Strategy\S6002_1_GenStatisticsRelationCsvFile.py` — NEW main program.
 - `VS_0006_data\VS_6002_findAlpha\2 Strategy\test_S6002_1_GenStatisticsRelationCsvFile.py` — NEW pytest suite.
-- `VS_8000_Strategy\VS_8001_20260204_NVDA\2 Strategy\S8001_2_ConvertFromGemini.py` — IRB threshold pattern (iRbBullish/Bearish, 0.45).
-- `VS_8000_Strategy\VS_8001_20260204_NVDA\2 Strategy\S8001_4_GenerateFromPromptQwen37Max.py` — manual ATR (TR) pattern.
+- `VS_4000_strategy\VS_4004_20260204_NVDA\2 Strategy\S8001_2_ConvertFromGemini.py` — IRB threshold pattern (iRbBullish/Bearish, 0.45).
+- `VS_4000_strategy\VS_4004_20260204_NVDA\2 Strategy\S8001_4_GenerateFromPromptQwen37Max.py` — manual ATR (TR) pattern.
 - `VS_9999_test_program\MachineLearning\NVDA_irb_20260209_V1.py` — manual RSI + BB (20,2std) pattern.
 - `VS_9999_test_program\MachineLearning\test_dia_ym_correlation1.py` — correlation matrix + rolling quantile pattern; `performCorrelation()` L663.
 - `VS_9999_test_program\percentile_strategy_backtest.py` — `rolling(days).apply(lambda x: np.percentile(x.dropna(),90))` pattern.
-- `VS_8000_Strategy\VS_8001_20260204_NVDA\5 Limited Test\lookAheadTest_S8004_v1.py` L120-136 — CSV col rename pattern; L452-508 — plotly `fig.to_html` pattern.
+- `VS_4000_strategy\VS_4004_20260204_NVDA\5 Limited Test\lookAheadTest_S8004_v1.py` L120-136 — CSV col rename pattern; L452-508 — plotly `fig.to_html` pattern.
 - `VS_0006_data\VS_6001_GetMarketDataToCsv\NVDA_20260101_20260615_1Min.py` — source of input CSV (confirms col layout).
 
 ## Verification

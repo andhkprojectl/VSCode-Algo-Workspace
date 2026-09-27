@@ -1,6 +1,6 @@
 # Plan: Convert AFL `doTrade00` to Python `autotrade.py`
 
-**TL;DR** — Port `doTrade00` from [autoTrade.afl](amibroker/autoTrade.afl) into a new `autotrade.py` (same folder) exposing function `doTrade0`, using `ib_insync` (the IB library already used in this workspace). Also generate a markdown doc describing the conversion. Reference for ib_insync patterns: `VS_0008_LiveTrade/test/convert_autoTrade_by_gemini.py`.
+**TL;DR** — Port `doTrade00` from [autoTrade.afl](amibroker/autoTrade.afl) into a new `autotrade.py` (same folder) exposing function `doTrade0`, using `ib_insync` (the IB library already used in this workspace). Also generate a markdown doc describing the conversion. Reference for ib_insync patterns: `VS_0008_liveTrade/test/convert_autoTrade_by_gemini.py`.
 
 ## Requirement (from L8001_autotrade_UR_V1.txt)
 
@@ -9,7 +9,7 @@
 
 ## Steps
 
-1. **Create `VS_0008_LiveTrade/IB/autotrade/autotrade.py`** with:
+1. **Create `VS_0008_liveTrade/IB/autotrade/autotrade.py`** with:
    - `AutoTrade` class — holds the `ib_insync.IB` connection (default `127.0.0.1:7497`), `write_line()` logger appending to `TWSTrade111.log` in the AFL format (`timestamp;autotrade.py;msg`), and helpers:
      - `get_nearest_round_to_price(price, tick, type)` — port of AFL `getNearestRoundToPrice` (type 1 nearest / 2 up / 3 down).
      - `cancel_pending_order(symbol)` — port of AFL `cancelPendingOrder` (match exact or common prefix >= 2 chars; cancel only `PreSubmitted`/`Submitted`; sleep 500 ms if anything cancelled).
@@ -71,9 +71,9 @@ Returns `1` if an order was placed, else `0`.
 
 ## Relevant files
 
-- `VS_0008_LiveTrade/IB/autotrade/amibroker/autoTrade.afl` — source of truth (`doTrade00` ~L1470-2150, `cancelPendingOrder`, `getNearestRoundToPrice`, `writeline`)
-- `VS_0008_LiveTrade/test/convert_autoTrade_by_gemini.py` — ib_insync bracket-order patterns to reuse
-- `VS_0008_LiveTrade/displayLiveInfo/displayLiveInfo.py` (L112) — connection params convention (port 7497 TWS paper)
+- `VS_0008_liveTrade/IB/autotrade/amibroker/autoTrade.afl` — source of truth (`doTrade00` ~L1470-2150, `cancelPendingOrder`, `getNearestRoundToPrice`, `writeline`)
+- `VS_0008_liveTrade/test/convert_autoTrade_by_gemini.py` — ib_insync bracket-order patterns to reuse
+- `VS_0008_liveTrade/displayLiveInfo/displayLiveInfo.py` (L112) — connection params convention (port 7497 TWS paper)
 
 ## Usage example (paper TWS)
 

@@ -11,11 +11,13 @@ of truth for the trading logic.
 """
 
 import datetime
+import os
 import time
 
 from ib_insync import IB, LimitOrder, MarketOrder, StopLimitOrder, StopOrder
 
-LOG_FILE = "TWSTrade111.log"
+LOG_FILE = (r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile"
+            r"\trade_log\TWSTrade111.log")
 PROGRAM_NAME = "VS_8101_autotrade.py"
 
 
@@ -84,6 +86,7 @@ class AutoTrade:
     def write_line(self, message):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         line = f"{timestamp};{PROGRAM_NAME};{message}\n"
+        os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
         with open(LOG_FILE, "a") as fh:
             fh.write(line)
         print(line.strip())

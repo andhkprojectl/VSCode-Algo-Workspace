@@ -1,0 +1,11 @@
+1. Generate program S4003_8_randomforest_glm.py, base on S4003_7_randomforest_glm.py, update below warkforward test
+    - walkforward start date: 1 year ago from today to 7 days before today
+    - IIS period 60 days. OOS period: 7 days. step is 1 day
+    - For example, perform walkforward test, IIS from 1 year ago to 1 year ago + 60 days, OOS 7 days after 1 year ago + 60 day. Then step 1 day
+    - walkforward test is rolling window
+
+2. output: 
+    - output file: similar output files as S4003_7_randomforest_glm.py
+3. do not change original file S4003_7_randomforest_glm.py
+    
+    

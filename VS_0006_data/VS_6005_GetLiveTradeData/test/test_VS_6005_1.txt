@@ -1,0 +1,9 @@
+Generate py program test_VS_6005_1.py
+- run function getLiveTradeIB1MinData in program VS_6005_1_1min_glm.py, with below parameter
+    - symbol: CME future ES Dec 26 continous
+    - start date: 2026-09-18:00
+    - end date: 2026-09-22 23:59
+- write output df to csv file with column in below order
+    - datetime, open, close, high, low, volume
+    - filename: C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_0006_data\test_VS_6005_1.csv
+

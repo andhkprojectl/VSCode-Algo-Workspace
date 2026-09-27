@@ -10,7 +10,8 @@ class AutoTradeIB:
         """
         self.ib = IB()
         self.ib.connect(host, port, clientId=client_id)
-        self.log_file = "TWSTrade111.log"
+        self.log_file = (r"C:\Project\ProjectLife\VSCode Algo Workspace DataFile"
+                         r"\trade_log\TWSTrade111.log")
         self.max_open_positions = 15 # Replicates StaticVarGet("MAX_OPEN_POSITION")
         self.quota = 20
 

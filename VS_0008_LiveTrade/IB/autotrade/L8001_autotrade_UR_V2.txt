@@ -1,2 +1,0 @@
-please compare md file .kilo\plans\1785245983679-autotrade-requirement-md.md with L8001_autotrade_kimi3_V1.md
-if anything exists in L8001_autotrade_kimi3_V1.md but miss in file 1785245983679-autotrade-requirement-md.md, add to 1785245983679-autotrade-requirement-md.md

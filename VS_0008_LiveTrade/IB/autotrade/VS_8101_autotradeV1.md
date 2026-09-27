@@ -49,7 +49,7 @@ Convert the AmiBroker AFL trade-execution function `doTrade00` to Python functio
   cancelled) and the execution/pending list status dump (`log_order_status`).
 
 **Implementation steps**
-1. Create `VS_0008_LiveTrade/IB/autotrade/VS_8101_autotrade.py` with an `AutoTrade` class:
+1. Create `VS_0008_liveTrade/IB/autotrade/VS_8101_autotrade.py` with an `AutoTrade` class:
    holds the connected `ib_insync.IB` (default host 127.0.0.1, port 4002 IB
    Gateway), `write_line(message)` appending `<timestamp>;VS_8101_autotrade.py;<message>`
    to `TWSTrade111.log` (AFL format: `Now();autoTrade.afl;<msg>`),
@@ -88,7 +88,7 @@ Convert the AmiBroker AFL trade-execution function `doTrade00` to Python functio
    `TWSTrade111.log` (AFL writes `Now();autoTrade.afl;<msg>`).
 8. Return: `doTrade0` returns 1 if any order action was placed, else 0.
 9. Structural reference only:
-   `VS_0008_LiveTrade/test/convert_autoTrade_by_gemini.py` (AutoTradeIB.do_trade_00);
+   `VS_0008_liveTrade/test/convert_autoTrade_by_gemini.py` (AutoTradeIB.do_trade_00);
    `autoTrade.afl` remains the single source of truth.
 
 **AFL -> Python mapping**
@@ -136,17 +136,17 @@ Convert the AmiBroker AFL trade-execution function `doTrade00` to Python functio
 Returns `1` if an order was placed, else `0`.
 
 **Relevant files**
-- `VS_0008_LiveTrade/IB/autotrade/amibroker/autoTrade.afl` - source of truth
+- `VS_0008_liveTrade/IB/autotrade/amibroker/autoTrade.afl` - source of truth
   (`doTrade00` lines 1480-2178, `cancelPendingOrder`, `getNearestRoundToPrice`,
   `writeline`)
-- `VS_0008_LiveTrade/test/convert_autoTrade_by_gemini.py` - ib_insync
+- `VS_0008_liveTrade/test/convert_autoTrade_by_gemini.py` - ib_insync
   bracket-order patterns to reuse
-- `VS_0008_LiveTrade/displayLiveInfo/displayLiveInfo.py` (L112) - connection
+- `VS_0008_liveTrade/displayLiveInfo/displayLiveInfo.py` (L112) - connection
   params convention (port 7497 TWS paper)
-- `VS_0008_LiveTrade/IB/autotrade/autotradeURV1.txt` /
-  `VS_0008_LiveTrade/IB/autotrade/L8001_autotrade_UR_V1.txt` - requirement
+- `VS_0008_liveTrade/IB/autotrade/autotradeURV1.txt` /
+  `VS_0008_liveTrade/IB/autotrade/L8001_autotrade_UR_V1.txt` - requirement
   sources (identical 2 lines)
-- `VS_0008_LiveTrade/IB/autotrade/L8001_autotrade_kimi3_V1.md` - companion
+- `VS_0008_liveTrade/IB/autotrade/L8001_autotrade_kimi3_V1.md` - companion
   kimi3 plan (merged into this document)
 
 **Safety**

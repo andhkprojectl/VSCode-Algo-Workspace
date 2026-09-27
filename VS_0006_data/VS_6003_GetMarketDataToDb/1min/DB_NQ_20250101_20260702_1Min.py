@@ -41,7 +41,7 @@ if __name__ == "__main__":
     my_ib_connection = None
 
 
-    # Fetch 5-minute NVDA data
+    # Fetch 1-minute ES data (Dec '26 continuous) and save to MariaDB ticker1Min
     df = ibMarketData.getAllTypesTicketDataWithTimeFromIB(
         conn1=my_ib_connection,
         # symbolName="NQ",  # nasdaq e-mini future continuous contract
@@ -49,9 +49,9 @@ if __name__ == "__main__":
         # symbolName="RTY", # Russell e-mini future continuous contract
         # symbolName="YM",    # DOW e-mini future continuous contract        
         # startDate="20251001",
-        startDate="20260905",
+        startDate="20260923",
         startTime="0000",
-        endDate="20260920",
+        endDate="20260925",
         endTime="2359",
         period1=1,
         tickerType = "FU",  # tickerType: "ST" for stock, "FU" for future

@@ -1,8 +1,0 @@
-1. after run S0001_GeneralFeature_2_ur V1.txt, run this file
-2. add below to feature
-- market regime
-- rolling vwap of close price, 3,6, 9, 20 period
-- band rolling vwap of close price, 3,6, 9, 20 period: vwap + 1*vwap std, vwap - 1*vwap std, vwap + 2*vwap std, vwap - 2*vwap std
-3. just update existing file S0001_GeneralFeature_2_glm.py, no need create new output file
-
-

@@ -1,0 +1,6 @@
+Prepare dataframe df output to live trade py program, logic to update df as below
+1. Not current date. Update df from from MariaDB
+2. If new day 2nd, 3rd bar open, get yesterday hist data from data provider, update hist data to both df and DB
+3. Current day not current bar, get last 5 bars hist data from data provider, update 5 bars hist data to both df and DB
+4. Current day current bar, get mkt data API, update current bar to df only
+5. All parties get data from the df
