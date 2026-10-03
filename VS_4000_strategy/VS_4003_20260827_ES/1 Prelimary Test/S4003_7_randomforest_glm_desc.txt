@@ -1,0 +1,113 @@
+================================================================================
+ S4003_7_randomforest_glm.py  --  program description
+================================================================================
+
+1. WHAT THIS PROGRAM DOES
+-------------------------
+Walk-forward parameter test of the ES intraday strategy (strategyIRB1000_V1
+logic, class strategyS4003V1) with a lookahead-free out-of-sample day gate.
+
+Analysis period : 2025-08-01 .. 2026-09-11 (data loaded from MariaDB
+                  ticker1Min; stn1/sln1 daily stops stay disabled)
+Pipeline        :
+  Phase 1  calibration grid (first 28 days of the period, before any
+           walk-forward day): full (w1, n1, e1) grid; the 2 parameters with
+           the widest win-rate spread are chosen for walk-forward, the 3rd
+           is fixed at the calibration backtest best.
+  Phase 2  gate selection: a mini walk-forward over the last 5 calibration
+           days picks an IS win-rate threshold (gate). A walk-forward day is
+           only traded when its in-sample-selected configuration shows
+           IS win rate >= gate AND IS net > 0. wr_min = 0.0 is the
+           net>0-only baseline. Real OOS data is never touched.
+  Phase 3  walk-forward: rolling in-sample 14 days -> out-of-sample 1 day,
+           per OOS day the best (w1, n1) of the calibration-chosen pair is
+           selected on the IS window ending the day before (key: enough
+           trades, win rate, net), then the OOS day is traded only if the
+           gate passes. Skipped days produce no trades.
+Target         : out-of-sample win rate >= 65% (reported honestly as
+                 PASS/MISS).
+Run            : python S4003_7_randomforest_glm.py [--ticker ES]
+
+2. OUTPUT FILES
+---------------
+All written to C:\...\VSCode Algo Workspace DataFile\VS_4003_20260827_ES\backTestResult
+
+  S4003_7_parameter_analysis.csv    calibration grid results per (w1, n1, e1)
+  S4003_7_parameter_values.csv      win-rate spread per parameter + chosen pair
+  S4003_7_gate_comparison.csv       gate-candidate mini walk-forward results
+  S4003_7_walkforward_results.csv   per-OOS-day metrics (IS/OOS/gate/Sharpe/MaxDD)
+  S4003_7_walkforward_trades.csv    every out-of-sample trade (taken days)
+  S4003_7_walkforward_<ts>.html     program name on top, gate info, summary,
+                                    per-OOS-day table, equity chart
+
+3. STRATEGY CLASS AND SOURCE FILES
+----------------------------------
+  strategyS4003V1        from  2 Strategy\S4003_1_glm.py   (same folder)
+                         - the strategy/backtest engine; class method
+                           _prepare() builds indicators and signals from the
+                           1-min bars; _equity_chart_html() renders the chart
+  S4003_3_randomforest_glm.py (same folder)
+                         - get_db_range(), _restore_params(), EXIT_COST,
+                           W1_GRID / N1_GRID / E1_GRID
+  S4003_5_randomforest_glm.py (same folder)
+                         - simulate_window(), window_metrics(),
+                           _sharpe_from_eq(), _max_dd_from_eq(), MIN_IS_TRADES
+  Data source            - MariaDB IBTradingDb.ticker1Min via
+                           load_data_from_db() (S4003_1_glm), credentials from
+                           VS_0002_config\.env
+  Output folder          - OUTPUT_DIR (S4003_1_glm) =
+                           ...\Workspace DataFile\VS_4003_20260827_ES\backTestResult
+
+4. TEST TYPE
+------------
+WALK-FORWARD TEST (not a plain backtest):
+  - calibration grid + gate selection on a 28-day window (lookahead-free)
+  - rolling in-sample 14 days -> out-of-sample 1 day, over every trading day
+    after the calibration window
+  - per-OOS-day gate derived from calibration only
+
+5. PARAMETERS REQUIRED
+----------------------
+  Command line : --ticker ES (default)
+  Internal     : ANALYSIS_START = 2025-08-01, ANALYSIS_END = 2026-09-11 23:59:59
+                 CALIB_DAYS = 28, IS_DAYS = 14, GATE_SELECT_DAYS = 5
+                 GATE_WR_GRID = (0, 40, 45, 50, 55, 60) % IS win rate
+                 GATE_MIN_TAKEN = 3, WIN_RATE_TARGET = 65%
+                 MIN_IS_TRADES (from S4003_5), EXIT_COST = 14.50 (from S4003_3)
+  Strategy     : w1 (profit multiplier), n1 (stop bars), e1 (entry offset)
+                 grids W1_GRID / N1_GRID / E1_GRID (from S4003_3); stn1/sln1
+                 daily stops always None (disabled)
+
+6. FUNCTIONS IN THIS PY FILE
+----------------------------
+  class S4003V7WalkForward
+    _load()           load 1-min bars from MariaDB, prepare signals
+                      (strategyS4003V1._prepare), classify analysis/trading/
+                      calibration days
+    _run_cfg(w1,n1,e1)  one backtest over the calibration window, metrics dict
+    _rank_key(r)      static ranking key: (freq >= 0.5 and net > 0,
+                      win_rate, net)
+    grid_search()     phase 1: calibration grid, win-rate spread per
+                      parameter, choose the 2 walk-forward parameters, fix
+                      the 3rd at backtest best
+    _is_best_cfg(day, p1, p2, grid, fv)
+                      best (w1, n1) on the IS window ending the day before
+                      (key: trades >= MIN_IS_TRADES, win rate, net)
+    select_gate()     pick the OOS-day gate threshold on calibration
+                      mini-OOS days only
+    walk_forward()    phase 2: rolling IS 14d -> OOS 1d with the day gate;
+                      per-day rows, trades, equity segments
+    write_outputs()   write the 6 output files + HTML report
+    run()             _load -> grid_search -> select_gate -> walk_forward ->
+                      write_outputs -> _restore_params (S4003_3)
+  main()              argparse entry point (--ticker)
+
+  Imported helpers used
+    S4003_5_randomforest_glm : simulate_window, window_metrics,
+                               _sharpe_from_eq, _max_dd_from_eq, MIN_IS_TRADES
+    S4003_3_randomforest_glm : get_db_range, _restore_params, EXIT_COST,
+                               W1_GRID, N1_GRID, E1_GRID
+    S4003_1_glm              : strategyS4003V1, load_data_from_db, OUTPUT_DIR,
+                               DT_FORMAT, strategyS4003V1._prepare,
+                               strategyS4003V1._equity_chart_html
+================================================================================

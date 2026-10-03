@@ -4,70 +4,41 @@
 
 | Component | File | Responsibility |
 | --- | --- | --- |
-| IBClient | `src/data/ib_client.py` | Connect, request historical bars, subscribe live bars (`keepUpToDate=True`) |
-| Database | `src/data/database.py` | SQLite upsert/read of 1-min bars |
-| StrategyBase | `src/strategies/base.py` | Abstract `on_bar(df) -> Signal`, shared param loading |
-| Strategy1 | `src/strategies/strategy1.py` | Concrete strategy logic |
-| BacktestEngine | `src/backtest/engine.py` | Replay bars from DB, apply strategy, simulate fills |
-| Metrics | `src/backtest/metrics.py` | PnL, Sharpe, max drawdown, win rate |
-| WalkForward | `src/walkforward/optimizer.py` | In-sample optimize -> out-of-sample validate, folds |
-| LiveTrader | `src/live/live_trader.py` | Callback loop: new bar -> strategy -> signal -> order |
-| OrderManager | `src/live/order_manager.py` | Signal -> IB order mapping, position/risk checks |
+| Ingest | `VS_6000_DataSource/ibMarketData.py` | Connect, request historical bars, subscribe live bars |
+| Strategy | `VS_4003_20260827_ES/2 Strategy/S4003_strategy.py` | Test S4003 strategy. Concrete strategy logic, base on S4003_7_randomforest_glm.py |
+| BacktestEngine | `VS_4003_20260827_ES/3 BackTest/S4003_backtest.py` | Replay bars from DB, apply strategy, simulate fills, output backtest result |
+| WalkForward | `VS_4003_20260827_ES/4 Walk Forward Test/S4003_walkforward.py` | In-sample optimize -> out-of-sample validate, folds, output walkforward result |
+| LiveTrader | `VS_4003_20260827_ES/6 liveTrade/S4003_live.py` | Callback loop: new bar -> strategy -> signal -> order |
 
 ## 2. Data Model
 
-Table `bars`:
+refer to VS_0007_dbAndFile/mariaDB. table ticker1Min. schema IBTradingDb
 
-```javascript
-symbol      TEXT   -- e.g. 'ES'
-contract_id TEXT   -- resolved front-month contract local symbol
-timestamp   TEXT   -- UTC, ISO-8601
-open        REAL
-high        REAL
-low         REAL
-close       REAL
-volume      INTEGER
-PRIMARY KEY (contract_id, timestamp)
-```
 
 ## 3. Flows
 
 ### Ingest
 
-```javascript
-main.py ingest -> IBClient.connect -> reqHistoricalData(1 min, range)
--> for each bar -> Database.upsert -> disconnect
-```
+main.py ingest -> VS_6003_GetMarketDataToDb -> ibMarketData ->  getAllTypesTicketDataWithTimeFromIB -> IBClient.connect -> reqHistoricalData(1 min, range) -> save to DB -> disconnect
 
 ### Backtest
 
-```javascript
-main.py backtest --period 6M -> Database.load_bars(start, end)
--> BacktestEngine.replay(df, Strategy1(params)) -> Metrics.report()
-```
+main.py backtest --strategy 4003 -> VS_4000_strategy/VS_4003_20260827_ES/3 BackTest/S4003_backtest.py -> load config.yaml -> load symbol name, start date, end date, initCapital, commission amount, table name -> call strategy in S4003_strategy.py -> Metrics.report()
 
 ### Walk-forward
 
-```javascript
-optimizer: for each fold:
+main.py walkForwardTest --strategy 4003 -> VS_4000_strategy/VS_4003_20260827_ES/4 Walk Forward Test/S4003_walkforward.py -> load config.yaml -> load symbol name, start date, end date, initCapital, commission amount, table name. step of IIS , table name, IIS window size, walkforward test parameter range,  -> call strategy in S4003_strategy.py --> optimizer: for each fold:
   in-sample window -> grid/random search params -> pick best by objective
   out-of-sample window -> evaluate best params -> record
-aggregate folds -> if thresholds pass -> save config/strategy1_wf.json
-```
+aggregate folds -> if thresholds pass -> save config/strategyS4003V1_wf.json
+
+### Other Test
+main.py 5 otherTest --strategy 4003 --name lookAhead -> VS_4000_strategy/VS_4003_20260827_ES/5 OtherTest/S4003_lookAhead.py -> load config.yaml -> load symbol name, start date, end date, initCapital, commission amount, table name -> call strategy in S4003_strategy.py --> output html strategy contain look ahead issue or not, detail of look ahead issue
+main.py otherTest --strategy 4003 --name monteCarlo -> VS_4000_strategy/VS_4003_20260827_ES/5 OtherTest/S4003_monteCarlo.py -> load config.yaml -> load symbol name, start date, end date, initCapital, commission amount, table name, number of runs (default 5000) -> call strategy in S4003_strategy.py --> output html table of percentile 99%, 95%, 90%, 75%, 50% final equity, annual return, max draw down, %max draw down, equity chart, draw down chart
+
 
 ### Live
 
-```javascript
-IBClient.connect -> reqHistoricalData(keepUpToDate=True)
--> on bar callback: append to rolling DataFrame (keep last N bars)
--> Strategy1.on_bar(df) -> Signal
--> if Signal != HOLD: OrderManager.execute(signal)
-  position checks -> build IB MarketOrder -> ib.placeOrder -> track fill
-```
+main.py live --strategy 4003 -> VS_4000_strategy/VS_4003_20260827_ES/6 liveTrade/S4003_live.py -> load config.yaml -> load symbol name, start date, end date, positionsize, initCapital, tradePort: tcp/ip port connecting to IB TWS or IB gateway -> IBClient.connect -> reqHistoricalData(keepUpToDate=True) --> call strategy in S4003_strategy.py -> place order -> track fill -> output trade defail transaction to csv, P&L and statistics html
 
-## 4. Key Design Decisions
 
-- `ib_insync` for async IB I/O; callbacks run in the event loop — keep strategy work lightweight.
-- One contract resolution helper ensures backtest and live use consistent ES front-month symbols.
-- Strategy params identical in backtest, walk-forward, and live (single source of truth: JSON file).
-- Paper account enforced via config flag `account_type: paper` until explicitly switched.

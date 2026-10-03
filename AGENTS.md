@@ -29,11 +29,6 @@ VSCode Algo Workspace/
 │   ├── monteCarloSimulation.py # Monte Carlo functions, called from strategy files in VS_4000_strategy
 │   ├── walkForwardTest.py     # walk-forward test functions, called from strategy files in VS_4000_strategy
 │   └── otherTest.py            # other tests (e.g. look-ahead test), called from strategy files in VS_4000_strategy
-├── VS_0004_broker
-│   ├── IB                   
-│   │   ├── ib_client.py # IB API client for TWS/Gateway connectivity, create later
-│   └── Futu
-│       └── fu_client.py         # Futu API client, create later
 ├── VS_0006_dataFunc            # data/feature programs that serve other programs in the workspace
 │   ├── VS_6000_DataSource
 │   │   └── ibMarketData.py             # get market data from IB and save to local MariaDB
@@ -41,6 +36,7 @@ VSCode Algo Workspace/
 │   │   ├── NVDA_20250101_20260430_5Min.py      # get 5-min NVDA data from IB, save to csv
 │   │   └── NVDA_20260101_20260615_1Min.py      # get 1-min NVDA data from IB, save to csv
 │   ├── VS_6003_GetMarketDataToDb
+│   │   ├── config.yaml
 │   │   ├── 1min
 │   │   │   └── DB_NQ_20250101_20260702_1Min.py     # 1-min NQ data from IB -> MariaDB ticker1Min
 │   │   └── 5min
@@ -70,7 +66,7 @@ VSCode Algo Workspace/
 │   │   │   ├── open_router_token_cost.docx
 │   │   │   ├── plan_backtest_S8002_V1.txt
 │   │   │   └── plan_strategy_S8002_V1.txt
-│   │   ├── 2 Strategy
+│   │   ├── 1 Prelimary Test
 │   │   │   └── S8002_1_BB.py           # Bollinger Band strategy
 │   │   └── 3 BackTest                  # (empty - reserved)
 │   ├── VS_4003_20260827_ES             # ES intraday strategy family
@@ -78,7 +74,6 @@ VSCode Algo Workspace/
 │   │   │   ├── prompt_strategy_S4003_V1.txt        # original requirement
 │   │   │   ├── prompt_strategy_S4003_kimi_V1.md    # kimi plan doc
 │   │   │   └── prompt_strategy_S4003_fm_glm_V1.md  # glm plan doc
-│   │   ├── 2 Strategy
 │   │   │   ├── S4003_1_glm.py                  # base engine: strategy logic + MariaDB loader (AFL parity port)
 │   │   │   ├── S4003_1_kimi.py                 # kimi variant of the base engine
 │   │   │   ├── S4003_2_randomforest_glm.py     # RandomForest ML gate on base signals
@@ -98,8 +93,17 @@ VSCode Algo Workspace/
 │   │   │   │   └── backtest_4003_1 - Backtest Report.html
 │   │   │   ├── run_log.txt
 │   │   │   └── requirement variants: S4003_{2..8}_*.txt (glm/kimi ur, OLS/RF per program)
-│   │   ├── 5 OtherTest                     # (empty - reserved)
+│   │   ├── 2 Strategy
+│   │   │   └── S4003_strategy.py
+│   │   ├── 3 BackTest
+│   │   │   └── S4003_backtest.py 
+│   │   ├── 4 WalkForward Test
+│   │   │   └── S4003_walkforward.py 
+│   │   ├── 5 OtherTest                     
+│   │   │   ├── S4003_lookAhead.py
+│   │   │   └── S4003_monteCarlo.py
 │   │   └── 7 liveTrade
+│   │       ├── S4003_live.py
 │   │       └── L4003_1_randomForest_glm.txt    # live-trade requirement for the RF model
 │   └── VS_4004_20260204_NVDA           # NVDA intraday strategy family
 │       ├── 1 Prelimary Test
@@ -128,18 +132,21 @@ VSCode Algo Workspace/
 │   │   ├── displayIBLiveInfo.py    # display IB live info (see displayLiveInfo.txt)
 │   │   ├── displayLiveInfo.txt     # description for displayIBLiveInfo.py
 │   │   └── autotrade
-│   │       ├── VS_8101_autotrade.md
-│   │       ├── VS_8101_autotrade.py        # doTrade0: IB bracket-order trading (port of autoTrade.afl doTrade00)
+│   │       ├── ibAutotrade.md
+│   │       ├── ibAutotrade.py        # doTrade0: IB bracket-order trading (port of autoTrade.afl doTrade00)
 │   │       ├── L8001_autotrade_step.txt    # build notes
 ```
 
 ## Commands
 - Ingest data: `python -m main ingest --period 1min --start 2025-01-01 --end 2025-06-30` 
 - Backtest: `python -m main backtest --strategy 4003`
-- Walk-forward: `python -m main walkforward --strategy 4003`
+- Walk-forward: `python -m main walkForwardTest --strategy 4003`
 - Other Test (Look Ahead): `python -m main otherTest --strategy 4003 --name lookAhead`
 - Other Test (MonteCarlo): `python -m main otherTest --strategy 4003 --name monteCarlo`
-- Live: `python -m main live --strategy 4003`
+- live trade: `python -m main live --strategy 4003`
+
+
+
 
 
 ## Code Conventions

@@ -8,7 +8,7 @@
         "${workspaceFolder}/VS_0006_dataFunc/VS_6005_GetLiveTradeData",
         "${workspaceFolder}/VS_0007_dbAndFile/mariaDB",
         "${workspaceFolder}/VS_0006_dataFunc/VS_6006_FeatureEngineering",
-        "${workspaceFolder}/VS_4000_strategy/VS_4003_20260827_ES/2 Strategy",
+        "${workspaceFolder}/VS_4000_strategy/VS_4003_20260827_ES/1 Prelimary Test",
         "${workspaceFolder}/VS_0008_liveTrade/IB/autotrade",
         "${workspaceFolder}/VS_0008_liveTrade/IB/autotrade/test"
     ]

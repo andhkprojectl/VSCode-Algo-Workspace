@@ -21,9 +21,9 @@ AmiBroker report `backtest_4003_1 - Backtest Report.html` (see §2a).
 
 | Item | Path |
 |---|---|
-| AFL source (primary logic) | `VS_4000_strategy/VS_4003_20260827_ES/2 Strategy/amibroker/backtest_4003_1 trim_4_python.afl` |
-| AmiBroker settings (secondary) | `VS_4000_strategy/VS_4003_20260827_ES/2 Strategy/amibroker/backtest_4003_1 trim_4_python.apx` |
-| AmiBroker reference report (validation) | `VS_4000_strategy/VS_4003_20260827_ES/2 Strategy/amibroker/backtest_4003_1 - Backtest Report.html` |
+| AFL source (primary logic) | `VS_4000_strategy/VS_4003_20260827_ES/1 Prelimary Test/amibroker/backtest_4003_1 trim_4_python.afl` |
+| AmiBroker settings (secondary) | `VS_4000_strategy/VS_4003_20260827_ES/1 Prelimary Test/amibroker/backtest_4003_1 trim_4_python.apx` |
+| AmiBroker reference report (validation) | `VS_4000_strategy/VS_4003_20260827_ES/1 Prelimary Test/amibroker/backtest_4003_1 - Backtest Report.html` |
 | DB access pattern | `VS_0007_dbAndFile/mariaDB/mariaDb.py` (mysql-connector-python, env vars) |
 | DB table DDL | `VS_0007_dbAndFile/mariaDB/amibroker/createTicker1Min.sql` |
 | Test programs (class must be usable as parameter) | `VS_0003_test/backtest.py`, `VS_0003_test/otherTest.py`, `VS_0003_test/monteCarloSimulation.py`, `VS_0003_test/walkForwardTest.py` |
@@ -48,7 +48,7 @@ If any of the 3 metrics differs, calibrate (see §8 step 10 and §10 notes) unti
 
 ## 3. Deliverable
 
-- **File**: `VS_4000_strategy/VS_4003_20260827_ES/2 Strategy/S4003_1.py`
+- **File**: `VS_4000_strategy/VS_4003_20260827_ES/1 Prelimary Test/S4003_1.py`
 - **Class**: `strategyS4003V1` — all strategy logic inside the class (helpers may be module-level functions).
 - Output folder (auto-create if missing):
   `C:\Project\ProjectLife\VSCode Algo Workspace DataFile\VS_4003_20260827_ES\backTestResult\`

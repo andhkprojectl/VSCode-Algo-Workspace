@@ -3,7 +3,7 @@ T1001_1_ buy_ES.py
 ==================
 Requirement: T1001_1_ buy_ES.txt (updated per user: price from the live
 delayed quote instead of the DB last bar close).
-Call VS_8101_autotrade.py function doTrade0 and buy 1 contract of the CME
+Call ibAutotrade.py function doTrade0 and buy 1 contract of the CME
 future ES.
 
 - connects to IB first (port 7497 TWS paper, retry logic), then prices the
@@ -26,7 +26,7 @@ if str(_AUTOTRADE_DIR) not in sys.path:
 
 from ib_insync import Future  # noqa: E402
 
-from VS_8101_autotrade import AutoTrade, doTrade0  # noqa: E402
+from ibAutotrade import AutoTrade, doTrade0  # noqa: E402
 
 
 def live_price(auto_trade, contract):

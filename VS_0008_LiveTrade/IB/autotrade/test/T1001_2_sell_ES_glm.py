@@ -3,7 +3,7 @@ T1001_2_sell_ES_glm.py
 ======================
 Requirement: T1001_2_sell_ES_glm.txt
 If a CME future ES position is open (long), sell it via
-VS_8101_autotrade.py function doTrade0 (sell-only exit order).
+ibAutotrade.py function doTrade0 (sell-only exit order).
 
 - connects to IB first (port 7497 TWS paper, retry logic)
 - prices from the live delayed quote (AutoTrade.get_rt_data)
@@ -24,7 +24,7 @@ if str(_AUTOTRADE_DIR) not in sys.path:
 
 from ib_insync import Future  # noqa: E402
 
-from VS_8101_autotrade import AutoTrade, doTrade0  # noqa: E402
+from ibAutotrade import AutoTrade, doTrade0  # noqa: E402
 
 
 def live_price(auto_trade, contract):

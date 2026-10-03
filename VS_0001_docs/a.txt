@@ -24,7 +24,7 @@ please rename VS_4000_Strategy\VS_4001_20260204_NVDA to VS_4000_Strategy\VS_4004
 
 under folder VS_6005_GetLiveTradeData, VS_6005_2_1min_glm.txt describe VS_6005_1_1min_glm.py. please change VS_6005_2_1min_glm.txt to mark down file format and rename VS_6005_2_1min_glm.txt to VS_6005_2_1min_glm.md (no need to keep file VS_6005_2_1min_glm.txt)
 
-under folder VSCode Algo Workspace\VS_0008_liveTrade\IB\autotrade, L8001_autotrade_UR_V1.txt, L8001_autotrade_UR_V2.txt, L8001_autotrade_UR_V3.txt describe VS_8101_autotrade.py. Please consolidate content of 3 txt file into 1 VS_8101_autotrade.md mark down file and remove the 3 txt files
+under folder VSCode Algo Workspace\VS_0008_liveTrade\IB\autotrade, L8001_autotrade_UR_V1.txt, L8001_autotrade_UR_V2.txt, L8001_autotrade_UR_V3.txt describe ibAutotrade.py. Please consolidate content of 3 txt file into 1 ibAutotrade.md mark down file and remove the 3 txt files
 
 
 under folder VS_4001_GeneralStrategy, S0001_GeneralFeature_2_ur V1.txt, S0001_GeneralFeature_2_ur V2.txt describe S0001_GeneralFeature_1_kimi.py. Please understand 2 txt files and consolidate content txt files into 1 S0001_GeneralFeature_2_glm.md file, in mark down file format, then remove the 2 txt files

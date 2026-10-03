@@ -2,7 +2,7 @@
 T1001_2_sell_ES_kimi.py
 =======================
 Requirement: T1001_2_sell_ES_kimi.txt
-Call VS_8101_autotrade.py function doTrade0: if there is 1 contract of the
+Call ibAutotrade.py function doTrade0: if there is 1 contract of the
 CME future ES position open, sell this 1 contract.
 
 - connects to IB first (port 7497 TWS paper, retry logic)
@@ -22,7 +22,7 @@ _AUTOTRADE_DIR = _HERE.parent                           # IB\autotrade
 if str(_AUTOTRADE_DIR) not in sys.path:
     sys.path.insert(0, str(_AUTOTRADE_DIR))
 
-from VS_8101_autotrade import AutoTrade, doTrade0  # noqa: E402
+from ibAutotrade import AutoTrade, doTrade0  # noqa: E402
 
 
 def live_price(auto_trade, contract):

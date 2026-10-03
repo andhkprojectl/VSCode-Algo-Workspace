@@ -1,0 +1,135 @@
+S4003_3_glm_diff_to_2 V1.txt
+============================
+Differences: S4003_3_randomforest_glm.py vs S4003_2_randomforest_glm.py
+(both live in VS_4000_strategy/VS_4003_20260827_ES/1 Prelimary Test/)
+
+Both programs share the same foundation and are NOT independent: both wrap
+the unchanged S4003_1 engine (strategyS4003V1), use the S0001
+ESFeatureEngineer 150-feature set at each trade's signal bar, train a
+Random Forest (400 trees, depth 6, min_samples_leaf 5, balanced) with a
+purged expanding walk-forward (5 folds, purge gap = max holding + 10
+bars), gate entries on out-of-sample P(Win) with per-direction long/short
+thresholds, never modify exits, and pursue the same three targets
+(net +15%, win rate +15%, >= 1 trade per 2 trading days).
+S4003_3 even imports write_backtest_trio() from S4003_2 instead of
+duplicating it.
+
+--------------------------------------------------------------------------
+1. STRATEGY PARAMETERS: FIXED vs GRID-SEARCHED  (the core difference)
+--------------------------------------------------------------------------
+S4003_2: one fixed configuration taken from S4003_1's class defaults:
+         take-profit multiple w1 = 1.5, N-bar stop n1 = 15,
+         entry limit-offset divisor e1 = 4.
+
+S4003_3: sweeps the full grid required by S4003_3_glm_ur V1.txt:
+         w1 in {1.5, 2.0, 2.5}  x  n1 in {10, 15, 20, 25}  x  e1 in {4, 5}
+         = 24 backtested combinations; the winner is chosen by the target
+         rule and printed to screen as "BEST PARAMETERS" (winner on the
+         full-history run: w1=1.5, n1=15, e1=4, gates 0.40/0.40).
+
+--------------------------------------------------------------------------
+2. COSTS PER TRADE
+--------------------------------------------------------------------------
+S4003_2: $14.50 round-turn commission per trade (inherited from the
+         AmiBroker parity validation; strategyS4003V1.commission_per_trade
+         untouched).
+
+S4003_3: $7.25 deducted from each trade's profit at sell/cover
+         (commission + slippage on the exit side), replacing the $14.50
+         round turn. Applied to every backtest in the program via
+         _set_params(); the original class attributes are saved and
+         restored after the run.
+
+--------------------------------------------------------------------------
+3. HOW THE GATE THRESHOLDS ARE SEARCHED
+--------------------------------------------------------------------------
+S4003_2: threshold search re-runs the FULL bar-by-bar simulation for every
+         candidate gate (stage 1 shared grid 0.30-0.70 step 0.02 + stage 2
+         per-direction 10x10 grid = 121 simulations) - expensive but there
+         is only one configuration.
+
+S4003_3: per configuration the RF walk-forward is retrained (labels change
+         with w1/n1/e1), but the gate search uses gate_search_fast():
+         trade-list arithmetic only (net / win rate / trade frequency from
+         the kept-trade subset, no re-simulation) across the same shared +
+         per-direction grids. Only the winning (params, gates) pair is
+         fully re-simulated at the end for the official outputs.
+         Result: 24 configurations evaluated in roughly the same wall time
+         S4003_2 needs for one.
+
+--------------------------------------------------------------------------
+4. TARGET REFERENCE (what "+15%" is measured against)
+--------------------------------------------------------------------------
+S4003_2: targets are measured against its OWN base run (same parameters,
+         $14.50 costs) - i.e. "what does the RF gate alone add?".
+
+S4003_3: targets are measured against the ORIGINAL S4003_1 reference
+         (original w1=1.5/n1=15/e1=4 and $14.50 commission, re-simulated at
+         program start) - i.e. parameter changes, the cost change and the
+         RF gate together must beat the existing strategy by 15%.
+
+--------------------------------------------------------------------------
+5. CODE STRUCTURE
+--------------------------------------------------------------------------
+S4003_2 (687 lines): class RandomForestEnhancer with everything as bound
+         methods (run_base_strategy, build_features, build_samples,
+         purged_walk_forward, _simulate_with_threshold, select_threshold,
+         enhanced_simulation, fit_final_model, ...). Defines
+         write_backtest_trio() locally.
+
+S4003_3 (566 lines): class GridSearchEnhancer plus module-level helpers
+         (_set_params/_restore_params, purged_walk_forward, build_samples,
+         gate_search_fast) so the same logic can run 24 times; reuses
+         write_backtest_trio imported from S4003_2.
+
+--------------------------------------------------------------------------
+6. COMMAND LINE
+--------------------------------------------------------------------------
+S4003_2: --threshold <float> pins a fixed gate (skips the search).
+S4003_3: no --threshold option (gates are always searched); same
+         --start/--end/--ticker/--folds/--min-train/--seed/--no-trio flags
+         otherwise.
+
+--------------------------------------------------------------------------
+7. OUTPUT FILES
+--------------------------------------------------------------------------
+Both write, into DataFile\VS_4003_20260827_ES\backTestResult\:
+         S4003_2_randomforest_results.csv
+         S4003_2_randomforest_model.pkl
+         S4003_2_randomforest_feature_importance.csv
+(file names kept identical per the S4003_3 requirement text - running
+S4003_3 OVERWRITES the S4003_2 outputs).
+
+Differences in content:
+  - results.csv sections:
+      S4003_2: base | enhanced | targets | model
+      S4003_3: reference_base(original S4003_1) | base(best params) |
+               enhanced | targets | model, and the model section adds
+               best_w1_take_profit_mult, best_n1_nbar_stop,
+               best_e1_entry_offset_divisor, exit_cost_sell_cover.
+  - model.pkl payload: S4003_3 adds 'best_params' and
+      'parameter_search' (all 24 evaluated combinations).
+  - backtest trio prefix: S4003_2 writes S4003_2_<ts>.html/.csv and
+      S4003_2_explore_<ts>.csv; S4003_3 writes S4003_3_<ts>.html/.csv and
+      S4003_3_explore_<ts>.csv.
+  - label definition: y = trade pnl > 0 in both, but S4003_3's pnl carries
+      the $7.25 exit cost instead of $14.50.
+
+--------------------------------------------------------------------------
+8. RESULT ON THE FULL-HISTORY RUN (2026-04-01..2026-08-21, 120 days)
+--------------------------------------------------------------------------
+                       S4003_1 ref   S4003_2 enhanced   S4003_3 enhanced
+ trades                    136             119                109
+ net profit             2,704.14         2,895.85           3,600.94
+ win rate                 44.12%          45.38%             47.71%
+ Sharpe                    1.37            1.63               2.44
+ profit factor             1.32            1.41               1.63
+ max drawdown              1.64%           1.14%              0.90%
+ T1 net +15%              -               MISS               PASS (+33.2%)
+ T2 win rate +15%          -               MISS               MISS (+8.1% rel.)
+ T3 >=1 trade/2 days       -               PASS               PASS (0.91/day)
+
+Same residual limitation in both: no (parameters, gates) combination lifts
+the OOS win rate by the full 15% - the Random Forest's out-of-sample edge
+(fold AUC ~0.57-0.59 on ~136 labeled trades) is not strong enough; both
+programs report the shortfall honestly instead of forcing a pass.

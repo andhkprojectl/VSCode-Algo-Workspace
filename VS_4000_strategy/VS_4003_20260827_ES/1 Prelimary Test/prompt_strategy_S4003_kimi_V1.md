@@ -9,7 +9,7 @@ Phase A — AFL conversion understanding
 1. Analyze source AFL [backtest_4003_1 trim_4_python.afl] and `.apx` — extract: VWAP (50-bar, month-reset variant `vwap50_2`), Stochastics (9,3 / 14,3 / 40,4 / 60,5), ATR(14), EMA(9), price-action patterns (`priceActionUp4Bar2` → `buy01_3_2`, `priceActionDown3Bar1` → `short01_4`, `priceActionDown3Bar2`/`short02`), divergence, body-size percentile ranks, and the bar-loop exit engine (stop loss `max3BarAtr14_1`, profit target `1.5*max3BarAtr14_1`, N-bar stop `stopPeriod1=15`, signal reversal force exits). *indipendent*, blocks Phase B.
 
 Phase B — Strategy file
-2. Create VS_4000_strategy/VS_4003_20260827_ES/2 Strategy/S4003_1.py containing class `strategyS4003V1`. Use S8002_1_BB.py as structural template — helper indicator functions, `init`/`next`, `generate_signals`, `run_backtest`. *depends on 1*
+2. Create VS_4000_strategy/VS_4003_20260827_ES/1 Prelimary Test/S4003_1.py containing class `strategyS4003V1`. Use S8002_1_BB.py as structural template — helper indicator functions, `init`/`next`, `generate_signals`, `run_backtest`. *depends on 1*
 3. Data loader: MariaDB `IBTradingDb.ticker1Min`, user `ibUser1@localhost`, mirroring mariaDb.py connector pattern (mysql.connector, env-var-overridable host/user/password/database). Query `ticker, datetime1, open, high, low, close, volume`; parse to pandas DataFrame with DatetimeIndex. *depends on 2*
 4. Class methods: `init`/`next` (backtesting.Strategy subclass) for backtest.py; `generate_signals(df)` for otherTest.py look-ahead test; `run_backtest(df, init_balance, position_size)` returning per-trade P&L list for monteCarloSimulation.py; compatible with walkForwardTest.py. *depends on 3*
 5. Conversion fidelity: all indicator math with no look-ahead (Elliott wave / divergence entries use bar-relative shifted refs identical to AFL `Ref(x, -n)` semantics). *depends on 4*
@@ -23,8 +23,8 @@ Phase D — Validation
 9. Run backtest on 2026-07-13 → 2026-08-17 and compare Number of trades, Net profit, Win rate against backtest_4003_1 - Backtest Report.html. Tolerances to lock with user. *depends on 8*
 
 **Relevant files**
-- VS_4000_strategy/VS_4003_20260827_ES/2 Strategy/S4003_1.py — new strategy module (create)
-- VS_4000_strategy/VS_4003_20260827_ES/2 Strategy/amibroker/* — conversion source
+- VS_4000_strategy/VS_4003_20260827_ES/1 Prelimary Test/S4003_1.py — new strategy module (create)
+- VS_4000_strategy/VS_4003_20260827_ES/1 Prelimary Test/amibroker/* — conversion source
 - VS_0007_dbAndFile/mariaDB/mariaDb.py — DB connection template
 - VS_0003_test/backtest.py — expects `Backtest`, `Strategy`, `init`/`next`, `_trades`
 - VS_0003_test/otherTest.py — expects `strategy1.generate_signals(df)` returning `signal` column for lookAheadBiasTest; also holds monkeyTest

@@ -1,8 +1,8 @@
 Please provide python program for algo trade strategy
 
 requirement:
-1. filename: VS_4000_strategy/VS_4003_20260827_ES/2 Strategy/S4003_1.py
-2. S4003_1.py convert from amibroker program VS_4000_strategy\VS_4003_20260827_ES\2 Strategy\amibroker\backtest_4003_1 trim_4_python.afl and backtest_4003_1 trim_4_python.apx
+1. filename: VS_4000_strategy/VS_4003_20260827_ES/1 Prelimary Test/S4003_1.py
+2. S4003_1.py convert from amibroker program VS_4000_strategy\VS_4003_20260827_ES\1 Prelimary Test\amibroker\backtest_4003_1 trim_4_python.afl and backtest_4003_1 trim_4_python.apx
 3. Datasource is mariaDB, database name IBTradingDb, login user 'ibUser1'@'localhost', table ticker1Min. detail refer to VS_0007_dbAndFile\mariaDB
 4. in py file, create a class strategyS4003V1, strategy logic inside the class
 5. class strategyS4003V1 can be a parameter to all testing program VS_0003_test backtest.py, otherTest.py, monteCarloSimulation.py and walkforwardTest.py
@@ -71,7 +71,7 @@ requirement:
             - column H - I: cCrossUpBBTop, cCrossDownBBBottom
         - records in decending order of column C
 7. if backtest class strategyS4003V1 from 2026-07-13 to 2026-08-17, below results 
-    should be the same as backtest result from amibroker in file VS_4000_strategy\VS_4003_20260827_ES\2 Strategy\amibroker\backtest_4003_1 - Backtest Report.html
+    should be the same as backtest result from amibroker in file VS_4000_strategy\VS_4003_20260827_ES\1 Prelimary Test\amibroker\backtest_4003_1 - Backtest Report.html
             - number of trades
             - net profit
             - win rate

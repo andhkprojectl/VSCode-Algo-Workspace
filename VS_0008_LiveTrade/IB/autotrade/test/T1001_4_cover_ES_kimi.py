@@ -2,7 +2,7 @@
 T1001_4_cover_ES_kimi.py
 ========================
 Requirement: T1001_4_cover_ES kimi.txt (parameters reference T1001_1_ buy_ES.py)
-Call VS_8101_autotrade.py function doTrade0: if there is an open short
+Call ibAutotrade.py function doTrade0: if there is an open short
 position of 1 contract of the CME future ES, cover (buy back) the contract.
 
 - connects to IB first (port 7497 TWS paper, retry logic)
@@ -24,7 +24,7 @@ _AUTOTRADE_DIR = _HERE.parent                           # IB\autotrade
 if str(_AUTOTRADE_DIR) not in sys.path:
     sys.path.insert(0, str(_AUTOTRADE_DIR))
 
-from VS_8101_autotrade import AutoTrade, doTrade0  # noqa: E402
+from ibAutotrade import AutoTrade, doTrade0  # noqa: E402
 
 
 def live_price(auto_trade, contract):
