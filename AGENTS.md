@@ -18,12 +18,22 @@ Some files already exists in the workspace. Keep files unchanged if file name no
 ```
 VSCode Algo Workspace/
 ├── AGENTS.md
+├── .gitignore                        # excludes .env, __pycache__, .venv
+├── config.yaml                       # global strategy configuration, section Ingest (TASKS.md T0.2)
+├── ingest.py                           
+├── backtest.py                         
+├── walkforward.py                      
+├── lookAhead.py                        
+├── monteCarlo.py                       
+├── liveTrade.py                        
 ├── VS_0001_docs
 │   ├── PRD.md
 │   ├── ARCHITECTURE.md
 │   └── TASKS.md
 ├── VS_0002_config
-│   └── config.yaml # environment variables (IB / MariaDB ),credentials), not exists yet, need later create
+│   ├── .env                          # IB / MariaDB credentials (never commit)
+│   ├── .env.example                  # template of the .env keys
+│   └── config.yaml                   # global configuration
 ├── VS_0003_test
 │   ├── backtest.py             # backtest functions, called from strategy files in VS_4000_strategy
 │   ├── monteCarloSimulation.py # Monte Carlo functions, called from strategy files in VS_4000_strategy
@@ -31,13 +41,18 @@ VSCode Algo Workspace/
 │   └── otherTest.py            # other tests (e.g. look-ahead test), called from strategy files in VS_4000_strategy
 ├── VS_0006_dataFunc            # data/feature programs that serve other programs in the workspace
 │   ├── VS_6000_DataSource
-│   │   └── ibMarketData.py             # get market data from IB and save to local MariaDB
+│   │   ├── ibMarketData.py               # get market data from IB and save to local MariaDB
+│   │   └── yFinanceMarketData.py         # get market data from yFinance
 │   ├── VS_6001_GetMarketDataToCsv
 │   │   ├── NVDA_20250101_20260430_5Min.py      # get 5-min NVDA data from IB, save to csv
 │   │   └── NVDA_20260101_20260615_1Min.py      # get 1-min NVDA data from IB, save to csv
+│   ├── VS_6002_findAlpha
+│   │   └── 2 Strategy
+│   │       ├── S6002_1_GenStatisticsRelationCsvFile.py      # generate statistics-relation csv for alpha research
+│   │       └── test_S6002_1_GenStatisticsRelationCsvFile.py
 │   ├── VS_6003_GetMarketDataToDb
-│   │   ├── config.yaml
 │   │   ├── 1min
+│   │   │   ├── ingest.py                           # ingest mode: params from root config.yaml section Ingest (TASKS.md T6.1)
 │   │   │   └── DB_NQ_20250101_20260702_1Min.py     # 1-min NQ data from IB -> MariaDB ticker1Min
 │   │   └── 5min
 │   │       ├── DB_NQ_20250101_20260702_5Min.py     # 5-min NQ data from IB -> MariaDB ticker5Min
@@ -45,28 +60,37 @@ VSCode Algo Workspace/
 │   ├── VS_6004_GetDataFromMariaDb
 │   │   └── VS_6004_GetDataFromMariaDb.py   # load_1Min_data_from_db: read 1-min bars from MariaDB
 │   ├── VS_6005_GetLiveTradeData
-│   │   ├── VS_6005_1_1min_glm.py           # getLiveTradeIB1MinData: consolidate MariaDB + IB live 1-min bars into df
-│   │   ├── VS_6005_2_1min_glm.md           # requirement doc for VS_6005_1
+│   │   ├── VS_6005_0_desc.txt            # overall description of the live-trade data programs
+│   │   ├── VS_6005_1_1min_glm.py         # getLiveTradeIB1MinData: consolidate MariaDB + IB live 1-min bars into df
+│   │   ├── VS_6005_2_1min_glm.md         # requirement doc for VS_6005_1
+│   │   └── test
+│   │       └── test_VS_6005_1.py
 │   └── VS_6006_FeatureEngineering
 │       ├── F6006_FeatureScoreRanker_1_glm.py   # feature score ranker for strategies in VS_4000_strategy
 │       ├── F6006_GeneralFeature_1_kimi.py      # feature engineering (kimi variant)
 │       ├── F6006_GeneralFeature_2_glm.py       # feature engineering (glm variant)
 │       └── F6006_GeneralFeature_2_glm.md       # requirement doc for F6006_GeneralFeature_2_glm.py
 ├── VS_0007_dbAndFile
-│   └── mariaDB
-│       ├── mariaDb.md              # doc for mariaDb.py
-│       ├── mariaDb.py              # MariaDB functions (saveDfToTicker5Min etc.)
-│       └── sql
-│           ├── createIBDbUser.sql      # create database schema, user and privileges for IBTradingDb
-│           ├── createTicker1Min.sql    # create ticker1Min table
-│           └── createTicker5Min.sql    # create ticker5Min table
+│   ├── mariaDB
+│   │   ├── mariaDb.md              # doc for mariaDb.py
+│   │   ├── mariaDb.py              # MariaDB functions (saveDfToTicker5Min etc.)
+│   │   └── sql
+│   │       ├── createIBDbUser.sql      # create database schema, user and privileges for IBTradingDb
+│   │       ├── createTicker1Min.sql    # create ticker1Min table
+│   │       ├── createTicker5Min.sql    # create ticker5Min table
+│   │       └── migrateTicker5Min_datetime1.sql  # migration: adjust datetime column of ticker5Min
+│   └── sqlIte
+│       ├── sql
+│       │   ├── SQLite1.sql
+│       │   └── ticker.sql
+│       └── ticker.db               # local SQLite ticker database
 ├── VS_4000_strategy
 │   ├── VS_4002_20260620_NVDA
 │   │   ├── 1 Prelimary Test
 │   │   │   ├── open_router_token_cost.docx
 │   │   │   ├── plan_backtest_S8002_V1.txt
 │   │   │   └── plan_strategy_S8002_V1.txt
-│   │   ├── 1 Prelimary Test
+│   │   ├── 2 Strategy
 │   │   │   └── S8002_1_BB.py           # Bollinger Band strategy
 │   │   └── 3 BackTest                  # (empty - reserved)
 │   ├── VS_4003_20260827_ES             # ES intraday strategy family
@@ -94,17 +118,19 @@ VSCode Algo Workspace/
 │   │   │   ├── run_log.txt
 │   │   │   └── requirement variants: S4003_{2..8}_*.txt (glm/kimi ur, OLS/RF per program)
 │   │   ├── 2 Strategy
-│   │   │   └── S4003_strategy.py
+│   │   │   └── S4003_strategy.py             # strategy class strategyS4003 + loadStrategyConfig (TASKS.md T1.1)
 │   │   ├── 3 BackTest
-│   │   │   └── S4003_backtest.py 
-│   │   ├── 4 WalkForward Test
-│   │   │   └── S4003_walkforward.py 
-│   │   ├── 5 OtherTest                     
-│   │   │   ├── S4003_lookAhead.py
-│   │   │   └── S4003_monteCarlo.py
-│   │   └── 7 liveTrade
-│   │       ├── S4003_live.py
-│   │       └── L4003_1_randomForest_glm.txt    # live-trade requirement for the RF model
+│   │   │   └── S4003_backtest.py             # backtest: RF gate + daily stops (TASKS.md T2.2)
+│   │   ├── 4 Walk Forward Test
+│   │   │   └── S4003_walkforward.py          # rolling IIS/OOS walk-forward with OOS-day gate (TASKS.md T2.1)
+│   │   ├── 5 OtherTest
+│   │   │   ├── S4003_lookAhead.py            # look-ahead bias test, verdict CLEAN (TASKS.md T3.1)
+│   │   │   └── S4003_monteCarlo.py           # Monte Carlo over trade P&L, percentile html (TASKS.md T3.2)
+│   │   ├── 6 liveTrade
+│   │   │   ├── S4003_live.py                 # live loop: IB keepUpToDate 1-min bars -> strategyS4003 -> doTrade0 (TASKS.md T4.1)
+│   │   │   ├── test_S4003_live.py            # offline tests: signal->order mapping, OBSERVE gate, DB replay
+│   │   │   └── L4003_1_randomForest_glm.txt  # live-trade requirement for the RF model
+│   │   └── config.yaml                       # local strategy configuration (TASKS.md T0.1)
 │   └── VS_4004_20260204_NVDA           # NVDA intraday strategy family
 │       ├── 1 Prelimary Test
 │       │   ├── plan-nvdaFeatureAnalysis.prompt.md
@@ -128,24 +154,30 @@ VSCode Algo Workspace/
 │       ├── config.yaml                     # local strategy configuration
 │       └── readMe.txt
 ├── VS_0008_liveTrade
+│   ├── ibAutotrade.py              # doTrade0: IB bracket-order trading (port of autoTrade.afl doTrade00)
 │   ├── IB
 │   │   ├── displayIBLiveInfo.py    # display IB live info (see displayLiveInfo.txt)
 │   │   ├── displayLiveInfo.txt     # description for displayIBLiveInfo.py
 │   │   └── autotrade
-│   │       ├── ibAutotrade.md
-│   │       ├── ibAutotrade.py        # doTrade0: IB bracket-order trading (port of autoTrade.afl doTrade00)
-│   │       ├── L8001_autotrade_step.txt    # build notes
+│   │       ├── ibAutotrade.md            # doc for ibAutotrade.py
+│   │       ├── L8001_autotrade_step.txt  # build notes
+│   │       ├── amibroker
+│   │       │   └── autoTrade.afl         # AmiBroker AFL source of doTrade0
+│   │       └── test                      # T1001_x order tests (buy/sell/short/cover ES)
+│   └── test
+│       └── convert_autoTrade_by_gemini.py
 ```
 
 ## Commands
-- Ingest data: `python -m main ingest --period 1min --start 2025-01-01 --end 2025-06-30` 
-- Backtest: `python -m main backtest --strategy 4003`
-- Walk-forward: `python -m main walkForwardTest --strategy 4003`
-- Other Test (Look Ahead): `python -m main otherTest --strategy 4003 --name lookAhead`
-- Other Test (MonteCarlo): `python -m main otherTest --strategy 4003 --name monteCarlo`
-- live trade: `python -m main live --strategy 4003`
+(under workspace root, see TASKS.md Phase 7)
+- Ingest data: `ingest.py`, , see TASKS.md Phase T7.1
+- Backtest: `backtest.py`, see TASKS.md Phase T7.2
+- Walk-forward: `walkforward.py`, see TASKS.md Phase T7.3
+- Other Test (Look Ahead): `lookAhead.py`, see TASKS.md Phase T7.4
+- Other Test (MonteCarlo): `monteCarlo.py`, see TASKS.md Phase T7.5 
+- live trade: `liveTrade.py`, see TASKS.md Phase T7.6
 
-
+               
 
 
 

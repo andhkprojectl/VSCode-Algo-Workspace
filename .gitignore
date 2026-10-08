@@ -1,0 +1,8 @@
+# Credentials - never commit (TASKS.md T6.1)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/

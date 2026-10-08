@@ -1,0 +1,27 @@
+# =============================================================================
+# Global configuration - VSCode Algo Workspace (TASKS.md T6.2)
+# Credentials are NOT stored here. They live in VS_0002_config/.env
+# (see .env.example for the required keys). Never commit .env.
+# =============================================================================
+
+IB:
+  host: 127.0.0.1
+  twsPaperPort: 7497            # IB TWS paper account
+  gatewayPaperPort: 4002        # IB Gateway paper account
+  twsLivePort: 7496             # IB TWS live account - do not use before all tests pass
+  gatewayLivePort: 4001         # IB Gateway live account - do not use before all tests pass
+  clientId: 1
+
+MariaDB:
+  host: localhost
+  port: 3306
+  schema: IBTradingDb
+  user: ibUser1
+  # password: read only from .env key DB_PASSWORD - never store it here
+
+Table:
+  bar1Min: ticker1Min
+  bar5Min: ticker5Min
+
+Output:
+  dataFileRoot: C:/Project/ProjectLife/VSCode Algo Workspace DataFile

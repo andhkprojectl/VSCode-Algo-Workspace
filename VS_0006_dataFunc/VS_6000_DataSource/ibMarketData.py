@@ -140,9 +140,11 @@ def getAllTypesTicketDataWithTimeFromIB(conn1, symbolName, startDate, startTime,
         days = duration_delta.days
 
         if days < 1:
-            # Sub-day stub: use hours ("1 D" can truncate to the last session segment)
-            hours = int(duration_delta.total_seconds() // 3600) + 1
-            durationStr = f"{hours} H"
+            # Sub-day stub: use seconds. "N H" is NOT a valid IB duration unit
+            # (only S|D|W|M|Y) -> error 321 'bH'; "1 D" can truncate to the
+            # last session segment.
+            seconds = int(duration_delta.total_seconds()) + 60
+            durationStr = f"{seconds} S"
         else:
             durationStr = f"{days + 1} D" # Add 1 day buffer to ensure edge coverage
             

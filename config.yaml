@@ -1,0 +1,23 @@
+# =============================================================================
+# config.yaml (workspace root) - global strategy configuration (TASKS.md T0.2)
+# Credentials are NOT stored here - they live in VS_0002_config/.env
+# (DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_NAME, see .env.example).
+# =============================================================================
+
+# --- T6.1: data ingestion from IB -> MariaDB ---
+# Consumed by VS_0006_dataFunc/VS_6003_GetMarketDataToDb/1min/ingest.py.
+# Parameters follow ibMarketData.getAllTypesTicketDataWithTimeFromIB(...)
+# plus the output table (PRD.md FR-1).
+Ingest:
+  symbolName: ES              # S&P e-mini future continuous contract
+  startDate: "20261001"       # YYYYMMDD
+  startTime: "0000"           # HHMM
+  endDate: "20261006"         # YYYYMMDD
+  endTime: "2359"             # HHMM
+  period1: 1                  # bar size in minutes (1 -> 1-min bars)
+  tickerType: FU              # ST = stock, FU = future
+  isConFuture: true           # true = continuous future; false = specific contract
+  futureExpireDate: null      # e.g. "202609"; only used when isConFuture = false
+  futureExchange: CME         # NQ/ES/RTY = CME; YM = CBOT
+  tableName: ticker1Min       # MariaDB IBTradingDb output table
+  isOverride: true            # true = update existing (ticker, datetime1) rows; false = skip

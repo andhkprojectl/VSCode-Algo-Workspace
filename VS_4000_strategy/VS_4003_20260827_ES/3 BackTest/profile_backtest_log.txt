@@ -1,0 +1,122 @@
+Config: C:\Users\andhk\AppData\Local\Temp\kilo\bt_profile_out\config_backtest_profile.yaml
+Loading ES 1-min bars [2026-09-01 00:00:00 .. 2026-09-30 23:59:59] ...
+Loaded 28516 bars: 2026-09-01 00:00:00 .. 2026-09-30 23:59:00 (26 trading days)
+Computing signals (parameter-independent) ...
+Computing S0001 feature set (parameter-independent) ...
+Features: 150 columns
+
+Reference (original S4003_1, $14.50 commission): 38 trades, net 6.44, win rate 44.74%
+Targets: net >= 7.40 (+15%), win rate >= 51.45% (+15%), freq >= 0.50 trades/day
+
+Phase A: 24 (w1, n1, e1) combinations, daily stops disabled (exit cost $14.50/trade)
+  w1  n1  e1 stn1 sln1  baseTr    baseNet |  thrL  thrS  RFtr      RFnet  RFwin%  freq    T1   T2   T3
+ 1.5  10 4.0 none none      38     -76.22 |  0.30  0.55    31     -53.88   41.94  1.19     -    - PASS
+ 1.5  10 5.0 none none      38    -180.11 |  0.30  0.55    31    -141.19   41.94  1.19     -    - PASS
+ 1.5  15 4.0 none none      38       6.44 |  0.30  0.30    38       6.44   44.74  1.46     -    - PASS
+ 1.5  15 5.0 none none      38     -97.45 |  0.30  0.55    31     -58.53   41.94  1.19     -    - PASS
+ 1.5  20 4.0 none none      38       6.44 |  0.30  0.30    38       6.44   44.74  1.46     -    - PASS
+ 1.5  20 5.0 none none      38     -97.45 |  0.30  0.55    31     -58.53   41.94  1.19     -    - PASS
+ 1.5  25 4.0 none none      38       6.44 |  0.30  0.30    38       6.44   44.74  1.46     -    - PASS
+ 1.5  25 5.0 none none      38     -97.45 |  0.30  0.55    31     -58.53   41.94  1.19     -    - PASS
+ 2.0  10 4.0 none none      39     486.39 |  0.30  0.30    39     486.39   43.59  1.50  PASS    - PASS
+ 2.0  10 5.0 none none      39     382.50 |  0.30  0.30    39     382.50   43.59  1.50  PASS    - PASS
+ 2.0  15 4.0 none none      39     798.90 |  0.30  0.30    39     798.90   43.59  1.50  PASS    - PASS
+ 2.0  15 5.0 none none      39     695.02 |  0.30  0.30    39     695.02   43.59  1.50  PASS    - PASS
+ 2.0  20 4.0 none none      39     798.90 |  0.30  0.30    39     798.90   43.59  1.50  PASS    - PASS
+ 2.0  20 5.0 none none      39     695.02 |  0.30  0.30    39     695.02   43.59  1.50  PASS    - PASS
+ 2.0  25 4.0 none none      39     798.90 |  0.30  0.30    39     798.90   43.59  1.50  PASS    - PASS
+ 2.0  25 5.0 none none      39     695.02 |  0.30  0.30    39     695.02   43.59  1.50  PASS    - PASS
+ 2.5  10 4.0 none none      40     757.79 |  0.30  0.30    40     757.79   45.00  1.54  PASS    - PASS
+ 2.5  10 5.0 none none      40     653.91 |  0.30  0.30    40     653.91   45.00  1.54  PASS    - PASS
+ 2.5  15 4.0 none none      40    1297.60 |  0.30  0.55    32     857.97   43.75  1.23  PASS    - PASS
+ 2.5  15 5.0 none none      40    1193.72 |  0.30  0.55    32     775.22   43.75  1.23  PASS    - PASS
+ 2.5  20 4.0 none none      40     925.03 |  0.30  0.40    39     970.45   38.46  1.50  PASS    - PASS
+ 2.5  20 5.0 none none      40     821.14 |  0.30  0.40    39     866.56   38.46  1.50  PASS    - PASS
+ 2.5  25 4.0 none none      40     925.03 |  0.30  0.40    39     970.45   38.46  1.50  PASS    - PASS
+ 2.5  25 5.0 none none      40     821.14 |  0.30  0.40    39     866.56   38.46  1.50  PASS    - PASS
+
+Phase B: daily-stop grid stn1/sln1 in {None, 1, 2, 3} on the top 3 configurations
+  w1  n1  e1 stn1 sln1  baseTr    baseNet |  thrL  thrS  RFtr      RFnet  RFwin%  freq    T1   T2   T3
+ 2.5  10 4.0    1    1      32     612.91 |  0.50  0.30    31     703.24   45.16  1.19  PASS    - PASS
+ 2.5  10 4.0    1    2      34     857.23 |  0.40  0.40    33     947.56   48.48  1.27  PASS    - PASS
+ 2.5  10 4.0    1    3      34     857.23 |  0.40  0.40    33     947.56   48.48  1.27  PASS    - PASS
+ 2.5  10 4.0    1 none      34     857.23 |  0.40  0.40    33     947.56   48.48  1.27  PASS    - PASS
+ 2.5  10 4.0    2    1      37     342.96 |  0.30  0.30    37     342.96   40.54  1.42  PASS    - PASS
+ 2.5  10 4.0    2    2      40     757.79 |  0.30  0.30    40     757.79   45.00  1.54  PASS    - PASS
+ 2.5  10 4.0    2    3      40     757.79 |  0.30  0.30    40     757.79   45.00  1.54  PASS    - PASS
+ 2.5  10 4.0    2 none      40     757.79 |  0.30  0.30    40     757.79   45.00  1.54  PASS    - PASS
+ 2.5  10 4.0    3    1      37     342.96 |  0.30  0.30    37     342.96   40.54  1.42  PASS    - PASS
+ 2.5  10 4.0    3    2      40     757.79 |  0.30  0.30    40     757.79   45.00  1.54  PASS    - PASS
+ 2.5  10 4.0    3    3      40     757.79 |  0.30  0.30    40     757.79   45.00  1.54  PASS    - PASS
+ 2.5  10 4.0    3 none      40     757.79 |  0.30  0.30    40     757.79   45.00  1.54  PASS    - PASS
+ 2.5  10 4.0 none    1      37     342.96 |  0.30  0.30    37     342.96   40.54  1.42  PASS    - PASS
+ 2.5  10 4.0 none    2      40     757.79 |  0.30  0.30    40     757.79   45.00  1.54  PASS    - PASS
+ 2.5  10 4.0 none    3      40     757.79 |  0.30  0.30    40     757.79   45.00  1.54  PASS    - PASS
+ 2.5  10 5.0    1    1      32     529.34 |  0.50  0.30    31     624.72   45.16  1.19  PASS    - PASS
+ 2.5  10 5.0    1    2      34     765.68 |  0.40  0.40    33     861.06   48.48  1.27  PASS    - PASS
+ 2.5  10 5.0    1    3      34     765.68 |  0.40  0.40    33     861.06   48.48  1.27  PASS    - PASS
+ 2.5  10 5.0    1 none      34     765.68 |  0.40  0.40    33     861.06   48.48  1.27  PASS    - PASS
+ 2.5  10 5.0    2    1      37     247.05 |  0.30  0.30    37     247.05   40.54  1.42  PASS    - PASS
+ 2.5  10 5.0    2    2      40     653.91 |  0.30  0.30    40     653.91   45.00  1.54  PASS    - PASS
+ 2.5  10 5.0    2    3      40     653.91 |  0.30  0.30    40     653.91   45.00  1.54  PASS    - PASS
+ 2.5  10 5.0    2 none      40     653.91 |  0.30  0.30    40     653.91   45.00  1.54  PASS    - PASS
+ 2.5  10 5.0    3    1      37     247.05 |  0.30  0.30    37     247.05   40.54  1.42  PASS    - PASS
+ 2.5  10 5.0    3    2      40     653.91 |  0.30  0.30    40     653.91   45.00  1.54  PASS    - PASS
+ 2.5  10 5.0    3    3      40     653.91 |  0.30  0.30    40     653.91   45.00  1.54  PASS    - PASS
+ 2.5  10 5.0    3 none      40     653.91 |  0.30  0.30    40     653.91   45.00  1.54  PASS    - PASS
+ 2.5  10 5.0 none    1      37     247.05 |  0.30  0.30    37     247.05   40.54  1.42  PASS    - PASS
+ 2.5  10 5.0 none    2      40     653.91 |  0.30  0.30    40     653.91   45.00  1.54  PASS    - PASS
+ 2.5  10 5.0 none    3      40     653.91 |  0.30  0.30    40     653.91   45.00  1.54  PASS    - PASS
+ 2.5  15 4.0    1    1      32    1026.39 |  0.50  0.30    31    1116.72   45.16  1.19  PASS    - PASS
+ 2.5  15 4.0    1    2      34    1452.97 |  0.40  0.40    33    1543.30   48.48  1.27  PASS    - PASS
+ 2.5  15 4.0    1    3      34    1452.97 |  0.40  0.40    33    1543.30   48.48  1.27  PASS    - PASS
+ 2.5  15 4.0    1 none      34    1452.97 |  0.40  0.40    33    1543.30   48.48  1.27  PASS    - PASS
+ 2.5  15 4.0    2    1      37     700.52 |  0.38  0.38    36     745.94   38.89  1.38  PASS    - PASS
+ 2.5  15 4.0    2    2      40    1297.60 |  0.30  0.55    32     857.97   43.75  1.23  PASS    - PASS
+ 2.5  15 4.0    2    3      40    1297.60 |  0.30  0.55    32     857.97   43.75  1.23  PASS    - PASS
+ 2.5  15 4.0    2 none      40    1297.60 |  0.30  0.55    32     857.97   43.75  1.23  PASS    - PASS
+ 2.5  15 4.0    3    1      37     700.52 |  0.38  0.38    36     745.94   38.89  1.38  PASS    - PASS
+ 2.5  15 4.0    3    2      40    1297.60 |  0.30  0.55    32     857.97   43.75  1.23  PASS    - PASS
+ 2.5  15 4.0    3    3      40    1297.60 |  0.30  0.55    32     857.97   43.75  1.23  PASS    - PASS
+ 2.5  15 4.0    3 none      40    1297.60 |  0.30  0.55    32     857.97   43.75  1.23  PASS    - PASS
+ 2.5  15 4.0 none    1      37     700.52 |  0.38  0.38    36     745.94   38.89  1.38  PASS    - PASS
+ 2.5  15 4.0 none    2      40    1297.60 |  0.30  0.55    32     857.97   43.75  1.23  PASS    - PASS
+ 2.5  15 4.0 none    3      40    1297.60 |  0.30  0.55    32     857.97   43.75  1.23  PASS    - PASS
+
+==========================================================================
+BEST PARAMETERS (S4003_4 search):
+  w1   = 2.5   (take profit at O +/- 2.5 * A)
+  n1   = 15   (N-bar stop, bars after entry bar)
+  e1   = 4   (entry limit offset ATR14[signal]/4)
+  stn1 = 1   (stop trading for the day after > 1 profitable trades closed that day)
+  sln1 = 2   (stop trading for the day after > 2 losing trades closed that day)
+  exit cost = $14.50 deducted from profit at sell/cover
+  RF gates: long >= 0.400, short >= 0.400
+  -> no candidate meets all targets; best worst-target achievement (misses: T2 win rate)
+==========================================================================
+
+Final enhanced simulation (full re-sim, gates + daily stops): 13 predicted (12 kept, 1 vetoed) -> 33 trades
+
+Output files:
+  results:            C:\Users\andhk\AppData\Local\Temp\kilo\bt_profile_out\S4003_4_randomforest_results.csv
+  model:              C:\Users\andhk\AppData\Local\Temp\kilo\bt_profile_out\S4003_4_randomforest_model.pkl
+  feature importance: C:\Users\andhk\AppData\Local\Temp\kilo\bt_profile_out\S4003_4_randomforest_feature_importance.csv
+  html: C:\Users\andhk\AppData\Local\Temp\kilo\bt_profile_out\S4003_4_20261008232247.html
+  trades_csv: C:\Users\andhk\AppData\Local\Temp\kilo\bt_profile_out\S4003_4_20261008232247.csv
+  explore_csv: C:\Users\andhk\AppData\Local\Temp\kilo\bt_profile_out\S4003_4_explore_20261008232247.csv
+
+==================================================================
+metric                             ref S4003_1       best base     RF enhanced
+==================================================================
+Number of trades                         38.00           34.00           33.00
+Number of wins %                         44.74           47.06           48.48
+Net Profit                                6.44        1,452.97        1,543.30
+Profit Factor                             1.00            1.91            2.02
+Sharpe Ratio                             -0.87            4.90            5.34
+Maximum system drawdown                   0.82            0.63            0.63
+Average Profit/loss                       0.17           42.73           46.77
+==================================================================
+TARGETS (w1=2.5, n1=15, e1=4, stn1=1, sln1=2; gate L 0.400 / S 0.400)    target  achieved  status
+T1 net profit +15%                                        7.40  1,543.30  PASS
+T2 win rate +15%                                         51.45     48.48  MISS
+T3 >=1 trade/2 days                                       0.50      1.27  PASS

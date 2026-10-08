@@ -3,7 +3,7 @@ CREATE DATABASE IBTradingDb;
 
 -- 2. Create the user and set a password
 -- Replace 'your_password' with a strong password
-CREATE USER 'ibUser1'@'localhost' IDENTIFIED BY 'abcd_9538';
+CREATE USER 'ibUser1'@'localhost' IDENTIFIED BY 'your_password';
 
 -- 3. Grant full privileges to this user for the new database
 GRANT ALL PRIVILEGES ON IBTradingDb.* TO 'ibUser1'@'localhost';

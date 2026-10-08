@@ -1,0 +1,186 @@
+================================================================================
+S4003_backtest.py — Description (TASKS.md T2.2)
+Location: VS_4000_strategy/VS_4003_20260827_ES/3 BackTest/S4003_backtest.py
+================================================================================
+
+WHAT IT DOES
+------------
+Backtest for strategy S4003 (ES 1-min intraday, long/short). It is a port of
+"1 Prelimary Test/S4003_4_randomforest_glm.py" onto the strategy class
+strategyS4003 ("2 Strategy/S4003_strategy.py"); it does NOT import anything
+from "1 Prelimary Test".
+
+Pipeline (DailyStopEnhancer.run):
+
+1. Load config: all parameters come from
+   VS_4000_strategy/VS_4003_20260827_ES/config.yaml, section "Backtest Test"
+   (signal/account parameters from section "Strategy" via
+   strategyS4003.applyStrategyConfig). CLI: --config <path>.
+
+2. Load data: 1-min OHLCV bars for the ticker (default ES) from MariaDB
+   IBTradingDb, table ticker1Min (credentials from VS_0002_config/.env).
+   Empty startDate/endDate = full DB range (get_db_range).
+
+3. Compute parameter-independent pieces once:
+   - strategyS4003._prepare(df): indicators + raw signals (buy00/short00,
+     shifted entry signals buySig/shortSig, atr14, max3BarAtr14_1, ...).
+   - ESFeatureEngineer.build_all(): the ML feature matrix used by the
+     RandomForest gate.
+
+4. Reference run: simulate the base strategy with the config (Strategy
+   section) parameters -> reference stats. Enhancement targets are defined
+   relative to it:
+     T1 net profit  >= reference net  * (1 + targetNetIncrease)   (default +15%)
+     T2 win rate    >= reference wins% * (1 + targetWinRateIncrease) (default +15%)
+     T3 frequency   >= targetTradesPer2Days / 2 trades/day        (default 0.5)
+
+5. Phase A — parameter grid search (daily stops disabled):
+   for each (w1, n1, e1) in w1Grid x n1Grid x e1Grid
+   (defaults 3 x 4 x 2 = 24 combos: take-profit mult, N-bar stop,
+   entry limit-offset divisor):
+     _evaluate(): simulate trades -> build RF training samples (features at
+     each trade's SIGNAL bar, label = trade pnl > 0) -> purged walk-forward
+     out-of-sample win probabilities -> gate_search_fast() sweeps probability
+     thresholds (thr_long/thr_short) on the trade list (no re-simulation) and
+     scores each candidate against T1/T2/T3.
+
+6. Phase B — daily-stop grid on the top-K (topK=3) Phase-A configs:
+   stn1Grid x sln1Grid (defaults {1,2,3,none} x {1,2,3,none}) daily win/loss
+   stops: new entries on a day are blocked once that day's closed winning
+   trades > stn1, or losing trades > sln1. Same _evaluate() scoring.
+
+7. Pick the best candidate (rank: all targets met -> number of targets met ->
+   worst-target achievement ratio -> net profit).
+
+8. Final evaluation with the best (w1, n1, e1, stn1, sln1):
+   full re-simulation with daily stops, purged walk-forward RF probabilities,
+   veto of signals below the thresholds, re-simulation of the gated signal
+   set (the "RF enhanced" strategy), and training of the final
+   RandomForestClassifier on ALL samples (saved for live use).
+
+9. Write outputs + print summary (reference vs best-base vs RF-enhanced).
+
+OUTPUTS (config "Backtest Test".outputFolder)
+  S4003_4_randomforest_results.csv             reference/base/enhanced stats,
+                                               target report, model metadata
+  S4003_4_randomforest_model.pkl               final RF + feature names +
+                                               thresholds + best params
+                                               (this is Live Trade.modelFile)
+  S4003_4_randomforest_feature_importance.csv  RF feature importance
+  S4003_4_<timestamp>.html                     enhanced backtest stats + equity chart
+  S4003_4_<timestamp>.csv                      enhanced trade list
+  S4003_4_explore_<timestamp>.csv              per-bar signal explore file
+
+FUNCTIONS USED (defined in S4003_backtest.py)
+---------------------------------------------
+Config / database:
+  _load_db_env()            load VS_0002_config/.env (DB_HOST/DB_USER/...)
+  get_db_range(ticker, table)        MIN/MAX datetime1 for the ticker
+  load_data_from_db(ticker, start, end, table)  read OHLCV bars -> DataFrame
+
+Parameter handling:
+  _snapshot_params()        remember strategyS4003 class params
+  _set_params(w1, n1, e1, exit_cost)  set strategyS4003 class params per candidate
+  _restore_params()         restore the snapshot (finally-safe)
+
+Random-Forest helpers (ported from S4003_3_randomforest_glm.py):
+  _make_model(seed)         RandomForestClassifier(400 trees, max_depth=6,
+                            min_samples_leaf=5, class_weight='balanced')
+  purged_walk_forward(X, y, meta, n_folds, min_train, seed)
+                            expanding past-only walk-forward; training rows
+                            purged by the label horizon (exit_bar) + gap;
+                            returns out-of-sample win probabilities + fold AUCs
+  build_samples(trades, feats)  feature rows at each trade's signal bar,
+                            label y = (pnl > 0); drops columns > 30% NaN
+  gate_search_fast(pnl, is_long, p_oos, trading_days, targets, grids)
+                            threshold sweep over shared grid 0.30..0.70 step
+                            0.025 plus per-direction grid 0.30..0.75 step 0.05;
+                            pure trade-list arithmetic (no re-simulation)
+
+Simulation / output:
+  simulate_with_daily_stops(sig, stn1, sln1)
+                            AFL-faithful bar loop (= strategyS4003._simulate)
+                            + daily win/loss entry blocking; returns
+                            (trades, equity, in_market)
+  write_backtest_trio(sig, trades, equity, stats, out_dir, prefix)
+                            writes the html / trades csv / explore csv trio
+  class DailyStopEnhancer   orchestrates everything:
+      _load()               DB load + trading-day count
+      _evaluate(...)        one candidate: sim -> samples -> RF WF -> gate search
+      _rank_key()/_row()    candidate ranking / console row
+      run()                 the full pipeline described above
+      _target_report()      T1/T2/T3 target rows
+      write_outputs()       results csv + model pkl + feature importance + trio
+      print_summary()       console summary table
+  main()                    argparse --config, applyStrategyConfig, run
+
+EXTERNAL FUNCTIONS/CLASSES USED
+  strategyS4003 (S4003_strategy.py): applyStrategyConfig, _prepare,
+      _simulate, _compute_stats, _equity_chart_html; class attrs mutated per
+      candidate: profit_mult, stop_period1, entry_limit_atr_frac,
+      commission_per_trade
+  loadStrategyConfig (S4003_strategy.py)
+  ESFeatureEngineer (F6006_GeneralFeature_2_glm.py): build_all(), .features
+  sklearn.ensemble.RandomForestClassifier, sklearn.metrics.roc_auc_score
+  joblib.dump, mysql.connector, yaml, numpy, pandas
+
+FEATURES USED
+-------------
+A) Strategy signal features (strategyS4003._prepare, parameter-independent):
+   atr14, max3BarAtr14_1, maxCO/minCO, isBullish/isBearish,
+   largeBullishBody/largeBearishBody, vwap50, regSlop3Vwap50Bar,
+   regSlop5vwap50Bar, regSlop5vwap50BarL0Sum15, crossUpVWap50,
+   crossDownVWap50, llvBar5_1, llvBar5_2, buy00/short00, buySig/shortSig.
+
+B) RF input features (ESFeatureEngineer.build_all, ~100+ columns, computed
+   once; sampled at each trade's signal bar; columns > 30% NaN dropped):
+   - returns:        ret_1m/5m/10m/20m, log_ret_1m/5m
+   - candles:        body_size, body_pct, body_direction, upper/lower_wick,
+                     wick_ratio, bar_range, range_pct, gap
+   - momentum:       roc_*, accel_5, slope_10/20, dist_sma_*, dist_ema_*,
+                     sma5_10_cross, sma10_20_cross
+   - linreg slopes:  slope15_close, slope15_ema*
+   - RSI divergence: rsi*_div_close, rsi*_bull_div_high, rsi*_bear_div_low
+   - market regime:  regime_trend, regime_vol, market_regime
+   - rolling VWAP:   rvwap_{3,6,9,20} (+ _std/_up1/_dn1/_up2/_dn2/_dist/_pos)
+   - volatility:     atr_*, atr_*_pct, vol_*, vol_*_annual, parkinson_*,
+                     bb_position, bb_width
+   - volume:         add_volume_features() family
+   - microstructure: add_microstructure() family
+   - time-of-day:    add_time_features() (sin/cos encodings)
+   - statistical:    add_statistical_features() (entropy, pct-rank, ...)
+   - market struct:  add_market_structure() family
+   (cross-market features are inactive: no spy_df/vix_df passed)
+
+RUNTIME BREAKDOWN (why it runs long, and where the time goes)
+-------------------------------------------------------------
+Measured profile is not instrumented in the code; percentages below are
+estimates from the structure of the algorithm for a typical ES 1-min run
+(~1 year ~= 130k bars, default grids = 24 Phase-A + ~45 Phase-B candidates
+~= 69 _evaluate() calls):
+
+  ~75-85%  purged_walk_forward() — RandomForest training inside _evaluate().
+           Each candidate trains nFolds=5 forests of 400 trees
+           (69 candidates x 5 folds ~= 345 RF fits). This dominates the
+           runtime. Scales with: nFolds, number of trades (samples), number
+           of features, and the grid sizes.
+  ~8-15%   strategyS4003._simulate() / simulate_with_daily_stops() —
+           pure-Python bar-by-bar loop over the full history, executed once
+           per candidate (69x) plus the final re-sims (2x). Grows linearly
+           with the number of bars.
+  ~3-7%    ESFeatureEngineer.build_all() — one-time, ~100+ rolling features
+           over the full history (rolling slope/entropy/pct-rank applies are
+           the slowest parts).
+  ~1-2%    load_data_from_db() — one MariaDB SELECT over the full range.
+  <1%      strategyS4003._prepare() (one-time, vectorized), gate_search_fast
+           (pure numpy over the trade list, no re-simulation), final model
+           fit (1 RF), write_outputs/write_backtest_trio (csv/html/pkl).
+
+Practical speed levers (config "Backtest Test"):
+  - shrink w1Grid/n1Grid/e1Grid (Phase A) and stn1Grid/sln1Grid (Phase B)
+  - lower topK (fewer Phase-B candidates)
+  - shorten startDate/endDate
+  - lower nFolds
+  (n_estimators=400 is hardcoded in _make_model; editing it is the biggest
+   single lever on the RF 75-85% block.)
+================================================================================

@@ -1,0 +1,139 @@
+# =============================================================================
+# VS_4003_20260827_ES - local strategy configuration (ES 1-min intraday)
+# Section names are referenced by TASKS.md T1.1-T4.1 - do not rename them.
+# Credentials are NOT stored here - they live in VS_0002_config/.env
+# (DB_HOST / DB_PORT / DB_USER / DB_PASSWORD / DB_NAME, see .env.example).
+# =============================================================================
+
+# --- T1.1: strategy class strategyS4003 in "2 Strategy/S4003_strategy.py" ---
+Strategy:
+  symbolName: ES
+  tickerType: FU                # FU = future, ST = stock (ibMarketData convention)
+  futureExchange: CME
+  timeFrame: 1min
+  tableName: ticker1Min         # MariaDB IBTradingDb table holding 1-min bars
+  initCapital: 80000.0          # USD, initial capital
+  commissionPerTrade: 14.50     # USD round turn (commission + slippage cost model)
+  positionSize: 1               # contracts per signal
+  pointValue: 50.0              # USD per index point (ES)
+  riskFreeAnnual: 0.03          # for Sharpe ratio
+  ulcerPeriod: 14
+  # signal parameters (defaults from strategyS4003V1; tuned values come from WalkForward Test)
+  profitMult: 1.5               # w1: profit take = entry +- w1 * ATR14(previous bar)
+  stopPeriod: 15                # n1: force-close any position open longer than n1 bars
+  stopMult: 1.0
+  entryLimitAtrFrac: 4.0        # e1: entry limit offset = ATR14 / e1
+  entryPriceMode: limit
+  atrMode: wilder
+  percentileMinPeriods: 100
+  warmupDays: 120
+  startDate: '2026-09-01 00:00:00'
+  endDate: '2026-09-30 23:59:59'
+  endDayInclusive: true
+  liveTrade: false              # master switch - must stay false until all tests pass
+
+# --- T2.1: "4 Walk Forward Test/S4003_walkforward.py" (rolling IIS -> OOS) ---
+WalkForward Test:
+  symbolName: ES
+  tableName: ticker1Min
+#  analysisStart: '2025-08-01 00:00:00'
+#  analysisEnd: '2026-09-11 23:59:59'
+  analysisStart: '2026-09-01 00:00:00'
+  analysisEnd: '2026-10-06 23:59:59'
+  iisDays: 14                   # in-sample window, trading days
+  oosDays: 1                    # out-of-sample window, trading days
+  oosStepDays: 1                # roll-forward step, calendar days
+  rollingWindow: true
+  endDateIsOOS: 0             # 1 = analysisEnd is the last OOS day (last results row has OOS date = analysisEnd)
+                                # 0 = analysisEnd is the last IS day (extra final results row: blank OOS date,
+                                #     w1/n1 selected for the next trading day; OOS columns blank until bars exist)
+  calibDays: 28                 # calibration window before first fold (gate selection)
+  gateSelectDays: 5             # mini-OOS days inside calibration used to pick the gate
+  gateWrGrid: [0.0, 40.0, 45.0, 50.0, 55.0, 60.0]   # IS win-rate gate candidates (%)
+  gateMinTaken: 3               # min taken mini-OOS days for a viable gate
+  minIsTrades: 5                # min in-sample trades for a param set to be selectable
+  winRateTarget: 65.0           # PASS/MISS threshold (%)
+  lookbackBars: 100             # engine warm-up bars kept before each simulated window
+  param1:                       # w1 - profit take weight
+    name: w1
+    grid: [1.5, 2.0, 2.5]       # PRD FR-4 allows up to 3.0; S4003_7 grid is 1.5-2.5
+  param2:                       # n1 - max open position period (bars)
+    name: n1
+    grid: [10, 15, 20, 25]
+  fixedParam:                   # e1 - entry limit-offset divisor (fixed from calibration best)
+    name: e1
+    grid: [4.0, 5.0]
+  outputFolder: C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/walkForwardTestResult
+
+# --- T2.2: "3 BackTest/S4003_backtest.py" ---
+Backtest Test:
+  symbolName: ES
+  tableName: ticker1Min
+  startDate: '2026-09-01 00:00:00'                 # empty = use DB min datetime for the ticker
+  endDate: '2026-09-30 23:59:59'   # empty = use DB max datetime for the ticker
+  initCapital: 80000.0
+  commissionPerTrade: 14.50
+  positionSize: 1
+  # RandomForest gate (from S4003_4_randomforest_glm.py)
+  nFolds: 5                     # purged walk-forward folds
+  minTrain: 20                  # min training samples per fold
+  seed: 42
+  topK: 3
+  w1Grid: [1.5, 2.0, 2.5]       # take-profit multiple grid, phase A (w1)
+  n1Grid: [10, 15, 20, 25]      # N-bar stop grid, phase A (n1)
+  e1Grid: [4.0, 5.0]            # entry limit-offset divisor grid, phase A (e1)
+  stn1Grid: [1, 2, 3, null]     # daily win stop: block entries once today's wins > stn1
+  sln1Grid: [1, 2, 3, null]     # daily loss stop: block entries once today's losses > sln1
+  targetNetIncrease: 0.15
+  targetWinRateIncrease: 0.15
+  targetTradesPer2Days: 1.0
+  outputFolder: C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/backTestResult
+
+# --- T3.1: "5 OtherTest/S4003_lookAhead.py" ---
+LookAhead Test:
+  symbolName: ES
+  tableName: ticker1Min
+  startDate: ''
+  endDate: ''
+  maxTruncationTests: 200       # sampled truncation points (even spacing + baseline signal bars)
+  truncationCompareBars: 50     # rows compared against baseline per truncated run
+  minTestBarIndex: 200          # skip the warmup head of the series
+  maxPrevBarTradesChecked: 25   # trade entry bars re-verified by truncation in the prev-bar check
+  outputFolder: C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/lookAheadTestResult
+
+# --- T3.2: "5 OtherTest/S4003_monteCarlo.py" ---
+MonteCarlo Test:
+  symbolName: ES
+  tableName: ticker1Min
+  startDate: ''
+  endDate: ''
+  numRuns: 5000                 # number of simulated equity paths
+  randomSeed: 42                # numpy RNG seed for reproducible resampling
+  initCapital: 80000.0
+  commissionPerTrade: 14.50
+  outputFolder: C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/monteCarloResult
+
+# --- T4.1: "6 liveTrade/S4003_live.py" ---
+Live Trade:
+  symbolName: ES
+  tickerType: FU
+  futureExchange: CME
+  timeFrame: 1min
+  tableName: ticker1Min
+  startDate: '2025-08-01 00:00:00'   # initial historical load for the rolling bar DataFrame
+  endDate: '2026-09-11 23:59:59'
+  tradeHost: 127.0.0.1
+  tradePort: 4002               # 4002 = IB Gateway paper, 7497 = TWS paper, 4001/7496 = live
+  clientId: 1
+  positionSize: 1
+  initCapital: 80000.0
+  liveTrade: false              # flip to true only after backtest/walkforward/other tests pass
+  modelFile: C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/backTestResult/S4003_4_randomforest_model.pkl
+  # doTrade0 order parameters (VS_0008_liveTrade/ibAutotrade.py)
+  symbolType: 1                 # 1 = future, 2 = stock
+  ibControllerTickSize: 2500    # tick = value/10000 -> 2500 = 0.25 (ES tick size)
+  isIntraDay: true              # order TIF Day (false = GTC)
+  isMktOrder: false             # limit entry, matches Strategy.entryPriceMode
+  maxNumTickSize4BuyShortSlippage: 4
+  maxNumTickSize4StpLmtOrderSlippage: 4
+  outputFolder: C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/liveTrade
