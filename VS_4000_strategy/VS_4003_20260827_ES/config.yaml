@@ -38,8 +38,9 @@ WalkForward Test:
   tableName: ticker1Min
 #  analysisStart: '2025-08-01 00:00:00'
 #  analysisEnd: '2026-09-11 23:59:59'
+#  analysisEnd: '2026-10-06 23:59:59'
   analysisStart: '2026-09-01 00:00:00'
-  analysisEnd: '2026-10-06 23:59:59'
+  analysisEnd: '2026-09-30 23:59:59'
   iisDays: 14                   # in-sample window, trading days
   oosDays: 1                    # out-of-sample window, trading days
   oosStepDays: 1                # roll-forward step, calendar days
@@ -69,7 +70,7 @@ WalkForward Test:
 Backtest Test:
   symbolName: ES
   tableName: ticker1Min
-  startDate: '2026-09-01 00:00:00'                 # empty = use DB min datetime for the ticker
+  startDate: '2025-10-01 00:00:00'                 # empty = use DB min datetime for the ticker
   endDate: '2026-09-30 23:59:59'   # empty = use DB max datetime for the ticker
   initCapital: 80000.0
   commissionPerTrade: 14.50
@@ -79,6 +80,7 @@ Backtest Test:
   minTrain: 20                  # min training samples per fold
   seed: 42
   topK: 3
+  rfNEstimators: 60             # RF trees per fold; lower = faster, coarser gate (speed knob)
   w1Grid: [1.5, 2.0, 2.5]       # take-profit multiple grid, phase A (w1)
   n1Grid: [10, 15, 20, 25]      # N-bar stop grid, phase A (n1)
   e1Grid: [4.0, 5.0]            # entry limit-offset divisor grid, phase A (e1)
@@ -87,6 +89,7 @@ Backtest Test:
   targetNetIncrease: 0.15
   targetWinRateIncrease: 0.15
   targetTradesPer2Days: 1.0
+  nJobs: 8                      # worker processes for parallel candidate evaluation (0/empty = min(8, cpu cores); 1 = sequential)
   outputFolder: C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/backTestResult
 
 # --- T3.1: "5 OtherTest/S4003_lookAhead.py" ---
@@ -128,6 +131,12 @@ Live Trade:
   positionSize: 1
   initCapital: 80000.0
   liveTrade: false              # flip to true only after backtest/walkforward/other tests pass
+  # fixed walkforward parameters (TASKS.md T4.1 / PRD FR-6): copy the latest
+  # walkforward-selected w1/n1 here before going live
+  w1: 1.5                       # profit take weight -> strategyS4003.profit_mult
+  n1: 15                        # max open position period (bars) -> strategyS4003.stop_period1
+  e1: 4.0                       # entry limit-offset divisor -> strategyS4003.entry_limit_atr_frac
+  lookbackBars: 3000            # rolling warm-up window per evaluation (~2 trading days of 1-min bars)
   modelFile: C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/backTestResult/S4003_4_randomforest_model.pkl
   # doTrade0 order parameters (VS_0008_liveTrade/ibAutotrade.py)
   symbolType: 1                 # 1 = future, 2 = stock

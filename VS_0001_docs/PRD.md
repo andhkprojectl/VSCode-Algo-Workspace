@@ -102,7 +102,7 @@ Some files already exists in the workspace. Keep files unchanged if file name no
 ### FR-6 Live Trading
 - Data: `ib.reqHistoricalData(..., barSizeSetting='1 min', keepUpToDate=True)`.
 - Maintain rolling bars in an in-memory pandas DataFrame (updated in the callback).
-- On each new bar (callback trigger), run strategy class using the walk-forward parameters.
+- On each new bar (callback trigger), trigger buy/sell/short/cover signal base on walkforward file S4003_walkforward.py, with fix w1, n1 set in config.yaml.
 - On signal:
 - `BUY`  -> place BUY market order (entry long)
 - `SELL` -> place SELL market order (exit long)

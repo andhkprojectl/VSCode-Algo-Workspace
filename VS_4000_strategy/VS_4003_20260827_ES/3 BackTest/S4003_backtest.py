@@ -10,7 +10,10 @@ Random-Forest gate), calling the strategy class `strategyS4003` from
 `2 Strategy/S4003_strategy.py` (T1.1). No imports from `1 Prelimary Test`.
 
 All parameters come from `VS_4000_strategy/VS_4003_20260827_ES/config.yaml`
-section `Backtest Test`. Data from MariaDB table ticker1Min.
+section `Backtest Test`. Data from MariaDB table ticker1Min. Phase A/B
+candidate evaluations run in parallel worker processes (`nJobs`, default
+min(8, cpu cores); 1 = sequential); each candidate passes its parameters
+to the simulator explicitly, so results are identical to sequential runs.
 
 Outputs (config outputFolder, same names/format as S4003_4_randomforest_glm.py):
   S4003_4_randomforest_results.csv            base/enhanced/targets/model sections
@@ -23,6 +26,7 @@ Outputs (config outputFolder, same names/format as S4003_4_randomforest_glm.py):
 import os
 import sys
 import warnings
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
@@ -172,13 +176,14 @@ def load_data_from_db(ticker='ES', start_date=None, end_date=None,
 # ===========================================================================
 # Random-Forest helpers (verbatim port from S4003_3_randomforest_glm.py)
 # ===========================================================================
-def _make_model(seed=42):
+def _make_model(seed=42, n_jobs=-1):
     return RandomForestClassifier(
         n_estimators=400, max_depth=6, min_samples_leaf=5,
-        class_weight='balanced', n_jobs=-1, random_state=seed)
+        class_weight='balanced', n_jobs=n_jobs, random_state=seed)
 
 
-def purged_walk_forward(X, y, meta, n_folds=5, min_train=20, seed=42):
+def purged_walk_forward(X, y, meta, n_folds=5, min_train=20, seed=42,
+                        n_jobs=-1):
     """Expanding past-only walk-forward with label-horizon purge.
     Returns (p_oos aligned with X, fold report list)."""
     n = len(X)
@@ -197,7 +202,7 @@ def purged_walk_forward(X, y, meta, n_folds=5, min_train=20, seed=42):
             report.append({'fold': k, 'n_test': len(f), 'n_train': len(train_idx),
                            'auc': np.nan})
             continue
-        model = _make_model(seed)
+        model = _make_model(seed, n_jobs)
         model.fit(X.iloc[train_idx], y[train_idx])
         p = model.predict_proba(X.iloc[sl])[:, 1]
         p_oos[sl] = p
@@ -359,16 +364,23 @@ Generated: {datetime.now().strftime(DT_FORMAT)}</p>
 # S4003_4_randomforest_glm.py: strategyS4003._simulate loop + daily entry
 # blocking)
 # ===========================================================================
-def simulate_with_daily_stops(sig, stn1=None, sln1=None, contracts=None):
+def simulate_with_daily_stops(sig, stn1=None, sln1=None, contracts=None,
+                              w1=None, n1=None, e1=None, exit_cost=None):
     """AFL-faithful S4003 trade loop plus daily trading stops.
 
     Daily counters are keyed by the EXIT bar's calendar date; new entries on
     a day are blocked once wins_that_day > stn1 (profitable trades) or
     losses_that_day > sln1 (pnl < 0 trades). None disables a stop.
+    w1/n1/e1/exit_cost override the strategyS4003 class attributes, so
+    candidate evaluation does not mutate shared class state (thread-safe).
     Returns (trades list of dict, equity ndarray, in_market ndarray).
     """
     cls = strategyS4003
     ct = cls.num_contracts if contracts is None else contracts
+    profit_mult = cls.profit_mult if w1 is None else float(w1)
+    sp = cls.stop_period1 if n1 is None else int(n1)
+    atr_div = cls.entry_limit_atr_frac if e1 is None else float(e1)
+    comm = cls.commission_per_trade if exit_cost is None else float(exit_cost)
     n = len(sig)
     O = sig['Open'].to_numpy(float)
     H = sig['High'].to_numpy(float)
@@ -377,13 +389,11 @@ def simulate_with_daily_stops(sig, stn1=None, sln1=None, contracts=None):
     dts = sig.index
     buy = sig['buySig'].to_numpy(int).copy()
     shr = sig['shortSig'].to_numpy(int).copy()
-    atr_off = (sig['atr14'].shift(1) / cls.entry_limit_atr_frac).to_numpy(float)
+    atr_off = (sig['atr14'].shift(1) / atr_div).to_numpy(float)
     max3 = sig['max3BarAtr14_1'].to_numpy(float)
 
     pv = cls.point_value
-    comm = cls.commission_per_trade
     limit_mode = (cls.entry_price_mode == 'limit')
-    sp = cls.stop_period1
 
     trades = []
     realized = 0.0
@@ -448,7 +458,7 @@ def simulate_with_daily_stops(sig, stn1=None, sln1=None, contracts=None):
             else:
                 long_fill = O[i]
             long_stop = O[i] - stop_pt
-            long_profit = O[i] + cls.profit_mult * stop_pt
+            long_profit = O[i] + profit_mult * stop_pt
             isInLong = True
             sell_stop_n = sp
             cur = {'entry_bar': i, 'mae': 0.0, 'mfe': 0.0}
@@ -463,7 +473,7 @@ def simulate_with_daily_stops(sig, stn1=None, sln1=None, contracts=None):
             else:
                 short_fill = O[i]
             short_stop = O[i] + stop_pt
-            short_profit = O[i] - cls.profit_mult * stop_pt
+            short_profit = O[i] - profit_mult * stop_pt
             isInShort = True
             cur_s = {'entry_bar': i, 'mae': 0.0, 'mfe': 0.0}
             if isInLong:
@@ -549,6 +559,68 @@ def simulate_with_daily_stops(sig, stn1=None, sln1=None, contracts=None):
 
 
 # ===========================================================================
+# Candidate evaluation core + process workers (parallel search)
+# ===========================================================================
+def _evaluate_ctx(ctx, w1, n1, e1, stn1, sln1, phase):
+    """One candidate: (params, daily stops) -> sim -> RF -> gate search.
+    ctx carries the shared, read-only run state (sig, features, targets,
+    grids). Parameters are passed to the simulator explicitly, so no
+    strategyS4003 class attributes are mutated - safe to run in worker
+    processes."""
+    trades, eq, im = simulate_with_daily_stops(
+        ctx['sig'], stn1, sln1, w1=w1, n1=n1, e1=e1,
+        exit_cost=ctx['exit_cost'])
+    stats = strategyS4003._compute_stats(trades, eq, im, ctx['sig'].index)
+    X, y, meta, drop_cols = build_samples(trades, ctx['features'])
+    if len(X) == 0:
+        return None
+    p_oos, fold_rep, purge_gap = purged_walk_forward(
+        X, y, meta, ctx['n_folds'], ctx['min_train'], ctx['seed'], n_jobs=1)
+    pnl = meta['pnl'].to_numpy(float)
+    is_long = (meta['direction'] == 'Long').to_numpy()
+    best, n_pred = gate_search_fast(
+        pnl, is_long, p_oos, ctx['trading_days'], ctx['targets'],
+        ctx['shared_grid'], ctx['direction_grid'])
+    return {
+        'phase': phase, 'w1': w1, 'n1': n1, 'e1': e1,
+        'stn1': stn1 if stn1 is not None else 'none',
+        'sln1': sln1 if sln1 is not None else 'none',
+        'base_trades': len(trades), 'base_net': stats['Net Profit'],
+        'base_win_rate': stats['Number of wins %'],
+        'thr_long': best['thr_long'], 'thr_short': best['thr_short'],
+        'rf_trades': best['n_trades'], 'rf_net': best['net'],
+        'rf_win_rate': best['win_rate'], 'rf_freq': best['freq'],
+        't1': best['t1'], 't2': best['t2'], 't3': best['t3'],
+        'all_pass': best['all_pass'], 'min_ratio': best['min_ratio'],
+        'n_samples': len(X), 'drop_cols': drop_cols,
+    }
+
+
+_WORKER_CTX = {}
+
+
+def _worker_init(ctx, strategy_cfg, bt_overrides):
+    """ProcessPoolExecutor initializer: configure the strategy class and
+    stash the shared run state once per worker process."""
+    strategyS4003.applyStrategyConfig(strategy_cfg)
+    ov = bt_overrides or {}
+    if ov.get('symbolName'):
+        strategyS4003.symbol = ov['symbolName']
+    if ov.get('initCapital') is not None:
+        strategyS4003.initial_capital = float(ov['initCapital'])
+    if ov.get('positionSize') is not None:
+        strategyS4003.num_contracts = int(ov['positionSize'])
+    if ov.get('commissionPerTrade') is not None:
+        strategyS4003.commission_per_trade = float(ov['commissionPerTrade'])
+    _WORKER_CTX.clear()
+    _WORKER_CTX.update(ctx)
+
+
+def _worker_evaluate(job):
+    return _evaluate_ctx(_WORKER_CTX, *job)
+
+
+# ===========================================================================
 # Daily-stop enhancer (two-phase search) - ported from
 # S4003_4_randomforest_glm.py, parameters injected from config
 # ===========================================================================
@@ -560,8 +632,12 @@ class DailyStopEnhancer:
                  stn1_grid=STN1_GRID, sln1_grid=SLN1_GRID,
                  target_net_increase=TARGET_NET_INCREASE,
                  target_winrate_increase=TARGET_WINRATE_INCREASE,
-                 target_trades_per_2_days=TARGET_TRADES_PER_2_DAYS):
+                 target_trades_per_2_days=TARGET_TRADES_PER_2_DAYS,
+                 n_jobs=None, strategy_cfg=None, bt_overrides=None):
         self.ticker = ticker
+        self.n_jobs = int(n_jobs) if n_jobs else min(8, os.cpu_count() or 4)
+        self.strategy_cfg = strategy_cfg
+        self.bt_overrides = bt_overrides
         self.start = start
         self.end = end
         self.n_folds = n_folds
@@ -597,37 +673,32 @@ class DailyStopEnhancer:
               f"{self.df.index[-1]} ({self.trading_days} trading days)")
 
     # ------------------------------------------------------------------
-    def _evaluate(self, w1, n1, e1, stn1, sln1, phase):
-        """One candidate: (params, daily stops) -> sim -> RF -> gate search."""
-        _set_params(w1, n1, e1, self.exit_cost)
-        if stn1 is None and sln1 is None:
-            trades, eq, im = strategyS4003._simulate(self.sig)
-        else:
-            trades, eq, im = simulate_with_daily_stops(self.sig, stn1, sln1)
-        stats = strategyS4003._compute_stats(trades, eq, im, self.sig.index)
-        X, y, meta, drop_cols = build_samples(trades, self.feats.features)
-        if len(X) == 0:
-            return None
-        p_oos, fold_rep, purge_gap = purged_walk_forward(
-            X, y, meta, self.n_folds, self.min_train, self.seed)
-        pnl = meta['pnl'].to_numpy(float)
-        is_long = (meta['direction'] == 'Long').to_numpy()
-        best, n_pred = gate_search_fast(
-            pnl, is_long, p_oos, self.trading_days, self.targets,
-            self.shared_grid, self.direction_grid)
+    def _build_ctx(self):
+        """Shared read-only run state handed to every candidate evaluation
+        (and pickled once per worker process)."""
         return {
-            'phase': phase, 'w1': w1, 'n1': n1, 'e1': e1,
-            'stn1': stn1 if stn1 is not None else 'none',
-            'sln1': sln1 if sln1 is not None else 'none',
-            'base_trades': len(trades), 'base_net': stats['Net Profit'],
-            'base_win_rate': stats['Number of wins %'],
-            'thr_long': best['thr_long'], 'thr_short': best['thr_short'],
-            'rf_trades': best['n_trades'], 'rf_net': best['net'],
-            'rf_win_rate': best['win_rate'], 'rf_freq': best['freq'],
-            't1': best['t1'], 't2': best['t2'], 't3': best['t3'],
-            'all_pass': best['all_pass'], 'min_ratio': best['min_ratio'],
-            'n_samples': len(X), 'drop_cols': drop_cols,
+            'sig': self.sig, 'features': self.feats.features,
+            'targets': self.targets, 'trading_days': self.trading_days,
+            'n_folds': self.n_folds, 'min_train': self.min_train,
+            'seed': self.seed, 'exit_cost': self.exit_cost,
+            'shared_grid': self.shared_grid,
+            'direction_grid': self.direction_grid,
         }
+
+    def _evaluate(self, w1, n1, e1, stn1, sln1, phase):
+        return _evaluate_ctx(self._ctx, w1, n1, e1, stn1, sln1, phase)
+
+    def _run_jobs(self, jobs):
+        """Evaluate candidates in result order; worker processes when
+        n_jobs > 1 (each worker loads the shared state once via
+        _worker_init; RF fits run single-threaded inside workers)."""
+        if self.n_jobs > 1:
+            with ProcessPoolExecutor(
+                    max_workers=self.n_jobs, initializer=_worker_init,
+                    initargs=(self._ctx, self.strategy_cfg,
+                              self.bt_overrides)) as ex:
+                return list(ex.map(_worker_evaluate, jobs))
+        return [_evaluate_ctx(self._ctx, *job) for job in jobs]
 
     @staticmethod
     def _rank_key(r):
@@ -691,11 +762,13 @@ class DailyStopEnhancer:
         combos = [(w1, n1, e1) for w1 in self.w1_grid for n1 in self.n1_grid
                   for e1 in self.e1_grid]
         print(f"\nPhase A: {len(combos)} (w1, n1, e1) combinations, "
-              f"daily stops disabled (exit cost ${self.exit_cost:.2f}/trade)")
+              f"daily stops disabled (exit cost ${self.exit_cost:.2f}/trade), "
+              f"{self.n_jobs} worker processes")
         print(self.HEAD)
+        self._ctx = self._build_ctx()
         results = []
-        for (w1, n1, e1) in combos:
-            r = self._evaluate(w1, n1, e1, None, None, phase='A')
+        jobs_a = [(w1, n1, e1, None, None, 'A') for (w1, n1, e1) in combos]
+        for r in self._run_jobs(jobs_a):
             if r is not None:
                 results.append(r)
                 print(self._row(r))
@@ -709,6 +782,7 @@ class DailyStopEnhancer:
               f"on the top {len(top)} configurations")
         print(self.HEAD)
         seen = {(r['w1'], r['n1'], r['e1'], r['stn1'], r['sln1']) for r in results}
+        jobs_b = []
         for base_cfg in top:
             for stn1 in self.stn1_grid:
                 for sln1 in self.sln1_grid:
@@ -717,12 +791,13 @@ class DailyStopEnhancer:
                            sln1 if sln1 is not None else 'none')
                     if key in seen:
                         continue
-                    r = self._evaluate(base_cfg['w1'], base_cfg['n1'],
-                                       base_cfg['e1'], stn1, sln1, phase='B')
-                    if r is not None:
-                        results.append(r)
-                        seen.add(key)
-                        print(self._row(r))
+                    seen.add(key)
+                    jobs_b.append((base_cfg['w1'], base_cfg['n1'],
+                                   base_cfg['e1'], stn1, sln1, 'B'))
+        for r in self._run_jobs(jobs_b):
+            if r is not None:
+                results.append(r)
+                print(self._row(r))
         self.search_results = pd.DataFrame(
             [{k: v for k, v in r.items() if k != 'drop_cols'} for r in results])
 
@@ -994,6 +1069,11 @@ def main():
         target_net_increase=float(bt.get('targetNetIncrease', TARGET_NET_INCREASE)),
         target_winrate_increase=float(bt.get('targetWinRateIncrease', TARGET_WINRATE_INCREASE)),
         target_trades_per_2_days=float(bt.get('targetTradesPer2Days', TARGET_TRADES_PER_2_DAYS)),
+        n_jobs=int(bt.get('nJobs', 0)) or None,
+        strategy_cfg=cfg_all.get('Strategy'),
+        bt_overrides={k: bt[k] for k in
+                      ('symbolName', 'initCapital', 'positionSize',
+                       'commissionPerTrade') if k in bt},
     )
     enh.run()
 

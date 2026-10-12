@@ -1,0 +1,46 @@
+C:\Project\ProjectLife\VSCode Algo Workspace\VS_4000_strategy\VS_4003_20260827_ES\2 Strategy\S4003_strategy.py:349: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  out['buySig'] = out['buy00'].shift(1).fillna(False).astype(int)
+C:\Project\ProjectLife\VSCode Algo Workspace\VS_4000_strategy\VS_4003_20260827_ES\2 Strategy\S4003_strategy.py:350: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  out['shortSig'] = out['short00'].shift(1).fillna(False).astype(int)
+[S4003_9_randomforest_glm.py]
+Loading ES 1-min bars [2026-08-29 00:00:00 .. 2026-10-01 23:59:59] ...
+Loaded 31636 bars in 0.36 s: 2026-08-30 18:00:00 .. 2026-10-01 23:59:00; indicator preparation 4.11 s; effective analysis period 2026-09-01 .. 2026-10-01 (27 trading days); calibration (grid) window 2026-09-01 .. 2026-09-28 (24 days), no walk-forward day is inside it
+
+Phase 1: calibration grid on [2026-09-01 .. 2026-09-29) over (w1, n1, e1), stn1/sln1 unset (daily stops disabled), exit cost $14.50/trade
+
+Parameter value analysis (win-rate spread across values):
+     w1: spread  1.50 pp  [1.5=45.71; 2.0=44.44; 2.5=45.95]
+     n1: spread  0.23 pp  [10=45.95; 15=45.71; 20=45.71; 25=45.71]
+     e1: spread  0.00 pp  [4.0=45.95; 5.0=45.95]
+
+2 most valuable parameters for walk-forward: w1, n1
+Fixed at backtest best: e1=4.0
+  full best config: w1=2.5, n1=10, e1=4.0 -> 37 trades, win rate 45.95%, net 814.31, sharpe 2.62
+
+Gate selection on calibration mini-OOS days 2026-09-23 .. 2026-09-28 (IS 14d, never touches real OOS data)
+  gate IS wr >=    0% & IS net > 0 | taken 5/5 | 8 trades | win  50.00% | net     41.17
+  gate IS wr >=   40% & IS net > 0 | taken 5/5 | 8 trades | win  50.00% | net     41.17
+  gate IS wr >=   45% & IS net > 0 | taken 5/5 | 8 trades | win  50.00% | net     41.17
+  gate IS wr >=   50% & IS net > 0 | taken 5/5 | 8 trades | win  50.00% | net     41.17
+  gate IS wr >=   55% & IS net > 0 | taken 3/5 | 2 trades | win   0.00% | net   -246.12
+  gate IS wr >=   60% & IS net > 0 | taken 0/5 | 0 trades | win   0.00% | net      0.00
+-> gate selected: take day only if IS win rate >= 0% and IS net > 0
+
+Phase 2: walk-forward from 2026-09-29 (after the calibration window), in-sample 14 days -> out-of-sample 1 day(s), 12 combinations per day, 2 out-of-sample days, gate IS wr >= 0% & IS net > 0
+   OOS day |     w1     n1 | IS nTr  IS wr%    IS net |  gate | OOS nTr OOS wr%   OOS pnl OOS Sharpe OOS MaxDD%       cum
+2026-09-29 |    1.5     10 |     19   57.89    362.77 |  take |       3   33.33      2.83      -0.19       0.36      2.83
+2026-09-30 |    1.5     10 |     20   55.00    269.00 |  take |       0    0.00      0.00       0.00       0.00      2.83
+
+Output files:
+  parameter analysis: C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/walkForwardTestResult\S4003_7_parameter_analysis.csv
+  parameter values:   C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/walkForwardTestResult\S4003_7_parameter_values.csv
+  gate comparison:    C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/walkForwardTestResult\S4003_7_gate_comparison.csv
+  walkforward results: C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/walkForwardTestResult\S4003_7_walkforward_results.csv
+  walkforward trades:  C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/walkForwardTestResult\S4003_7_walkforward_trades.csv
+  html:                C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/walkForwardTestResult\S4003_7_walkforward_20261010101022.html
+
+============================================================
+OUT-OF-SAMPLE AGGREGATE: 3 trades on 2 taken days (0 gated out), win rate 33.33% (target >= 65% -> MISS), net 2.83, freq 0.11/day, Sharpe -0.41, max DD 0.36%
+============================================================
+
+TIMING: MariaDB load 4.65 s (excluded) | compute (indicators + walk-forward + outputs) 5.82 s | total wall 10.47 s

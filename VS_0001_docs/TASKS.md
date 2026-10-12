@@ -27,7 +27,7 @@
 
 ## Phase 4 — Live Trading
 
-- [x] T4.1 Implement `VS_4000_strategy/VS_4003_20260827_ES/6 liveTrade/S4003_live.py`: call IB function reqHistoricalData(keepUpToDate=True), if bar change, call back function call strategy class in file `S4003_strategy.py`. If buy/short/sell/cover signal generate, call function `doTrade0` in file `VS_0008_liveTrade/ibAutotrade.py` to place order. All parameter store in config file `VS_4003_20260827_ES/config.yaml` under section called `Live Trade`. There is a parameter tradePort: tcp/ip port connecting to IB TWS or IB gateway. Do not depends on files within folder `1 Prelimary Test` anymore. live trade output file to folder `C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/liveTrade`, output files include log file storing each buy/short/sell/cover record, debug log from doTrade0
+- [x] T4.1 Implement `VS_4000_strategy/VS_4003_20260827_ES/6 liveTrade/S4003_live.py`: call IB function reqHistoricalData(keepUpToDate=True), if bar change, call back function call logic base on `S4003_walkforward.py`, parameter w1, n1 got from config file config.yaml. If buy/short/sell/cover signal generate, call function `doTrade0` in file `VS_0008_liveTrade/ibAutotrade.py` to place order. All parameter store in config file `VS_4003_20260827_ES/config.yaml` under section called `Live Trade`. There is a parameter tradePort: tcp/ip port connecting to IB TWS or IB gateway. Do not depends on files within folder `1 Prelimary Test` anymore. live trade output file to folder `C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/liveTrade`, output files include log file storing each buy/short/sell/cover record, debug log from doTrade0
 
 ## Phase 5 — Hardening
 

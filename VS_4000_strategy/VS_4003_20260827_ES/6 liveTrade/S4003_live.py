@@ -1,28 +1,44 @@
 """
 S4003_live.py
 =============
-Live trade for VS_4003_20260827_ES (TASKS.md T4.1).
+Live trade for VS_4003_20260827_ES (TASKS.md T4.1, PRD.md FR-6).
 
 - Connects to IB TWS/Gateway (config `Live Trade`: tradeHost/tradePort/clientId)
   and calls reqHistoricalData(keepUpToDate=True) for 1-min ES bars.
 - On every bar change the updateEvent callback appends the bar to a rolling
   DataFrame (seeded from MariaDB ticker1Min via
-  VS_6004_GetDataFromMariaDb.load_1Min_data_from_db) and calls the strategy
-  class strategyS4003 from `2 Strategy/S4003_strategy.py` (no imports from
-  `1 Prelimary Test`).
-- Signal -> order mapping (doTrade0 in VS_0008_liveTrade/ibAutotrade.py):
-      BUY   entry (flat)            -> buy=1                         + bracket stop/profit
-      SHORT entry (flat)            -> short=1                       + bracket stop/profit
-      SHORT while long (force exit) -> sell=1, short=1  (doTrade0 reversal branch)
-      BUY   while short (force exit)-> buy=1, cover=1   (doTrade0 reversal branch)
-      N-bar stop exit (long)        -> sell=1
-      N-bar stop exit (short)       -> cover=1
-  Entry prices mirror the AFL-faithful engine (strategyS4003._simulate):
+  VS_6004_GetDataFromMariaDb.load_1Min_data_from_db) and evaluates signals
+  through the strategy class strategyS4003 from `2 Strategy/S4003_strategy.py`
+  (no imports from `1 Prelimary Test`).
+- Signal evaluation is based on `4 Walk Forward Test/S4003_walkforward.py`
+  (TASKS.md T4.1: "call back function call logic base on S4003_walkforward.py,
+  parameter w1, n1 got from config file config.yaml"): the same engine call
+  path as the walkforward's _simulate_window() - strategyS4003._prepare() on
+  the last `lookbackBars` rows, then strategyS4003._simulate() with entries
+  gated to the live-start bar (trade_start_ts, mirroring the walkforward's
+  window-start entry gating) - with FIXED w1/n1/e1 from config.yaml section
+  `Live Trade` (w1 -> profit_mult, n1 -> stop_period1, e1 ->
+  entry_limit_atr_frac; Strategy-section values are the fallback).
+- The engine force-closes any still-open position at the last row with reason
+  'eod', so a trade with reason 'eod' means "position open now". Order actions
+  are derived from the diff against the tracked strategy-side position:
+      new open trade (live flat)           -> BUY buy=1 / SHORT short=1 + bracket
+      opposite entry while positioned      -> BUY+COVER / SHORT+SELL reversal
+      engine exit reason 'nbar'/'force'    -> SELL sell=1 / COVER cover=1 at Open
+      engine exit reason 'stop'/'profit'   -> no order: the broker-side bracket
+                                              children govern it; log + flat
+      trade voided by the engine           -> AFL same-bar cancel (Buy[i]=0);
+                                              log + flat (bracket governs fill)
+      engine trade opened before the last  -> ghost-adopt (startup gate / missed
+          bar while live is flat              bars): track only, never dispatch
+  Entry order prices mirror the engine anchors (entry bar = signal bar):
       buy   limit = Open - atr14[prev]/e1, stop = Open - max3BarAtr14_1,
-            profit = Open + profitMult * max3BarAtr14_1
+            profit = Open + w1 * max3BarAtr14_1
       short limit = Open + atr14[prev]/e1, stop = Open + max3BarAtr14_1,
-            profit = Open - profitMult * max3BarAtr14_1
-  where Open is the just-opened bar's open (entry fills at next-bar Open).
+            profit = Open - w1 * max3BarAtr14_1
+  where Open is the entry bar's open (entry fills at next-bar Open). The broker
+  fills the limit only if reached; the engine's AmiBroker price-bound clamp
+  (fill at Low/High) is a backtest artifact - real fills are broker truth.
 
 SAFETY: config `Live Trade`.liveTrade=false -> OBSERVE/paper mode. Signals are
 computed and written to the signal log, position state is tracked, but
@@ -34,8 +50,9 @@ RF model hook: config `Live Trade`.modelFile points at the RandomForest gate
 pkl from the backtest program. The gate is intentionally NOT wired yet (the
 requirement file L4003_1_randomForest_glm.txt is empty - no spec for how the
 RF probability should gate live entries). See _passes_rf_gate(): it currently
-returns True so the base strategy signals drive orders. Wire the model there
-once the gating rule is specified.
+returns True so the base strategy signals drive orders. When it returns False,
+the just-opened bar's entry signals are masked before the engine runs, so
+engine state and orders stay consistent.
 
 Outputs (config `Live Trade`.outputFolder):
   S4003_live_signals.log     - one line per buy/short/sell/cover event
@@ -47,8 +64,7 @@ Import-safe: no IB/DB connection and no config access at import time.
 
 import os
 import sys
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -106,8 +122,12 @@ def _et_naive(dt):
 class S4003LiveTrade:
     """Rolling-bars live trader for strategyS4003.
 
-    do_trade_fn / prepare_fn are injectable so the signal->order mapping can
-    be unit-tested offline with a stubbed doTrade0 and scripted signals.
+    Signal evaluation follows `4 Walk Forward Test/S4003_walkforward.py`:
+    strategyS4003._prepare + strategyS4003._simulate on a rolling warm-up
+    window with entries gated to the live-start bar and fixed w1/n1/e1 from
+    config. do_trade_fn / prepare_fn are injectable so the signal->order
+    mapping can be unit-tested offline with a stubbed doTrade0 and scripted
+    signals.
     """
 
     MIN_BARS = 150  # warm-up guard: percentile(100) + vwap50 need history
@@ -142,16 +162,25 @@ class S4003LiveTrade:
         # route the doTrade0 debug log into the live-trade output folder
         ibAutotrade.LOG_FILE = os.path.join(self.output_folder, DOTRADE0_LOG_NAME)
 
-        # apply Strategy section params to the class (walk-forward tuned values
-        # can likewise be applied by setting strategyS4003 class attrs first)
+        # walkforward _set_params pattern: Strategy section first, then the
+        # fixed w1/n1/e1 from the Live Trade section override (TASKS.md T4.1)
         strategyS4003.applyStrategyConfig(loadStrategyConfig())
+        self.w1 = float(cfg.get("w1", strategyS4003.profit_mult))
+        self.n1 = int(cfg.get("n1", strategyS4003.stop_period1))
+        self.e1 = float(cfg.get("e1", strategyS4003.entry_limit_atr_frac))
+        self.lookback_bars = int(cfg.get("lookbackBars", 3000))
+        strategyS4003.profit_mult = self.w1
+        strategyS4003.stop_period1 = self.n1
+        strategyS4003.entry_limit_atr_frac = self.e1
 
         self.do_trade_fn = doTrade0 if do_trade_fn is None else do_trade_fn
         self.prepare_fn = prepare_fn or strategyS4003._prepare
 
         self.bars_df = pd.DataFrame(columns=["open", "high", "low", "close", "volume"])
         self.position = 0            # +1 long, -1 short, 0 flat (strategy-side view)
-        self.entry_bar_dt = None     # datetime of the bar the position was entered
+        self.open_trade = None       # engine trade dict of the adopted open position
+        self.seen_closed = set()     # (type, entry_dt, exit_dt) of processed closes
+        self.trade_start_ts = None   # entries gated to >= this ts (set in start_stream)
         self.last_eval_bar_dt = None  # dedup: evaluate each new bar once
         self.ib = None
         self.contract = None
@@ -171,12 +200,14 @@ class S4003LiveTrade:
     # ------------------------------------------------------------------
     # RF model gate hook (NOT wired - see module docstring)
     # ------------------------------------------------------------------
-    def _passes_rf_gate(self, side, sig_row) -> bool:
+    def _passes_rf_gate(self, sig) -> bool:
         """RandomForest entry gate. modelFile is loaded nowhere yet because
         L4003_1_randomForest_glm.txt is empty (no gating rule specified).
         Returns True so base strategy signals pass through. To wire: load the
-        pkl once in __init__, build the feature vector from sig_row here and
-        return model.predict(...) == take-trade."""
+        pkl once in __init__, build the feature vector from the last row of
+        sig here and return model.predict(...) == take-trade. When it returns
+        False, the just-opened bar's entry signals are masked before the
+        engine runs, so engine state and orders stay consistent."""
         return True
 
     # ------------------------------------------------------------------
@@ -234,11 +265,18 @@ class S4003LiveTrade:
                 b.open, b.high, b.low, b.close, max(b.volume, 0.0)]
         self.bars_df = self.bars_df[~self.bars_df.index.duplicated(keep="last")]
         self.bars_df.sort_index(inplace=True)
+        # gate entries to the live stream start (walkforward window-start
+        # gating): signals from before program start are never traded; an
+        # engine trade opened on a seeded bar is ghost-adopted in _reconcile
+        if not self.bars_df.empty:
+            self.trade_start_ts = self.bars_df.index[-1]
         bars.updateEvent += self.on_bar_update
         self.live_bars = bars
         self.write_signal_log(
             f"stream started. {self.trade_host}:{self.trade_port} "
             f"clientId={self.client_id} contract=[{self.contract.localSymbol}] "
+            f"w1={self.w1} n1={self.n1} e1={self.e1} "
+            f"tradeStart=[{self.trade_start_ts}] "
             f"liveTrade=[{self.live_trade}] mode=[{'LIVE' if self.live_trade else 'OBSERVE'}]")
 
     def on_bar_update(self, bars, has_new_bar):
@@ -253,13 +291,16 @@ class S4003LiveTrade:
         self.evaluate_latest_bar()
 
     # ------------------------------------------------------------------
-    # strategy evaluation on the latest bar change
+    # strategy evaluation on the latest bar change (walkforward engine path)
     # ------------------------------------------------------------------
     def evaluate_latest_bar(self):
-        """Evaluate signals for the just-opened bar (last df row). Entry
-        signals come from the last CLOSED bar (buySig/shortSig are shifted,
-        so the partial current bar never contaminates them). Returns the
-        action dict taken, or None."""
+        """Evaluate signals for the just-opened bar (last df row) the way
+        S4003_walkforward.py does: prepare the last `lookbackBars` rows, run
+        strategyS4003._simulate with entries gated to the live-start bar, and
+        derive order actions from the engine's trade-list diff. Entry signals
+        come from the last CLOSED bar (buySig/shortSig are shifted), so the
+        partial current bar never contaminates them. Returns the action dict
+        taken, or None."""
         df = self.bars_df
         if len(df) < 2:
             return None
@@ -270,79 +311,151 @@ class S4003LiveTrade:
         if len(df) < self.MIN_BARS:
             return None
 
-        sig = self.prepare_fn(df)
-        last = sig.iloc[-1]
-        cur_open = float(last["Open"])
-        buy_sig = int(last["buySig"]) == 1
-        short_sig = int(last["shortSig"]) == 1
+        sig = self.prepare_fn(df.iloc[-self.lookback_bars:])
+        if not self._passes_rf_gate(sig):
+            # mask the just-opened bar's entries so engine state and orders
+            # stay consistent (hook is unwired - always True today)
+            sig.iloc[-1, sig.columns.get_loc("buySig")] = 0
+            sig.iloc[-1, sig.columns.get_loc("shortSig")] = 0
+        trades, _eq, _im = strategyS4003._simulate(
+            sig, trade_start_ts=self.trade_start_ts)
+        return self._reconcile(sig, trades, cur_dt)
 
-        atr14_prev = float(sig["atr14"].iloc[-2])
-        stop_pt = float(last["max3BarAtr14_1"])
-        if np.isnan(stop_pt):
-            stop_pt = atr14_prev
-        if np.isnan(atr14_prev):
-            atr14_prev = stop_pt
-        atr_off = atr14_prev / strategyS4003.entry_limit_atr_frac
-        profit_mult = strategyS4003.profit_mult
-        stop_period1 = int(strategyS4003.stop_period1)
+    # ------------------------------------------------------------------
+    # engine-state diff -> order actions
+    # ------------------------------------------------------------------
+    def _reconcile(self, sig, trades, cur_dt):
+        """Diff the engine's trade list against the tracked strategy-side
+        position and dispatch the matching orders. Returns the action dict
+        taken, or None."""
+        prev = self.open_trade
+        open_tr = None
+        new_closed = []
+        for t in trades:
+            if t["reason"] == "eod":
+                open_tr = t            # engine force-closes any open position at
+                continue               # the last row -> 'eod' means "open now"
+            key = (t["type"], t["entry_dt"], t["exit_dt"])
+            if key not in self.seen_closed:
+                self.seen_closed.add(key)
+                new_closed.append(t)
 
-        pos_before = self.position
-        action = None
+        close = None
+        if prev is not None:
+            still_open = (open_tr is not None
+                          and open_tr["type"] == prev["type"]
+                          and open_tr["entry_dt"] == prev["entry_dt"])
+            if still_open:
+                return None
+            close = next((t for t in new_closed
+                          if t["type"] == prev["type"]
+                          and t["entry_dt"] == prev["entry_dt"]), None)
+            if close is None:
+                # trade vanished from the sim: the entry bar completed and the
+                # engine voided the trade (AFL same-bar cancel, Buy[i]=0)
+                self.write_signal_log(
+                    f"engine voided {prev['type']} entry=[{prev['entry_dt']}] "
+                    f"(same-bar cancel); broker bracket governs the real fill. "
+                    f"bar=[{cur_dt}]")
+                self._adopt(None)
+            elif close["reason"] in ("stop", "profit"):
+                self.write_signal_log(
+                    f"{prev['type']} exit [{close['reason']}] handled by broker "
+                    f"bracket. entry=[{prev['entry_dt']}] "
+                    f"exit=[{close['exit_dt']}] price=[{close['exit_price']:.2f}]")
+                self._adopt(None)
+            elif open_tr is None:
+                if prev.get("ghost"):
+                    self.write_signal_log(
+                        f"ghost {prev['type']} ended [{close['reason']}], no "
+                        f"order (entry was never dispatched). "
+                        f"entry=[{prev['entry_dt']}]")
+                    self._adopt(None)
+                    return None
+                cur_open = float(sig["Open"].iloc[-1])
+                action = self._exit_order(prev["type"], close["reason"],
+                                          cur_dt, cur_open)
+                self.open_trade = None
+                return action
+            # else: reversal - the exit leg rides with the new entry below
 
-        if buy_sig and short_sig and pos_before == 0:
-            self.write_signal_log(
-                f"AMBIGUOUS buy+short same bar, skipped. bar=[{cur_dt}]")
+        if open_tr is None:
             return None
 
-        # ---- entries / force reversals ----
-        if buy_sig and self._passes_rf_gate("BUY", last):
-            if pos_before == 0:
-                action = self._take("BUY", cur_dt, buy=1, sell=0, short=0, cover=0,
-                                    limit_price=cur_open - atr_off,
-                                    stop_loss=cur_open - stop_pt,
-                                    profit_take=cur_open + profit_mult * stop_pt,
-                                    new_pos=1)
-            elif pos_before == -1:
-                action = self._take("BUY+COVER", cur_dt, buy=1, sell=0, short=0, cover=1,
-                                    limit_price=cur_open - atr_off,
-                                    stop_loss=cur_open - stop_pt,
-                                    profit_take=cur_open + profit_mult * stop_pt,
-                                    new_pos=1)
-            else:  # already long: consecutive buy shifts the N-bar anchor (AFL)
-                self.entry_bar_dt = cur_dt
-                self.write_signal_log(f"BUY anchor shift (already long). bar=[{cur_dt}]")
+        side = "BUY" if open_tr["type"] == "Long" else "SHORT"
+        if open_tr["entry_dt"] != cur_dt:
+            # engine opened this trade on an earlier bar (startup gate or
+            # missed bars): cannot place a retroactive order - track it as a
+            # ghost so its later exits never emit orders either
+            self.write_signal_log(
+                f"engine {side} entry=[{open_tr['entry_dt']}] predates the "
+                f"live bar [{cur_dt}] - ghost-adopted, no orders")
+            self._adopt(open_tr, ghost=True)
+            return None
 
-        if action is None and short_sig and self._passes_rf_gate("SHORT", last):
-            if pos_before == 0:
-                action = self._take("SHORT", cur_dt, buy=0, sell=0, short=1, cover=0,
-                                    limit_price=cur_open + atr_off,
-                                    stop_loss=cur_open + stop_pt,
-                                    profit_take=cur_open - profit_mult * stop_pt,
-                                    new_pos=-1)
-            elif pos_before == 1:
-                action = self._take("SHORT+SELL", cur_dt, buy=0, sell=1, short=1, cover=0,
-                                    limit_price=cur_open + atr_off,
-                                    stop_loss=cur_open + stop_pt,
-                                    profit_take=cur_open - profit_mult * stop_pt,
-                                    new_pos=-1)
-            else:
-                self.entry_bar_dt = cur_dt
-                self.write_signal_log(f"SHORT anchor shift (already short). bar=[{cur_dt}]")
+        o, stop_pt, atr_off = self._entry_prices(sig, open_tr["entry_dt"])
+        w1 = strategyS4003.profit_mult
+        if open_tr["type"] == "Long":
+            limit_price, stop_loss = o - atr_off, o - stop_pt
+            profit_take = o + w1 * stop_pt
+        else:
+            limit_price, stop_loss = o + atr_off, o + stop_pt
+            profit_take = o - w1 * stop_pt
 
-        # ---- N-bar stop exit at Open ----
-        if action is None and pos_before != 0 and self.entry_bar_dt is not None:
-            bars_held = len(df) - 1 - df.index.get_loc(self.entry_bar_dt)
-            if bars_held >= stop_period1:
-                if pos_before == 1:
-                    action = self._take("SELL (nbar)", cur_dt, buy=0, sell=1,
-                                        short=0, cover=0, limit_price=cur_open,
-                                        stop_loss=0.0, profit_take=0.0, new_pos=0)
-                else:
-                    action = self._take("COVER (nbar)", cur_dt, buy=0, sell=0,
-                                        short=0, cover=1, limit_price=cur_open,
-                                        stop_loss=0.0, profit_take=0.0, new_pos=0)
-
+        # exit leg only when the broker really still holds the old side
+        # (force/nbar close; stop/profit exits are broker-bracket business)
+        exit_leg = (prev is not None and not prev.get("ghost")
+                    and close is not None
+                    and close["reason"] not in ("stop", "profit"))
+        if open_tr["type"] == "Long":
+            action = self._take("BUY+COVER" if exit_leg else "BUY", cur_dt,
+                                buy=1, sell=0, short=0,
+                                cover=1 if exit_leg else 0,
+                                limit_price=limit_price, stop_loss=stop_loss,
+                                profit_take=profit_take, new_pos=1)
+        else:
+            action = self._take("SHORT+SELL" if exit_leg else "SHORT", cur_dt,
+                                buy=0, sell=1 if exit_leg else 0, short=1,
+                                cover=0,
+                                limit_price=limit_price, stop_loss=stop_loss,
+                                profit_take=profit_take, new_pos=-1)
+        self.open_trade = dict(open_tr, ghost=False)
         return action
+
+    def _exit_order(self, trade_type, reason, cur_dt, cur_open):
+        """Explicit exit order for engine closes the broker bracket does not
+        perform (nbar / force without re-entry)."""
+        if trade_type == "Long":
+            return self._take(f"SELL ({reason})", cur_dt, buy=0, sell=1,
+                              short=0, cover=0, limit_price=cur_open,
+                              stop_loss=0.0, profit_take=0.0, new_pos=0)
+        return self._take(f"COVER ({reason})", cur_dt, buy=0, sell=0,
+                          short=0, cover=1, limit_price=cur_open,
+                          stop_loss=0.0, profit_take=0.0, new_pos=0)
+
+    def _adopt(self, trade, ghost=False):
+        """Sync strategy-side position tracking with the engine state."""
+        if trade is None:
+            self.open_trade = None
+            self.position = 0
+        else:
+            self.open_trade = dict(trade, ghost=ghost)
+            self.position = 1 if trade["type"] == "Long" else -1
+
+    @staticmethod
+    def _entry_prices(sig, entry_dt):
+        """(entry-bar Open, stop points, limit offset) at the engine's entry
+        bar - the same anchors the engine uses (Open, max3BarAtr14_1,
+        atr14[prev]/e1)."""
+        pos = sig.index.searchsorted(entry_dt)
+        o = float(sig["Open"].iloc[pos])
+        stop_pt = float(sig["max3BarAtr14_1"].iloc[pos])
+        atr_prev = float(sig["atr14"].iloc[pos - 1]) if pos > 0 else float("nan")
+        if np.isnan(stop_pt):
+            stop_pt = atr_prev
+        if np.isnan(atr_prev):
+            atr_prev = stop_pt
+        return o, stop_pt, atr_prev / strategyS4003.entry_limit_atr_frac
 
     # ------------------------------------------------------------------
     # order dispatch (gated by liveTrade)
@@ -382,7 +495,6 @@ class S4003LiveTrade:
         # strategy-side position tracking (stop/profit exits are handled by the
         # broker-side bracket children; nbar/force exits are handled above)
         self.position = new_pos
-        self.entry_bar_dt = bar_dt if new_pos != 0 else None
         return action
 
     # ------------------------------------------------------------------

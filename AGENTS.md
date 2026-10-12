@@ -111,6 +111,7 @@ VSCode Algo Workspace/
 │   │   │   ├── S4003_7_randomforest_glm.py     # WF with OOS-day gate + calibration window (IS 14d)
 │   │   │   ├── S4003_8_randomforest_glm.py     # rolling WF: IIS 60d -> OOS 7d, step 1 day, 1-year span
 │   │   │   ├── kimi variants: S4003_{4_linearRegression,4_randomforest,5_linearRegression,5_randomforest,6_randomforest}_kimi.py, S4003_{7,8}_randomforest_kimi.py
+│   │   │   ├── S4003_9_randomforest_kimi.py      # speed-optimized port of 4 Walk Forward Test/S4003_walkforward.py (identical outputs)
 │   │   │   ├── amibroker
 │   │   │   │   ├── backtest_4003_1 trim_4_python.afl   # AmiBroker AFL source of the port
 │   │   │   │   ├── backtest_4003_1 trim_4_python.apx   # AmiBroker analysis project
@@ -127,7 +128,7 @@ VSCode Algo Workspace/
 │   │   │   ├── S4003_lookAhead.py            # look-ahead bias test, verdict CLEAN (TASKS.md T3.1)
 │   │   │   └── S4003_monteCarlo.py           # Monte Carlo over trade P&L, percentile html (TASKS.md T3.2)
 │   │   ├── 6 liveTrade
-│   │   │   ├── S4003_live.py                 # live loop: IB keepUpToDate 1-min bars -> strategyS4003 -> doTrade0 (TASKS.md T4.1)
+│   │   │   ├── S4003_live.py                 # live loop: IB keepUpToDate 1-min bars -> strategyS4003._simulate (walkforward engine path, fixed w1/n1 from config) -> doTrade0 (TASKS.md T4.1)
 │   │   │   ├── test_S4003_live.py            # offline tests: signal->order mapping, OBSERVE gate, DB replay
 │   │   │   └── L4003_1_randomForest_glm.txt  # live-trade requirement for the RF model
 │   │   └── config.yaml                       # local strategy configuration (TASKS.md T0.1)

@@ -66,6 +66,9 @@ def scripted_prepare(signals_by_pos):
     def _prepare(df):
         out = df.copy()
         out["Open"] = out["open"]
+        out["High"] = out["high"]
+        out["Low"] = out["low"]
+        out["Close"] = out["close"]
         n = len(out)
         out["buySig"] = 0
         out["shortSig"] = 0
