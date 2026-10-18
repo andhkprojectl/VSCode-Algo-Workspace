@@ -123,14 +123,17 @@ Live Trade:
   futureExchange: CME
   timeFrame: 1min
   tableName: ticker1Min
-  startDate: '2025-08-01 00:00:00'   # initial historical load for the rolling bar DataFrame
-  endDate: '2026-09-11 23:59:59'
+  initMonths: 6                   # FR-6 init: months of 1-min history loaded from MariaDB at start
   tradeHost: 127.0.0.1
   tradePort: 4002               # 4002 = IB Gateway paper, 7497 = TWS paper, 4001/7496 = live
   clientId: 1
   positionSize: 1
   initCapital: 80000.0
+  tickSize: 0.25                  # FR-7: ES tick size (doTrade0 uses ibControllerTickSize = tickSize * 10000)
+  pointValue: 50.0                # FR-7: USD per index point (ES); overrides Strategy pointValue live
   liveTrade: false              # flip to true only after backtest/walkforward/other tests pass
+  isDebug: true                 # FR-7: write per-new-bar details to outputFolder/trade_debug.log
+  executionTableName: tradeExecution  # MariaDB table for actual IB execution/fill details
   # fixed walkforward parameters (TASKS.md T4.1 / PRD FR-6): copy the latest
   # walkforward-selected w1/n1 here before going live
   w1: 1.5                       # profit take weight -> strategyS4003.profit_mult
@@ -138,11 +141,17 @@ Live Trade:
   e1: 4.0                       # entry limit-offset divisor -> strategyS4003.entry_limit_atr_frac
   lookbackBars: 3000            # rolling warm-up window per evaluation (~2 trading days of 1-min bars)
   modelFile: C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/backTestResult/S4003_4_randomforest_model.pkl
+  # FR-6 init gap backfill (ingest.py logic: ibMarketData.getAllTypesTicketDataWithTimeFromIB)
+  isConFuture: true             # continuous future; false = specific contract (futureExpireDate)
+  futureExpireDate: null        # e.g. "202609"; only used when isConFuture = false
+  # FR-6 periodic DB persist: every dbFlushEveryMin minutes write the last
+  # dbFlushLookbackMin minutes of bars (current minute bar excluded) to tableName
+  dbFlushEveryMin: 8
+  dbFlushLookbackMin: 12
   # doTrade0 order parameters (VS_0008_liveTrade/ibAutotrade.py)
   symbolType: 1                 # 1 = future, 2 = stock
-  ibControllerTickSize: 2500    # tick = value/10000 -> 2500 = 0.25 (ES tick size)
   isIntraDay: true              # order TIF Day (false = GTC)
-  isMktOrder: false             # limit entry, matches Strategy.entryPriceMode
+  isMktOrder: true              # FR-6: market entries/exits; live simulation also uses market-entry fills
   maxNumTickSize4BuyShortSlippage: 4
   maxNumTickSize4StpLmtOrderSlippage: 4
   outputFolder: C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/liveTrade

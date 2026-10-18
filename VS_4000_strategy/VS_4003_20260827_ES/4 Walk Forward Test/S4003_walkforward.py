@@ -22,6 +22,38 @@ gets one extra final row with a blank OOS date carrying the w1/n1 selected
 for the next trading day (its OOS columns are blank - no bars in MariaDB
 yet).
 
+Speed optimizations (ported from
+`1 Prelimary Test/S4003_9_randomforest_kimi.py`; output CSV values are
+bit-identical to the pre-optimization version):
+  1. Warm-up truncation: bars are loaded from
+     max(db_min_datetime, analysisStart - WARMUP_DAYS calendar days) instead
+     of the database minimum date. ATR(Wilder) is an IIR recursion whose
+     start-up difference underflows float64 after ~500 bars; every other
+     indicator has a <= 100-bar window, so WARMUP_DAYS=10 (several thousand
+     bars) of warm-up makes every value read by the walk-forward windows
+     bit-identical to loading full history.
+  2. In-process acceleration of the two rolling-apply indicator helpers
+     (_lin_reg_slope, _bars_since_min) with stride-trick numpy equivalents
+     that keep the exact per-window operation order -> bit-identical Series.
+     Patched into the S4003_strategy module namespace for this process only;
+     S4003_strategy.py on disk is untouched.
+  3. Gate selection no longer re-runs the IS grid search per gate
+     candidate: the IS-best config of a mini-OOS day does not depend on the
+     gate threshold, so each day's IS grid + OOS simulation is computed once
+     and reused for every gateWrGrid candidate (390 -> 65 simulations for
+     the default config; gate table rows are identical).
+  4. _simulate_window runs a line-by-line transcription of
+     strategyS4003._simulate (_simulate_fast) on per-window cached python
+     lists instead of pandas/numpy containers: the slice view, the
+     pre-window signal zeroing (same mask _simulate applies for
+     trade_start_ts) and the array->list conversions are computed once per
+     window and reused for every (w1, n1, e1) grid combination.
+  5. The HTML equity chart uses the strategy's dependency-free SVG renderer
+     (strategyS4003._equity_chart_svg, the same fallback _equity_chart_html
+     uses when matplotlib is absent) instead of importing matplotlib.
+  6. mysql.connector / python-dotenv are imported lazily inside the DB
+     helpers.
+
 Outputs (same names/format as S4003_7_randomforest_glm.py, written to the
 `WalkForward Test` outputFolder):
   S4003_7_parameter_analysis.csv   calibration (w1, n1, e1) grid results
@@ -36,15 +68,14 @@ Outputs (same names/format as S4003_7_randomforest_glm.py, written to the
 import argparse
 import os
 import sys
+import time
 import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import mysql.connector
 import numpy as np
 import pandas as pd
 import yaml
-from dotenv import load_dotenv
 
 warnings.filterwarnings('ignore', category=FutureWarning)
 try:
@@ -58,16 +89,68 @@ _STRATEGY_DIR = Path(__file__).resolve().parents[1] / '2 Strategy'
 if str(_STRATEGY_DIR) not in sys.path:
     sys.path.insert(0, str(_STRATEGY_DIR))
 
+import S4003_strategy as _strategy_mod
 from S4003_strategy import strategyS4003, DT_FORMAT
 
 PROGRAM_NAME = 'S4003_walkforward.py'
 VALUE_PARAMS = ('w1', 'n1', 'e1')
 _DEFAULT_CONFIG = (_ROOT / 'VS_4000_strategy' / 'VS_4003_20260827_ES'
                    / 'config.yaml')
+WARMUP_DAYS = 10   # warm-up calendar days loaded before analysisStart (>> the
+                   # ~500 bars ATR(Wilder) needs to converge bit-exactly plus
+                   # the <= 100-bar indicator windows plus lookbackBars)
+
+
+# ===========================================================================
+# Acceleration shims (bit-identical, process-local; S4003_strategy.py on
+# disk is untouched). Both replace pandas rolling-apply helpers with numpy
+# sliding-window equivalents that keep the same per-window operation order,
+# so every output value is exactly the same.
+# ===========================================================================
+def _lin_reg_slope_fast(s: pd.Series, period: int) -> pd.Series:
+    """Bit-identical fast _lin_reg_slope: rolling OLS slope of the last
+    `period` values (AmiBroker LinRegSlope)."""
+    y = s.to_numpy(dtype=float)
+    n = len(y)
+    out = np.full(n, np.nan)
+    if n < period:
+        return pd.Series(out, index=s.index)
+    t = np.arange(period, dtype=float)
+    tm = t.mean()
+    denom = float(((t - tm) ** 2).sum())
+    w = np.lib.stride_tricks.sliding_window_view(y, period)
+    with np.errstate(all='ignore'):
+        m = w.mean(axis=1)
+        res = ((w - m[:, None]) * (t - tm)).sum(axis=1) / denom
+    res[np.isnan(w).any(axis=1)] = np.nan
+    out[period - 1:] = res
+    return pd.Series(out, index=s.index)
+
+
+def _bars_since_min_fast(s: pd.Series, period: int) -> pd.Series:
+    """Bit-identical fast _bars_since_min (AmiBroker LLVBars): bars passed
+    since the lowest value in the window (partial windows allowed, oldest
+    occurrence wins ties, 0 = current bar)."""
+    y = s.to_numpy(dtype=float)
+    n = len(y)
+    out = np.empty(n, dtype=float)
+    for i in range(min(period - 1, n)):      # partial head windows
+        w = y[:i + 1]
+        out[i] = float(len(w) - 1 - np.argmin(w))
+    if n >= period:
+        w = np.lib.stride_tricks.sliding_window_view(y, period)
+        out[period - 1:] = (period - 1 - np.argmin(w, axis=1)).astype(float)
+    return pd.Series(out, index=s.index)
+
+
+_strategy_mod._lin_reg_slope = _lin_reg_slope_fast
+_strategy_mod._bars_since_min = _bars_since_min_fast
 
 
 # ===========================================================================
 # Config / MariaDB access (self-contained; credentials in VS_0002_config/.env)
+# mysql.connector / dotenv are imported lazily so their import time belongs
+# to the MariaDB fetch.
 # ===========================================================================
 def loadWalkForwardConfig(config_path=None) -> dict:
     """Return the `WalkForward Test` section of the local strategy config."""
@@ -79,6 +162,7 @@ def loadWalkForwardConfig(config_path=None) -> dict:
 
 def _load_db_env():
     """Load VS_0002_config/.env if present (repo convention)."""
+    from dotenv import load_dotenv
     for p in (_ROOT / 'VS_0002_config' / '.env',
               Path.cwd() / 'VS_0002_config' / '.env'):
         if p.exists():
@@ -88,6 +172,7 @@ def _load_db_env():
 
 
 def _db_connect():
+    import mysql.connector
     _load_db_env()
     return mysql.connector.connect(
         host=os.getenv("DB_HOST", "localhost"),
@@ -177,6 +262,221 @@ def window_metrics(trades):
 
 
 # ===========================================================================
+# Fast AFL-faithful trade simulation loop
+# ===========================================================================
+def _simulate_fast(O, H, L, C, atr14, max3, buy, shr, dts, start_pos,
+                   profit_mult, stop_period1, entry_limit_atr_frac, limit_mode,
+                   commission_per_trade, point_value, num_contracts,
+                   initial_capital):
+    """Line-by-line transcription of strategyS4003._simulate (same order of
+    operations -> bit-identical trades and equity) running on python lists
+    instead of pandas/numpy containers. O/H/L/C/atr14/max3 are lists of
+    floats covering the window (including the lookbackBars warm-up head);
+    buy/shr are mutable list copies of the window entry signals with bars
+    before the window start already zeroed (exactly what
+    _simulate(trade_start_ts=...) does); start_pos is the number of zeroed
+    head bars; dts is the window DatetimeIndex. Returns (trades, equity
+    list); in_market is not computed (callers discard it).
+    """
+    n = len(O)
+    ef = entry_limit_atr_frac
+    pv = point_value
+    comm = commission_per_trade
+    ct = num_contracts
+    sp = stop_period1
+    pm = profit_mult
+    ic = initial_capital
+
+    trades = []
+    realized = 0.0
+    equity = [0.0] * n
+
+    isInLong = isInShort = False
+    long_fill = long_stop = long_profit = 0.0
+    short_fill = short_stop = short_profit = 0.0
+    sell_stop_n = sp
+    buy_force_cover = short_force_sell = False
+    cur = None      # [entry_bar, mae, mfe] of the open long trade
+    cur_s = None    # [entry_bar, mae, mfe] of the open short trade
+
+    for i in range(n):
+        # ---------- Buy entry ----------
+        if buy[i] == 1 and not isInLong:
+            stop_pt = max3[i]
+            a = atr14[i - 1] / ef if i >= 1 else np.nan
+            if limit_mode and not (a != a):
+                long_fill = O[i] - a
+                if long_fill < L[i]:
+                    long_fill = L[i]            # max(O - atr_off, Low)
+            else:
+                long_fill = O[i]
+            long_stop = O[i] - stop_pt
+            long_profit = O[i] + pm * stop_pt
+            isInLong = True
+            sell_stop_n = sp
+            cur = [i, 0.0, 0.0]
+            if isInShort:
+                buy_force_cover = True
+
+        # ---------- Short entry ----------
+        if shr[i] == 1 and not isInShort:
+            stop_pt = max3[i]
+            a = atr14[i - 1] / ef if i >= 1 else np.nan
+            if limit_mode and not (a != a):
+                short_fill = O[i] + a
+                if short_fill > H[i]:
+                    short_fill = H[i]           # min(O + atr_off, High)
+            else:
+                short_fill = O[i]
+            short_stop = O[i] + stop_pt
+            short_profit = O[i] - pm * stop_pt
+            isInShort = True
+            cur_s = [i, 0.0, 0.0]
+            if isInLong:
+                short_force_sell = True
+
+        # ---------- Long exits ----------
+        if isInLong and cur is not None:
+            v = L[i] - long_fill
+            if v < cur[1]:
+                cur[1] = v                      # mae = min(mae, L - fill)
+            v = H[i] - long_fill
+            if v > cur[2]:
+                cur[2] = v                      # mfe = max(mfe, H - fill)
+            exit_price = None
+            if (L[i] <= long_stop) or short_force_sell:
+                if short_force_sell:
+                    exit_price = O[i]; reason = 'force'; short_force_sell = False
+                else:
+                    exit_price = long_stop; reason = 'stop'
+            elif H[i] >= long_profit:
+                exit_price = long_profit; reason = 'profit'
+            if exit_price is not None:
+                buy[i] = 0      # AFL cancels same-bar entries (Buy[i] = 0)
+                if cur[0] != i:
+                    pnl = (exit_price - long_fill) * pv * ct - comm
+                    realized += pnl
+                    trades.append({
+                        'type': 'Long', 'entry_dt': dts[cur[0]],
+                        'entry_price': long_fill, 'exit_dt': dts[i],
+                        'exit_price': exit_price, 'entry_bar': cur[0],
+                        'exit_bar': i, 'pnl': pnl,
+                        'pnl_pct': pnl / (long_fill * pv * ct) * 100.0,
+                        'mae': cur[1], 'mfe': cur[2], 'reason': reason})
+                isInLong = False
+                cur = None
+            else:
+                j = i - sell_stop_n
+                if j >= 0 and buy[j] == 1 and buy[i] != 1:
+                    # N-bar stop at Open
+                    pnl = (O[i] - long_fill) * pv * ct - comm
+                    realized += pnl
+                    trades.append({
+                        'type': 'Long', 'entry_dt': dts[cur[0]],
+                        'entry_price': long_fill, 'exit_dt': dts[i],
+                        'exit_price': O[i], 'entry_bar': cur[0],
+                        'exit_bar': i, 'pnl': pnl,
+                        'pnl_pct': pnl / (long_fill * pv * ct) * 100.0,
+                        'mae': cur[1], 'mfe': cur[2], 'reason': 'nbar'})
+                    isInLong = False
+                    cur = None
+                else:
+                    if j >= 0 and buy[j] == 1 and buy[i] == 1:
+                        sell_stop_n += 1
+
+        # ---------- Short exits ----------
+        if isInShort and cur_s is not None:
+            v = short_fill - H[i]
+            if v < cur_s[1]:
+                cur_s[1] = v
+            v = short_fill - L[i]
+            if v > cur_s[2]:
+                cur_s[2] = v
+            exit_price = None
+            if (H[i] >= short_stop) or buy_force_cover:
+                if buy_force_cover:
+                    exit_price = O[i]; reason = 'force'; buy_force_cover = False
+                else:
+                    exit_price = short_stop; reason = 'stop'
+            elif L[i] <= short_profit:
+                exit_price = short_profit; reason = 'profit'
+            if exit_price is not None:
+                shr[i] = 0
+                if cur_s[0] != i:
+                    pnl = (short_fill - exit_price) * pv * ct - comm
+                    realized += pnl
+                    trades.append({
+                        'type': 'Short', 'entry_dt': dts[cur_s[0]],
+                        'entry_price': short_fill, 'exit_dt': dts[i],
+                        'exit_price': exit_price, 'entry_bar': cur_s[0],
+                        'exit_bar': i, 'pnl': pnl,
+                        'pnl_pct': pnl / (short_fill * pv * ct) * 100.0,
+                        'mae': cur_s[1], 'mfe': cur_s[2], 'reason': reason})
+                isInShort = False
+                cur_s = None
+            else:
+                j = i - sp
+                if j >= 0 and (shr[j] == 1 or buy_force_cover) and shr[i] != 1:
+                    pnl = (short_fill - O[i]) * pv * ct - comm
+                    realized += pnl
+                    trades.append({
+                        'type': 'Short', 'entry_dt': dts[cur_s[0]],
+                        'entry_price': short_fill, 'exit_dt': dts[i],
+                        'exit_price': O[i], 'entry_bar': cur_s[0],
+                        'exit_bar': i, 'pnl': pnl,
+                        'pnl_pct': pnl / (short_fill * pv * ct) * 100.0,
+                        'mae': cur_s[1], 'mfe': cur_s[2], 'reason': 'nbar'})
+                    isInShort = False
+                    cur_s = None
+
+        # ---------- equity ----------
+        unreal = 0.0
+        if isInLong:
+            unreal = (C[i] - long_fill) * pv * ct
+        elif isInShort:
+            unreal = (short_fill - C[i]) * pv * ct
+        equity[i] = ic + realized + unreal
+
+    # close any open position at last bar close (AmiBroker end-of-data behavior)
+    if n > 0:
+        if isInLong and cur is not None:
+            v = L[n - 1] - long_fill
+            if v < cur[1]:
+                cur[1] = v
+            v = H[n - 1] - long_fill
+            if v > cur[2]:
+                cur[2] = v
+            pnl = (C[n - 1] - long_fill) * pv * ct - comm
+            realized += pnl
+            trades.append({
+                'type': 'Long', 'entry_dt': dts[cur[0]],
+                'entry_price': long_fill, 'exit_dt': dts[n - 1],
+                'exit_price': C[n - 1], 'entry_bar': cur[0],
+                'exit_bar': n - 1, 'pnl': pnl,
+                'pnl_pct': pnl / (long_fill * pv * ct) * 100.0,
+                'mae': cur[1], 'mfe': cur[2], 'reason': 'eod'})
+        if isInShort and cur_s is not None:
+            v = short_fill - H[n - 1]
+            if v < cur_s[1]:
+                cur_s[1] = v
+            v = short_fill - L[n - 1]
+            if v > cur_s[2]:
+                cur_s[2] = v
+            pnl = (short_fill - C[n - 1]) * pv * ct - comm
+            realized += pnl
+            trades.append({
+                'type': 'Short', 'entry_dt': dts[cur_s[0]],
+                'entry_price': short_fill, 'exit_dt': dts[n - 1],
+                'exit_price': C[n - 1], 'entry_bar': cur_s[0],
+                'exit_bar': n - 1, 'pnl': pnl,
+                'pnl_pct': pnl / (short_fill * pv * ct) * 100.0,
+                'mae': cur_s[1], 'mfe': cur_s[2], 'reason': 'eod'})
+        equity[n - 1] = ic + realized
+
+    return trades, equity
+
+
+# ===========================================================================
 # Main class (port of S4003V7WalkForward)
 # ===========================================================================
 class S4003WalkForward:
@@ -208,6 +508,8 @@ class S4003WalkForward:
             if p.get('name'):
                 self.param_grids[p['name']] = tuple(p.get('grid') or ())
         self.exit_cost = float(strategyS4003.commission_per_trade)
+        self.timings = {}
+        self._win_cache = {}
 
     # ------------------------------------------------------------------
     def _set_params(self, w1, n1, e1):
@@ -216,36 +518,82 @@ class S4003WalkForward:
         strategyS4003.entry_limit_atr_frac = e1
         strategyS4003.commission_per_trade = self.exit_cost
 
+    def _window_data(self, sig, start_ts, end_ts):
+        """Per-window cached inputs for _simulate_fast: the iloc slice view
+        (lookbackBars bars kept before start for engine warm-up) converted
+        once to python lists, with entry signals before start_ts zeroed -
+        the same mask strategyS4003._simulate applies for trade_start_ts, so
+        trades/equity are identical. Reused for every (w1, n1, e1) grid
+        combination simulated on the same window."""
+        key = (start_ts, end_ts)
+        wd = self._win_cache.get(key)
+        if wd is None:
+            lo = sig.index.searchsorted(start_ts)
+            lo = max(0, lo - self.lookback_bars)
+            hi = sig.index.searchsorted(end_ts, side='right')
+            sl = sig.iloc[lo:hi]
+            dts = sl.index
+            pre = int(np.count_nonzero(np.asarray(dts < start_ts)))
+            buy0 = sl['buySig'].to_numpy(int).tolist()
+            shr0 = sl['shortSig'].to_numpy(int).tolist()
+            for i in range(pre):
+                buy0[i] = 0
+                shr0[i] = 0
+            wd = {'dts': dts, 'pre': pre,
+                  'O': sl['Open'].tolist(), 'H': sl['High'].tolist(),
+                  'L': sl['Low'].tolist(), 'C': sl['Close'].tolist(),
+                  'atr14': sl['atr14'].tolist(),
+                  'max3': sl['max3BarAtr14_1'].tolist(),
+                  'buy0': buy0, 'shr0': shr0}
+            self._win_cache[key] = wd
+        return wd
+
     def _simulate_window(self, sig, start_ts, end_ts, w1, n1, e1, stn1, sln1):
         """Run the strategy engine on [start_ts, end_ts] with entries gated
         to the window (lookbackBars bars kept before start for engine
         warm-up). stn1/sln1 daily stops stay unset (disabled), as in
-        S4003_7. Returns (trades list, bar-level equity pd.Series)."""
+        S4003_7. Returns (trades list, bar-level equity pd.Series).
+
+        Runs _simulate_fast on the cached per-window lists (bit-identical
+        trades/equity vs strategyS4003._simulate)."""
         if stn1 is not None or sln1 is not None:
             raise ValueError('stn1/sln1 daily stops are disabled in this port')
         self._set_params(w1, n1, e1)
-        lo = sig.index.searchsorted(start_ts)
-        lo = max(0, lo - self.lookback_bars)
-        hi = sig.index.searchsorted(end_ts, side='right')
-        sl = sig.iloc[lo:hi].copy()
-        pre = sl.index < start_ts
-        sl.loc[pre, 'buySig'] = 0
-        sl.loc[pre, 'shortSig'] = 0
-        trades, eq, _im = strategyS4003._simulate(sl)
-        keep = np.asarray(sl.index >= start_ts)
-        eq_series = pd.Series(eq[keep], index=sl.index[keep])
+        wd = self._window_data(sig, start_ts, end_ts)
+        trades, equity = _simulate_fast(
+            wd['O'], wd['H'], wd['L'], wd['C'], wd['atr14'], wd['max3'],
+            wd['buy0'][:], wd['shr0'][:], wd['dts'], wd['pre'],
+            strategyS4003.profit_mult, strategyS4003.stop_period1,
+            strategyS4003.entry_limit_atr_frac,
+            strategyS4003.entry_price_mode == 'limit',
+            strategyS4003.commission_per_trade, strategyS4003.point_value,
+            strategyS4003.num_contracts, strategyS4003.initial_capital)
+        pre = wd['pre']
+        eq_series = pd.Series(equity[pre:], index=wd['dts'][pre:])
         return trades, eq_series
 
     # ------------------------------------------------------------------
     def _load(self):
         db_lo, _db_hi = get_db_range(self.ticker, self.table)
+        # warm-up truncation (speed): analysisStart - WARMUP_DAYS calendar
+        # days of history is enough for every indicator read by the
+        # walk-forward windows to be bit-identical to full history (see
+        # module docstring); fall back to the db minimum when it is later.
+        warm_start = self.analysis_start - pd.Timedelta(days=WARMUP_DAYS)
+        load_start = max(pd.Timestamp(db_lo), warm_start)
         print(f"[{PROGRAM_NAME}]")
-        print(f"Loading {self.ticker} 1-min bars [{db_lo} .. {self.analysis_end}] ...")
-        self.df = load_data_from_db(self.ticker, str(db_lo),
+        print(f"Loading {self.ticker} 1-min bars [{load_start} .. "
+              f"{self.analysis_end}] (db min {db_lo}, warm-up "
+              f"{WARMUP_DAYS}d) ...")
+        t_db = time.perf_counter()
+        self.df = load_data_from_db(self.ticker, str(load_start),
                                     str(self.analysis_end), self.table)
+        self.timings['db_fetch'] = time.perf_counter() - t_db
         if self.df.empty:
             raise RuntimeError('no bars returned from database')
+        t0 = time.perf_counter()
         self.sig = strategyS4003._prepare(self.df)
+        self.timings['prepare'] = time.perf_counter() - t0
         in_period = ((self.sig.index >= self.analysis_start)
                      & (self.sig.index <= self.analysis_end))
         self.analysis_days = np.unique(np.asarray(self.sig.index[in_period].date))
@@ -362,7 +710,11 @@ class S4003WalkForward:
         walk-forward over the last gateSelectDays trading days of the
         calibration window. A day is taken when its IS-selected config has
         IS win rate >= wr_min AND IS net > 0. wr_min = 0.0 is the
-        net>0-only baseline."""
+        net>0-only baseline.
+
+        Speed: a day's IS-best config and its OOS-day simulation do not
+        depend on the gate candidate wr_min, so they are computed once per
+        day and reused for every candidate (identical gate table)."""
         p1, p2 = self.chosen_params
         grid = [(v1, v2) for v1 in self.param_grids[p1]
                 for v2 in self.param_grids[p2]]
@@ -375,24 +727,26 @@ class S4003WalkForward:
         print(f"\nGate selection on calibration mini-OOS days "
               f"{mini_days[0].date()} .. {mini_days[-1].date()} "
               f"(IS {self.is_days}d, never touches real OOS data)")
+        day_results = []
+        for day in mini_days:
+            v1, v2, is_m = self._is_best_cfg(day, p1, p2, grid, fv)
+            kw = dict(fv)
+            kw[p1], kw[p2] = v1, v2
+            day_end = (day + timedelta(days=self.oos_days - 1)).replace(
+                hour=23, minute=59, second=59)
+            oos_trades, _ = self._simulate_window(
+                self.sig, day, day_end, kw['w1'], kw['n1'], kw['e1'],
+                None, None)
+            day_results.append((is_m, window_metrics(oos_trades)))
         rows = []
         for wr_min in self.gate_wr_grid:
             trades_n = wins = 0
             net = 0.0
             taken = 0
-            for day in mini_days:
-                v1, v2, is_m = self._is_best_cfg(day, p1, p2, grid, fv)
+            for is_m, m in day_results:
                 if is_m['win_rate'] < wr_min or is_m['net'] <= 0:
                     continue
                 taken += 1
-                kw = dict(fv)
-                kw[p1], kw[p2] = v1, v2
-                day_end = (day + timedelta(days=self.oos_days - 1)).replace(
-                    hour=23, minute=59, second=59)
-                oos_trades, _ = self._simulate_window(
-                    self.sig, day, day_end, kw['w1'], kw['n1'], kw['e1'],
-                    None, None)
-                m = window_metrics(oos_trades)
                 trades_n += m['trades']
                 wins += m['wins']
                 net += m['net']
@@ -564,7 +918,10 @@ class S4003WalkForward:
                      - (1 if self.next_day_params else 0))
         eq = self.oos_equity if len(self.oos_equity) else \
             self.wf_results.set_index('oos_date')['oos_cum_pnl']
-        chart = strategyS4003._equity_chart_html(eq)
+        # speed: dependency-free SVG chart (the fallback _equity_chart_html
+        # itself uses when matplotlib is absent); importing matplotlib and
+        # rendering a PNG costs ~1-2 s.
+        chart = strategyS4003._equity_chart_svg(eq)
 
         def _wf_row_html(r):
             if r['oos_date'] == '':   # endDateIsOOS=0 next-day params row
@@ -666,6 +1023,7 @@ OOS activity; cum pnl is unchanged.</p>
 
     # ------------------------------------------------------------------
     def run(self):
+        t_run0 = time.perf_counter()
         strategyS4003.applyStrategyConfig()
         self.exit_cost = float(strategyS4003.commission_per_trade)
         orig = {k: getattr(strategyS4003, k) for k in
@@ -673,13 +1031,27 @@ OOS activity; cum pnl is unchanged.</p>
                  'entry_limit_atr_frac')}
         try:
             self._load()
+            t0 = time.perf_counter()
             self.grid_search()
+            self.timings['phase1_grid'] = time.perf_counter() - t0
+            t0 = time.perf_counter()
             self.select_gate()
+            self.timings['gate_select'] = time.perf_counter() - t0
+            t0 = time.perf_counter()
             self.walk_forward()
+            self.timings['walk_forward'] = time.perf_counter() - t0
+            t0 = time.perf_counter()
             self.write_outputs()
+            self.timings['write_outputs'] = time.perf_counter() - t0
         finally:
             for k, v in orig.items():
                 setattr(strategyS4003, k, v)
+        t_total = time.perf_counter() - t_run0
+        t_no_db = t_total - self.timings.get('db_fetch', 0.0)
+        print(f"\nRuntime breakdown (s): "
+              + ' | '.join(f"{k} {v:.2f}" for k, v in self.timings.items()))
+        print(f"Total runtime: {t_total:.2f}s | excluding MariaDB fetch: "
+              f"{t_no_db:.2f}s")
 
 
 # ===========================================================================

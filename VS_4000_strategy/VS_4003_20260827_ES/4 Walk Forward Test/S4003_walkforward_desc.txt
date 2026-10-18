@@ -9,9 +9,18 @@
 Walk-forward test for the ES intraday strategy (class strategyS4003,
 ported from 1 Prelimary Test\S4003_7_randomforest_glm.py). All parameters
 come from config.yaml section "WalkForward Test" (signal/account parameters
-from section "Strategy"); data from MariaDB table ticker1Min
-(analysisStart 2025-08-01 .. analysisEnd 2026-09-11, 424,857 bars loaded,
-349 trading days).
+from section "Strategy"); data from MariaDB table ticker1Min (bars loaded
+from max(db min, analysisStart - 10 warm-up days) .. analysisEnd).
+
+Speed: the engine path is optimized (ported from
+1 Prelimary Test\S4003_9_randomforest_kimi.py; output CSVs verified
+bit-identical to the pre-optimization version): fast numpy shims for the
+_lin_reg_slope/_bars_since_min rolling helpers (patched into the
+S4003_strategy module namespace for this process only), _simulate_fast
+(line-by-line transcription of strategyS4003._simulate on per-window cached
+python lists, reused across the (w1, n1, e1) grid), gate selection computes
+each mini-OOS day once and reuses it for every gate candidate, warm-up
+truncated data load, lazy mysql/dotenv imports, SVG equity chart.
 
 Pipeline:
   Phase 1  calibration grid (first 28 days, before any walk-forward day):
@@ -41,13 +50,25 @@ Latest run results (both timing runs, deterministic):
 ---------------------------
 Module-level functions:
 
+  _lin_reg_slope_fast(s, period)          [module level]
+      Fast _lin_reg_slope: numpy sliding-window equivalent (same per-window
+      operation order -> bit-identical). Patched into the S4003_strategy
+      module namespace for this process only.
+  _bars_since_min_fast(s, period)         [module level]
+      Fast _bars_since_min (LLVBars): numpy sliding-window equivalent,
+      bit-identical. Patched into the S4003_strategy module namespace.
+  _simulate_fast(O, H, L, C, atr14, max3, buy, shr, dts, start_pos, ...)
+      Line-by-line transcription of strategyS4003._simulate on python lists
+      (bit-identical trades/equity); in_market not computed.
   loadWalkForwardConfig(config_path=None)
       Load and return the "WalkForward Test" section of the strategy
       folder config.yaml.
   _load_db_env()
       Load VS_0002_config\.env if present (DB credentials, repo convention).
+      dotenv imported lazily.
   _db_connect()
-      Open a MariaDB connection from the .env variables.
+      Open a MariaDB connection from the .env variables (mysql.connector
+      imported lazily).
   get_db_range(ticker, table)
       Return (min, max) datetime1 of the ticker in the table.
   load_data_from_db(ticker, start_date, end_date, table)
@@ -72,12 +93,18 @@ Class S4003WalkForward (port of S4003V7WalkForward):
   _set_params(w1, n1, e1)
       Push profit_mult / stop_period1 / entry_limit_atr_frac / commission
       onto the strategyS4003 class.
+  _window_data(sig, start, end)
+      Per-window cached inputs for _simulate_fast: iloc slice (lookbackBars
+      warm-up head) converted once to python lists with pre-window entry
+      signals zeroed; reused across the (w1, n1, e1) grid (_win_cache).
   _simulate_window(sig, start, end, w1, n1, e1, stn1, sln1)
       Run the strategy engine on [start, end] (lookbackBars bars kept
-      before start for indicator warm-up, entries gated to the window).
+      before start for indicator warm-up, entries gated to the window) via
+      _simulate_fast on the cached per-window lists.
       stn1/sln1 must be None (disabled). Returns (trades, bar-level equity).
   _load()
-      Load bars from MariaDB, build signals via strategyS4003._prepare,
+      Load bars from MariaDB (from max(db min, analysisStart - WARMUP_DAYS)),
+      build signals via strategyS4003._prepare,
       classify analysis / trading / calibration days.
   _run_cfg(w1, n1, e1)
       One backtest over the calibration window, metrics dict.
@@ -91,53 +118,41 @@ Class S4003WalkForward (port of S4003V7WalkForward):
       (enough trades, win rate, net). Returns (v1, v2, is_metrics).
   select_gate()
       Select the OOS-day gate threshold on calibration mini-OOS days only
-      (never touches real OOS data).
+      (never touches real OOS data). Speed: each day's IS-best config and
+      OOS simulation are computed once and reused for every gateWrGrid
+      candidate.
   walk_forward()
       Phase 2: per OOS day - select best (w1, n1) on the IS window ending
       the day before, apply the gate, trade the day when taken; builds
       per-day rows, trade list, equity segments.
   write_outputs(out_dir)
       Write the 6 output files + the HTML report (gate table, summary,
-      per-OOS-day table, equity chart via strategyS4003._equity_chart_html).
+      per-OOS-day table, equity chart via strategyS4003._equity_chart_svg).
   run()
       applyStrategyConfig -> _load -> grid_search -> select_gate ->
-      walk_forward -> write_outputs -> restore original class params.
+      walk_forward -> write_outputs -> restore original class params;
+      prints a per-phase runtime breakdown.
 
   main()
       argparse entry point (--ticker, --config).
 
 3. TIME TAKEN WHEN RUNNING
 --------------------------
-  Wall time (plain run)      : 141.6 s  = 2 min 22 s
-  Wall time (under cProfile) : 167.6 s  = 2 min 48 s (profiler overhead)
-  Both runs deterministic    : 607 trades, 291 taken days / 34 gated out,
-                               win rate 44.32%, net 13,813.10.
+Current optimized version (config analysisStart 2026-09-01 ..
+analysisEnd 2026-09-30, 26 trading days; measured on this machine):
 
-4. WHICH PART / FUNCTION TAKES % OF THE TIME
---------------------------------------------
-From the cProfile run (167.6 s total, 43.1M function calls).
-Cumulative time includes everything called by the function.
+  Total runtime ~2.0 s, excluding MariaDB fetch ~0.6 s
+  Breakdown (s): db_fetch 0.46 | prepare 0.11 | phase1_grid 0.13 |
+                 gate_select 0.18 | walk_forward 0.11 | write_outputs 0.01
 
-  Cum s     %    Function / part
-  131.5   78.5%  _simulate_window  (all strategy simulations:
-                 325 OOS-day + 12 calibration + 30 gate sims)
-  120.6   71.9%  walk_forward phase (IS selection + OOS days)
-   94.4   56.3%  strategyS4003._simulate  (the bar-loop engine itself,
-                 4,602 calls; 77.9 s self time = 46.5% of total)
-   26.6   15.9%  _load  (DB read 5.2 s + indicator preparation
-                 strategyS4003._prepare 20.8 s of which rolling
-                 indicator windows 19.9 s)
-   12.1    7.2%  select_gate  (calibration mini walk-forward)
-    5.2    3.1%  load_data_from_db  (424,857 rows from MariaDB)
-    1.4    0.9%  _is_best_cfg  (orchestration overhead)
-    1.2    0.7%  grid_search  (phase 1, 24 combos)
-   ~2-4   1-2%   write_outputs  (csv files + HTML report;
-                 equity chart rendering included)
-
-  Self-time hot spots inside the engine:
-   77.9 s   S4003_strategy._simulate        (bar loop)
-    5.6 s   pandas _merge_blocks            (df copies per sim)
-    3.9 s   numpy vstack / reduce           (per-sim arrays)
-    3.2 s   S4003_strategy._slope           (lin-reg slope helper)
-    1.9 s   mysql connector get_rows        (one-time DB load)
+Superseded pre-optimization figures (same program before the
+S4003_9 speed-up port, on the earlier 2025-08-01..2026-09-11 config with
+424,857 bars / 349 trading days): 141.6 s plain run, 167.6 s under
+cProfile; both deterministic: 607 trades, 291 taken days / 34 gated out,
+win rate 44.32%, net 13,813.10. The cProfile hot spots of that version
+(_simulate_window 78.5%, strategyS4003._simulate 56.3%, _load 15.9%)
+are exactly what the optimization removed: _simulate_fast replaces the
+pandas-container engine loop, _prepare runs on the warm-up-truncated
+load with the fast rolling shims, and gate selection reuses per-day
+simulations across gate candidates.
 ================================================================================

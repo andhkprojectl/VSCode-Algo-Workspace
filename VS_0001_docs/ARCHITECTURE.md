@@ -14,14 +14,15 @@
 
 ## 2. Data Model
 
-refer to VS_0007_dbAndFile/mariaDB. schema IBTradingDb. tables ticker1Min (1-min bars) and ticker5Min (5-min bars)
+Refer to `VS_0007_dbAndFile/mariaDB`, schema `IBTradingDb`: `ticker1Min` (1-min bars), `ticker5Min` (5-min bars), and `tradeExecution` (actual IB execution/fill details, uniquely keyed by IB `execId`).
 
 ## 3. Strategy Interface
 
-- Strategy class `strategyS4003` in `S4003_strategy.py`; one strategy class per strategy folder
+- Each sub-folder under VS_4000_strategy implement a strategyStrategy class `strategyS4003` in `S4003_strategy.py`; one strategy class per strategy folder
 - Input: bars DataFrame (from MariaDB for tests, from IB live stream for live trade) plus parameters from the strategy `config.yaml`
 - Output per bar: one signal of `BUY`, `SELL`, `SHORT`, `COVER`, `HOLD`
 - The same strategy class is reused by backtest, walk-forward, other test and live trade
+- Strategy under VS_4003_20260827_ES, refer to VS_4003_PRD.md and VS_4003_TASKS.md
 
 ## 4. Flows
 
@@ -47,6 +48,6 @@ aggregate folds -> if thresholds pass -> save config/strategyS4003_wf.json
 
 ### Live
 
-`liveTrade.py` --strategy 4003 -> VS_4000_strategy/VS_4003_20260827_ES/6 liveTrade/S4003_live.py -> load config.yaml -> load symbol name, start date, end date, positionsize, initCapital, tradePort: tcp/ip port connecting to IB TWS or IB gateway -> IBClient.connect -> reqHistoricalData(keepUpToDate=True) --> call strategy in S4003_strategy.py -> place order -> track fill -> output trade defail transaction to csv, P&L and statistics html
+`liveTrade.py --strategy 4003` -> `VS_4000_strategy/VS_4003_20260827_ES/6 liveTrade/S4003_live.py` -> load `Live Trade` config -> read last `initMonths` months from MariaDB `ticker1Min` into the rolling DataFrame -> connect to TWS/Gateway using `tradeHost`/`tradePort` -> backfill DB-last-bar-to-previous-minute from IB and upsert it -> `reqHistoricalData(keepUpToDate=True)` -> each new bar calls `strategyS4003._prepare` + `_simulate_fast` with fixed w1/n1/e1 -> `doTrade0` market orders on the same IB connection -> IB execution events -> idempotent MariaDB `tradeExecution` insert. Every 8 minutes, upsert the last 12 minutes of completed bars to `ticker1Min`. Write signal and doTrade0 logs plus, when `isDebug=true`, `trade_debug.log` with per-new-bar OHLCV/signals/order parameters. `liveTrade=false` is OBSERVE mode and never calls `doTrade0`.
 
 

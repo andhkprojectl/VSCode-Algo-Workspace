@@ -1,0 +1,669 @@
+S4003_live.py - FILE DESCRIPTION
+================================
+
+Target file:
+  VS_4000_strategy/VS_4003_20260827_ES/6 liveTrade/S4003_live.py
+
+Primary local configuration:
+  VS_4000_strategy/VS_4003_20260827_ES/config.yaml
+
+This description reflects the current implementation. Paths below are relative
+to the workspace root unless stated otherwise.
+
+
+1) WHAT THIS FILE DOES
+======================
+
+S4003_live.py is the live-trading runner for the S4003 ES intraday strategy.
+It maintains a rolling in-memory 1-minute OHLCV DataFrame, evaluates the same
+strategy engine used by the walk-forward test, translates engine state changes
+into IB order actions, persists recent bars, and records actual IB executions.
+It supports both long and short trades.
+
+Normal startup and runtime sequence:
+
+1. main() creates S4003LiveTrade. The constructor loads database environment
+   variables, reads Live Trade and Strategy configuration, configures logging,
+   applies fixed live strategy parameters, and selects the data/order/DB
+   functions. The module itself is import-safe: importing it does not open an
+   IB or database connection.
+
+2. start_stream() normally calls load_initial_history(), which reads the last
+   initMonths months of ES 1-minute bars from MariaDB into memory.
+
+3. It connects to IB TWS/Gateway with ib_insync.IB, qualifies either a specific
+   future, the current front-month future resolved from ContFuture, or a stock
+   contract, depending on the configuration.
+
+4. In LIVE mode only, it ensures that the execution table exists and subscribes
+   to IB execution-detail events.
+
+5. backfill_gap_from_ib() compares the latest in-memory bar with the previous
+   completed minute. If there is a gap, it requests the missing bars from IB,
+   upserts them into MariaDB, and merges them into the rolling DataFrame.
+
+6. It calls IB.reqHistoricalData(..., barSizeSetting="1 min",
+   keepUpToDate=True) to seed recent bars and subscribe to continuing updates.
+   Entries before the live-stream start are masked so old signals are not
+   traded retroactively.
+
+7. on_bar_update() synchronizes every incoming bar into memory. When IB reports
+   a new bar, it trims/deduplicates history, calls evaluate_latest_bar(), and
+   runs the periodic database flush gate.
+
+8. evaluate_latest_bar() prepares at most lookbackBars rows with
+   strategyS4003._prepare and runs _simulate_fast from S4003_walkforward.py.
+   Entry signals are shifted by the strategy, so a signal generated on a closed
+   bar is acted on at the next bar. At least MIN_BARS = 150 rows are required
+   before evaluation.
+
+9. _reconcile() compares the simulated trade list with the tracked position:
+   - New long/short entries produce BUY or SHORT actions.
+   - Reversals produce BUY+COVER or SHORT+SELL actions.
+   - N-bar and force exits without immediate re-entry produce SELL or COVER.
+   - Stop-loss and profit-take exits are left to the existing IB bracket orders.
+   - An older simulated entry is "ghost-adopted" for state tracking only; no
+     retroactive order is sent, and its later exit also produces no order.
+   - The engine's final "eod" trade is interpreted as a position still open,
+     not as a request to flatten that position.
+
+10. _take() builds and logs the complete order action. If liveTrade=true, it
+    calls doTrade0 on the existing IB connection. If liveTrade=false, the
+    program is in OBSERVE mode: it logs signals and tracks strategy state but
+    NEVER calls doTrade0.
+
+11. main() keeps the ib_insync event loop alive with IB.sleep(1). It also calls
+    maybe_flush_db() once per loop. Ctrl+C exits the loop and stop() disconnects
+    IB.
+
+Entry and exit price behavior:
+
+- With isMktOrder=true, entries and explicit exits use market-order semantics;
+  the live engine also uses market-entry fills at the entry bar Open.
+- With isMktOrder=false, entry reference prices use the walk-forward ATR limit
+  offset, and doTrade0 applies its configured slippage/tick rounding rules.
+- New-position stop and profit prices are anchored to the entry bar Open and
+  max3BarAtr14_1. Profit distance is w1 times the stop distance.
+- doTrade0 places entry brackets with stop and, when applicable, profit child
+  orders. Reversal orders combine the exit and entry quantities as implemented
+  in ibAutotrade.py.
+
+Database persistence:
+
+- Initial history is read from MariaDB.
+- IB gap-backfill bars are written to the configured bar table and memory.
+- Every dbFlushEveryMin minutes, maybe_flush_db() writes bars from the last
+  dbFlushLookbackMin minutes, excluding the current incomplete minute, using
+  upsert behavior.
+- In LIVE mode, IB fills for this trader's submitted orders are converted to
+  execution records and saved idempotently by IB execId. A fill arriving before
+  order registration is held temporarily and saved after registration.
+
+Outputs under Live Trade.outputFolder:
+
+- S4003_live_signals.log
+  Startup, stream, signal/order, database flush, execution, error, and shutdown
+  messages. These messages are also printed to the console.
+- S4003_doTrade0_debug.log
+  Detailed doTrade0/IB order log. S4003_live.py redirects ibAutotrade.LOG_FILE
+  to this path.
+- trade_debug.log
+  Written only when isDebug=true. Contains per-new-bar OHLCV, signal flags,
+  order parameters/results, order IDs, position state, and execution details.
+- Configured MariaDB execution table (default tradeExecution)
+  Actual IB execution/fill records in LIVE mode.
+
+Important current limitation:
+
+- modelFile is only stored. No model is loaded, and _passes_rf_gate() always
+  returns True. Therefore no RandomForest gate currently filters live entries.
+
+
+2) PARAMETERS USED AND WHERE THEY COME FROM
+============================================
+
+2.1 Configuration sources and precedence
+----------------------------------------
+
+A. Live Trade section
+
+   loadLiveTradeConfig() reads the "Live Trade" mapping from:
+     VS_4000_strategy/VS_4003_20260827_ES/config.yaml
+
+   S4003LiveTrade.__init__ reads these values with cfg.get(...). The "current
+   value" notes below refer to the current local config.yaml. If the constructor
+   receives config=<dict>, that dictionary is used instead of reading the file;
+   this supports offline tests. main() passes no config and therefore uses the
+   file.
+
+B. Strategy section
+
+   The constructor calls:
+     strategyS4003.applyStrategyConfig(loadStrategyConfig())
+
+   loadStrategyConfig() reads the "Strategy" section of the same config.yaml,
+   and applyStrategyConfig() copies its mapped values to strategyS4003 class
+   attributes. Live Trade values then override the attributes relevant to live
+   trading. In particular, Live Trade w1/n1/e1 override Strategy
+   profitMult/stopPeriod/entryLimitAtrFrac.
+
+C. Database environment
+
+   _load_db_env() loads:
+     VS_0002_config/.env
+
+   It uses python-dotenv with override=False, so existing process environment
+   variables take precedence. The MariaDB helpers read DB_HOST, DB_PORT,
+   DB_USER, DB_PASSWORD, and DB_NAME when connecting. The key template is in:
+     VS_0002_config/.env.example
+
+D. Hardcoded runtime values
+
+   The live stream and IB gap backfill use 1-minute bars. MIN_BARS is 150.
+   Market-data timestamps are normalized to naive America/New_York time to
+   match the existing MariaDB convention. Execution timestamps are stored as
+   naive UTC values in executionTimeUtc.
+
+E. Constructor dependency-injection parameters
+
+   S4003LiveTrade(config=None, do_trade_fn=None, prepare_fn=None,
+                  fetch_history_fn=None, save_df_fn=None,
+                  ensure_execution_table_fn=None, save_execution_fn=None)
+
+   These optional arguments replace configuration or external functions,
+   primarily for offline tests. None values select the normal file/configured
+   implementations described in section 3.
+
+There are no command-line arguments and no argparse/CLI parameter parsing.
+
+
+2.2 Live Trade parameters
+-------------------------
+
+Market data and contract parameters:
+
+- symbolName
+  Current: ES. Default if absent: ES.
+  Used for the initial DB read, IB historical requests, contract construction,
+  saved bar rows, and execution ticker filtering.
+
+- tickerType
+  Current: FU. Default: FU.
+  Passed to the IB gap-backfill fetcher. FU means future; ST means stock.
+
+- futureExchange
+  Current: CME. Default: CME.
+  Used when qualifying the future and requesting future historical data.
+
+- timeFrame
+  Current: 1min, but S4003_live.py does NOT read this key. The initial loader,
+  backfill period1=1, and streaming request are fixed to 1-minute bars.
+
+- tableName
+  Current: ticker1Min. Default: ticker1Min.
+  Destination for gap-backfill and periodic bar upserts. Note that the imported
+  initial-history loader currently queries ticker1Min directly; tableName is
+  not passed to that loader.
+
+- initMonths
+  Current: 6. Default: 6.
+  Number of months initially loaded and the rolling-history retention period.
+
+- isConFuture
+  Current: true. Default: true.
+  Selects continuous/front-month future handling. If false, a specific Future
+  is built and futureExpireDate is required.
+
+- futureExpireDate
+  Current: null. Default: None.
+  Specific future expiry used only when isConFuture=false.
+
+IB connection parameters:
+
+- tradeHost
+  Current: 127.0.0.1. Default: 127.0.0.1.
+  IB TWS/Gateway host for the stream and doTrade0.
+
+- tradePort
+  Current: 4002. Default: 4002.
+  IB API port. The config comments identify 4002/7497 as paper ports and
+  4001/7496 as live ports.
+
+- clientId
+  Current: 1. Default: 1.
+  IB API client ID for both the connection and order function.
+
+Strategy and account parameters:
+
+- w1
+  Current: 1.5. Fallback: strategyS4003.profit_mult after Strategy config.
+  Assigned to strategyS4003.profit_mult. Multiplies stop distance to calculate
+  the profit target and is passed to _simulate_fast.
+
+- n1
+  Current: 15. Fallback: strategyS4003.stop_period1 after Strategy config.
+  Assigned to strategyS4003.stop_period1. Maximum position duration in bars,
+  passed to _simulate_fast.
+
+- e1
+  Current: 4.0. Fallback: strategyS4003.entry_limit_atr_frac after Strategy
+  config. Assigned to strategyS4003.entry_limit_atr_frac. ATR divisor for the
+  limit-entry offset; also passed to _simulate_fast.
+
+- lookbackBars
+  Current: 3000. Default: 3000.
+  Maximum number of recent rows passed to _prepare and _simulate_fast on each
+  evaluation, including indicator warm-up history.
+
+- positionSize
+  Current: 1. Default: 1.
+  Number of contracts. It sets strategyS4003.num_contracts and is passed to
+  doTrade0 as numContracts/num_contracts.
+
+- initCapital
+  Current: 80000.0. Fallback: strategyS4003.initial_capital after Strategy
+  config. Used by the live simulation's equity calculation; it does not fund or
+  resize the IB account.
+
+- pointValue
+  Current: 50.0. If absent or null, the Strategy-config/class value remains.
+  USD per index point, assigned to strategyS4003.point_value and passed to
+  _simulate_fast.
+
+- isMktOrder
+  Current: true. Default: false.
+  Selects market versus limit behavior in both _simulate_fast and doTrade0.
+  It also sets strategyS4003.entry_price_mode to "market" or "limit".
+
+Relevant values initially supplied by the Strategy section:
+
+- commissionPerTrade -> strategyS4003.commission_per_trade
+  Current: 14.50. Passed to _simulate_fast for simulated trade P&L/equity.
+- atrMode -> strategyS4003.atr_mode
+  Current: wilder. Controls ATR calculation in _prepare.
+- percentileMinPeriods -> strategyS4003.percentile_min_periods
+  Current: 100. Controls rolling percentile warm-up in _prepare.
+- profitMult, stopPeriod, entryLimitAtrFrac, positionSize, initCapital,
+  pointValue, and entryPriceMode are applied first, then overridden by the
+  corresponding Live Trade settings described above where applicable.
+
+Order parameters passed to doTrade0:
+
+- symbolType
+  Current: 1. Default: 1.
+  1=future and 2=stock. Also controls build_contract().
+
+- tickSize
+  Current: 0.25. When present, ibControllerTickSize is calculated as
+  int(round(tickSize * 10000)), currently 2500.
+
+- ibControllerTickSize
+  Not currently configured. Used only when tickSize is absent; default: 2500.
+  doTrade0 converts it back to tick size by dividing by 10000.
+
+- isIntraDay
+  Current: true. Default: true.
+  Passed to doTrade0; true selects Day orders, false selects GTC orders.
+
+- maxNumTickSize4BuyShortSlippage
+  Current: 4. Default: 4.
+  Maximum entry/exit limit-price slippage in ticks used by doTrade0.
+
+- maxNumTickSize4StpLmtOrderSlippage
+  Current: 4. Default: 4.
+  Stop-limit offset in ticks used by doTrade0 for applicable entry brackets.
+
+Safety, logging, and persistence parameters:
+
+- liveTrade
+  Current: false. Default: false.
+  Master order/execution-persistence switch. false=OBSERVE and no doTrade0
+  call; true=LIVE, with order dispatch, execution-table setup, and fill events.
+
+- isDebug
+  Current: true. Default: false.
+  Enables trade_debug.log and detailed execution debug records.
+
+- executionTableName
+  Current: tradeExecution. Default: tradeExecution.
+  MariaDB destination for actual IB fills.
+
+- dbFlushEveryMin
+  Current: 8. Default: 8.
+  Minimum wall-clock minutes between periodic bar writes.
+
+- dbFlushLookbackMin
+  Current: 12. Default: 12.
+  Size of the recent-bar window written on each flush; current minute excluded.
+
+- outputFolder
+  Current configured destination:
+    C:/Project/ProjectLife/VSCode Algo Workspace DataFile/VS_4003_20260827_ES/liveTrade
+  Default if absent or empty:
+    VS_4000_strategy/VS_4003_20260827_ES/6 liveTrade
+  Destination for the three log files listed in section 1.
+
+- modelFile
+  Current: points to S4003_4_randomforest_model.pkl under backTestResult.
+  Default: empty string. Currently unused; no model is loaded or called.
+
+
+3) FUNCTIONS CALLED, WHAT THEY DO, AND THEIR SOURCE FILES
+==========================================================
+
+3.1 Functions and methods defined in S4003_live.py
+--------------------------------------------------
+
+All functions in this subsection are defined in:
+  VS_4000_strategy/VS_4003_20260827_ES/6 liveTrade/S4003_live.py
+
+- main()
+  Program entry point. Creates S4003LiveTrade, starts streaming, runs the
+  IB.sleep(1) loop and periodic flush gate, handles Ctrl+C, and calls stop().
+
+- loadLiveTradeConfig(config_path=None) -> dict
+  Reads YAML and returns only the Live Trade section. Returns {} if the file
+  does not exist. main() uses the default local strategy config path.
+
+- _load_db_env()
+  Loads VS_0002_config/.env with python-dotenv when available and when the file
+  exists. Does not overwrite existing environment variables.
+
+- _et_naive(dt)
+  Converts a datetime to pandas Timestamp, converts aware values to
+  America/New_York, removes timezone information, and returns a Python datetime
+  compatible with the bar database/index convention.
+
+S4003LiveTrade constructor and logging:
+
+- S4003LiveTrade.__init__(...)
+  Loads all configuration, applies Strategy then Live Trade overrides, computes
+  tick size, creates the output directory, routes log paths, selects imported
+  or injected functions, and initializes rolling bars, order, position, and
+  execution-tracking state.
+
+- write_signal_log(message)
+  Appends a timestamped S4003_live message to S4003_live_signals.log and prints
+  it to the console.
+
+- write_debug_log(message)
+  Appends a timestamped message to trade_debug.log only when isDebug=true.
+
+- _write_bar_debug(bar_dt, raw_buy=0, raw_short=0, action=None)
+  Writes the latest bar's OHLCV, BUY/SELL/SHORT/COVER flags, event, complete
+  order details/result, order IDs, and tracked position to the debug log.
+
+History loading, backfill, and persistence:
+
+- load_initial_history()
+  Calculates [now - initMonths, now], calls load_1Min_data_from_db(symbol,
+  start, end), retains open/high/low/close/volume, sorts the DatetimeIndex, and
+  stores the result in self.bars_df.
+
+- _prev_minute_et(now=None)  (static method)
+  Returns the previous completed minute as naive US/Eastern time. Used as the
+  inclusive end boundary for gap backfill.
+
+- backfill_gap_from_ib(now=None)
+  Detects missing history after the last in-memory bar. Calls the injected or
+  default fetch_history_fn with the existing IB connection and the configured
+  symbol/contract parameters and period1=1. Filters the result to the requested
+  gap, calls save_df_fn(..., tableName=self.table_name, isOverride=True), merges
+  the bars into memory, trims history, and returns the merged bar count.
+
+- _trim_rolling_history()
+  Removes duplicate timestamps (keeping the last), sorts ascending, and drops
+  bars older than initMonths relative to the latest bar.
+
+- flush_recent_bars_to_db(now=None)
+  Selects the last dbFlushLookbackMin minutes before the current minute,
+  converts rows to symbolName/date/time/OHLCV format, and calls save_df_fn with
+  isOverride=True. Returns the number of rows sent.
+
+- maybe_flush_db(now=None)
+  Allows flush_recent_bars_to_db() only after dbFlushEveryMin minutes have
+  elapsed. Logs flush exceptions instead of raising them into the stream loop.
+
+IB contract and streaming:
+
+- build_contract(ib)
+  For symbolType=1, builds/qualifies a specific Future or resolves a ContFuture
+  to its current localSymbol and qualifies that Future. For other symbol types,
+  builds/qualifies a SMART USD Stock. Returns the qualified contract.
+
+- start_stream()
+  Loads initial DB history if needed, connects IB, builds the contract, sets up
+  LIVE execution handling, backfills gaps, starts keepUpToDate 1-minute
+  historical streaming, merges seed bars, establishes trade_start_ts, and
+  registers on_bar_update as the updateEvent callback.
+
+- on_bar_update(bars, has_new_bar)
+  IB callback that copies bars into the rolling DataFrame. On a new bar only,
+  it trims history, evaluates the strategy, and checks the DB flush timer.
+
+Signal evaluation and order-state reconciliation:
+
+- evaluate_latest_bar()
+  Deduplicates evaluation by bar timestamp and enforces MIN_BARS. Calls
+  prepare_fn on the latest lookbackBars rows, applies the RF hook, masks entry
+  signals before trade_start_ts, and calls _simulate_fast with OHLC, ATR,
+  signal, date, cost, contract, capital, and fixed w1/n1/e1 inputs. Passes the
+  resulting trades to _reconcile(), writes debug details, and returns the order
+  action or None.
+
+- _passes_rf_gate(sig) -> bool
+  Reserved RandomForest entry-gate hook. Currently always returns True and does
+  not read modelFile. If implemented to return False, evaluate_latest_bar()
+  masks the latest buySig and shortSig before simulation.
+
+- _reconcile(sig, trades, cur_dt)
+  Diffs current engine trades against self.open_trade and self.seen_closed.
+  Handles holds, normal closes, bracket-managed stop/profit exits, explicit
+  N-bar/force exits, reversals, same-bar cancelled entries, and ghost-adopted
+  old entries. Calculates new bracket prices and returns the resulting action.
+
+- _exit_order(trade_type, reason, cur_dt, cur_open)
+  Creates SELL for a long or COVER for a short when an engine N-bar/force close
+  needs an explicit order rather than a broker bracket exit.
+
+- _adopt(trade, ghost=False)
+  Synchronizes self.open_trade and self.position with an engine trade, or resets
+  them to flat when trade is None.
+
+- _entry_prices(sig, entry_dt)  (static method)
+  Returns entry-bar Open, stop distance from max3BarAtr14_1, and ATR limit
+  offset from previous-bar atr14/e1. Includes NaN fallbacks for warm-up rows.
+
+Order dispatch and order/fill tracking:
+
+- _current_order_ids()
+  Takes a best-effort snapshot of order IDs from self.ib.trades(). Used to
+  identify orders newly submitted by doTrade0.
+
+- _register_new_orders(before)
+  Adds newly observed order IDs to submitted_order_ids, saves any fills that
+  arrived before registration, and returns the sorted new IDs.
+
+- _take(event, bar_dt, *, buy, sell, short, cover, limit_price, stop_loss,
+        profit_take, new_pos)
+  Builds the action and complete doTrade0 parameter set. In LIVE mode it calls
+  do_trade_fn with the existing IB connection, qualified contract, signal flags,
+  prices, position size, tick/TIF/order-type/slippage settings, symbolType,
+  host, port, and clientId. Registers new order IDs and logs the result. In
+  OBSERVE mode it records doTrade0 as SKIPPED. Updates strategy-side position.
+
+- on_exec_details(trade, fill)
+  IB execDetailsEvent callback. Filters by symbol and duplicate execId, builds a
+  record containing strategy S4003, ticker, orderId, execId, UTC execution time,
+  side, quantity, price, exchange, and account. Saves immediately for a known
+  submitted order or defers the record until order registration.
+
+- _save_execution_record(record)
+  Deduplicates by execId, calls save_execution_fn(record,
+  tableName=executionTableName), logs success/failure, and returns the DB save
+  result or 0.
+
+- stop()
+  Best-effort IB disconnect followed by a shutdown signal-log entry.
+
+
+3.2 Imported project functions and classes
+------------------------------------------
+
+- loadStrategyConfig(config_path=None)
+  Source:
+    VS_4000_strategy/VS_4003_20260827_ES/2 Strategy/S4003_strategy.py
+  What it does:
+    Reads the Strategy section from the local config.yaml and returns it as a
+    dictionary. S4003_live.py calls it during construction.
+
+- strategyS4003.applyStrategyConfig(config)
+  Source:
+    VS_4000_strategy/VS_4003_20260827_ES/2 Strategy/S4003_strategy.py
+  What it does:
+    Copies Strategy configuration values to strategyS4003 class attributes.
+    S4003_live.py then applies the Live Trade w1/n1/e1/account/order overrides.
+
+- strategyS4003._prepare(df)
+  Source:
+    VS_4000_strategy/VS_4003_20260827_ES/2 Strategy/S4003_strategy.py
+  What it does:
+    Normalizes OHLCV input and computes indicators and shifted buySig/shortSig
+    entry columns. It indirectly calls _normalize_df(), _compute_signals(), and
+    _compute_indicators() in the same file. Indicators include ATR14,
+    max3BarAtr14_1, VWAP50, regression slopes, body/percentile conditions, and
+    low-bar conditions used by the price-action strategy.
+  Called from:
+    S4003LiveTrade.evaluate_latest_bar(), through self.prepare_fn by default.
+
+- _simulate_fast(O, H, L, C, atr14, max3, buy, shr, dts, start_pos,
+                 profit_mult, stop_period1, entry_limit_atr_frac, limit_mode,
+                 commission_per_trade, point_value, num_contracts,
+                 initial_capital)
+  Source:
+    VS_4000_strategy/VS_4003_20260827_ES/4 Walk Forward Test/S4003_walkforward.py
+  What it does:
+    Fast list-based transcription of strategyS4003._simulate. Simulates entries,
+    stop/profit exits, N-bar exits, opposite-signal force exits, trade P&L, and
+    equity with walk-forward semantics. Returns (trades, equity); live trading
+    uses trades and discards equity.
+  Additional import effect:
+    Importing S4003_walkforward replaces the strategy module's _lin_reg_slope
+    and _bars_since_min helpers with the file's faster, equivalent implementations
+    for this Python process only; it does not modify S4003_strategy.py on disk.
+
+- load_1Min_data_from_db(ticker='ES', start_date=None, end_date=None)
+  Source:
+    VS_0006_dataFunc/VS_6004_GetDataFromMariaDb/VS_6004_GetDataFromMariaDb.py
+  What it does:
+    Connects to MariaDB using DB_* environment values, selects ascending
+    datetime1/OHLCV rows from ticker1Min for the ticker and optional date range,
+    and returns a float OHLCV DataFrame indexed by datetime1.
+  Called from:
+    S4003LiveTrade.load_initial_history().
+
+- ibMarketData.getAllTypesTicketDataWithTimeFromIB(
+      conn1, symbolName, startDate, startTime, endDate, endTime, period1,
+      tickerType, isConFuture=True, futureExpireDate=None, futureExchange=None)
+  Source:
+    VS_0006_dataFunc/VS_6000_DataSource/ibMarketData.py
+  What it does:
+    Fetches historical IB intraday bars in bounded chunks, handles stock/future
+    contracts and front-month selection, normalizes timestamps to naive
+    US/Eastern time, filters to the requested interval, and returns a DataFrame
+    with symbolName, date, time, OHLC, and volume columns.
+  Called from:
+    S4003LiveTrade.backfill_gap_from_ib(), through self.fetch_history_fn, using
+    the already-connected self.ib and period1=1.
+
+- mariaDb.saveDfToTicker5Min(df, tableName='ticker5Min', isOverride=True)
+  Source:
+    VS_0007_dbAndFile/mariaDB/mariaDb.py
+  What it does:
+    Despite its historical function name, it writes to the tableName argument.
+    Combines date+time into datetime1, cleans numeric fields, and inserts or
+    updates rows by (ticker, datetime1). S4003_live.py always calls it with
+    tableName=self.table_name and isOverride=True, so it performs an upsert.
+    Returns the number of processed records.
+  Called from:
+    Gap backfill and periodic recent-bar flushes through self.save_df_fn.
+
+- mariaDb.ensureTradeExecutionTable(tableName='tradeExecution')
+  Source:
+    VS_0007_dbAndFile/mariaDB/mariaDb.py
+  What it does:
+    Creates the execution table if it does not exist, including the unique
+    execId key used for idempotent fill persistence.
+  Called from:
+    start_stream(), only when liveTrade=true.
+
+- mariaDb.saveTradeExecution(execution, tableName='tradeExecution')
+  Source:
+    VS_0007_dbAndFile/mariaDB/mariaDb.py
+  What it does:
+    Validates required execution fields and inserts one fill with INSERT IGNORE,
+    so an already-existing execId is not duplicated. Returns cursor.rowcount.
+  Called from:
+    _save_execution_record(), through self.save_execution_fn.
+
+- doTrade0(auto_trade, contract, buy, sell, short, cover, limit_price,
+           stop_loss_price, profit_take_price, num_contracts,
+           ib_controller_tick_size, is_intra_day, is_mkt_order,
+           max_num_tick_size4_buy_short_slippage,
+           max_num_tick_size4_stp_lmt_order_slippage, symbol_type,
+           *, port=4002, host='127.0.0.1', client_id=1, ...)
+  Source:
+    VS_0008_liveTrade/ibAutotrade.py
+  What it does:
+    Ensures an IB connection, qualifies the contract if needed, reads current
+    position/market data, validates order flags and prices, applies tick
+    rounding and slippage, and places the applicable IB orders:
+      SELL long exit, COVER short exit, BUY/SHORT entry brackets, and
+      BUY+COVER or SHORT+SELL reversals.
+    Entries can be MarketOrder or LimitOrder. Entry brackets contain stop and
+    optional profit-taking child orders. Returns 1 if an order action was placed,
+    otherwise 0. It uses AutoTrade helpers and order helpers in the same file.
+  Called from:
+    S4003LiveTrade._take(), only when liveTrade=true. self.ib is passed as
+    auto_trade, so the existing streaming IB connection is reused.
+
+
+3.3 Main third-party functions/APIs used directly
+-------------------------------------------------
+
+- yaml.safe_load(...)
+  Source: PyYAML package.
+  Reads config.yaml into Python dictionaries.
+
+- dotenv.load_dotenv(...)
+  Source: python-dotenv package.
+  Loads DB_* values from VS_0002_config/.env without overriding existing
+  environment variables.
+
+- ib_insync.IB.connect / disconnect / sleep / trades
+  Source: ib_insync package.
+  Manage the TWS/Gateway connection, event loop, and current order snapshot.
+
+- ib_insync.IB.reqHistoricalData(...)
+  Source: ib_insync package.
+  Seeds recent bars and, with keepUpToDate=True, supplies continuing bar updates.
+
+- ib_insync.IB.qualifyContracts(...)
+  Source: ib_insync package.
+  Resolves contract details before historical data or order placement.
+
+- ib_insync.ContFuture / Future / Stock
+  Source: ib_insync package.
+  Contract types constructed by build_contract().
+
+- IB.execDetailsEvent and bars.updateEvent
+  Source: ib_insync package.
+  Respectively deliver actual fills to on_exec_details() and bar changes to
+  on_bar_update().
+
+- pandas and numpy
+  Source: pandas/numpy packages.
+  Provide DataFrame/Series handling, DatetimeIndex and time arithmetic, numeric
+  conversion, NaN checks, and signal-array processing. No individual pandas or
+  numpy method is a strategy/order implementation; the project-level behavior
+  is described above.

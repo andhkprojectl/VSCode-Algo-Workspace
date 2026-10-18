@@ -84,3 +84,90 @@ def saveDfToTicker5Min(df, tableName="ticker5Min", isOverride=True):
     finally:
         cursor.close()
         conn.close()
+
+
+def _connectDb():
+    return mysql.connector.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        port=int(os.getenv("DB_PORT", "3306")),
+        user=os.getenv("DB_USER", "ibUser1"),
+        password=os.getenv("DB_PASSWORD", ""),
+        database=os.getenv("DB_NAME", "IBTradingDb"),
+    )
+
+
+def _validateTableName(tableName):
+    if not isinstance(tableName, str) or not tableName.isidentifier():
+        raise ValueError(f"Invalid MariaDB table name: {tableName!r}")
+
+
+def ensureTradeExecutionTable(tableName="tradeExecution"):
+    """Create the live-trade execution table when it does not already exist."""
+    _validateTableName(tableName)
+    conn = _connectDb()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS {tableName} (
+                id                BIGINT       NOT NULL AUTO_INCREMENT,
+                strategy          VARCHAR(20)  NOT NULL,
+                ticker            VARCHAR(20)  NOT NULL,
+                orderId           BIGINT       NOT NULL,
+                execId            VARCHAR(128) NOT NULL,
+                executionTimeUtc  DATETIME     NOT NULL,
+                side              VARCHAR(10)  NOT NULL,
+                quantity          DECIMAL(18,4) NOT NULL,
+                price             DECIMAL(18,4) NOT NULL,
+                exchangeName      VARCHAR(64)  NOT NULL DEFAULT '',
+                account           VARCHAR(64)  NOT NULL DEFAULT '',
+                created_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uk_tradeExecution_execId (execId),
+                KEY idx_tradeExecution_strategy_ticker (strategy, ticker),
+                KEY idx_tradeExecution_orderId (orderId),
+                KEY idx_tradeExecution_time (executionTimeUtc)
+            ) ENGINE=InnoDB
+              DEFAULT CHARSET=utf8mb4
+              COLLATE=utf8mb4_unicode_ci
+        """)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def saveTradeExecution(execution, tableName="tradeExecution"):
+    """Insert one IB execution, ignoring an already-seen IB execution ID."""
+    _validateTableName(tableName)
+    required = ("strategy", "ticker", "orderId", "execId", "executionTimeUtc",
+                "side", "quantity", "price")
+    missing = [key for key in required if execution.get(key) in (None, "")]
+    if missing:
+        raise ValueError(f"Missing execution fields: {missing}")
+    conn = _connectDb()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"""
+            INSERT IGNORE INTO {tableName}
+                (strategy, ticker, orderId, execId, executionTimeUtc, side,
+                 quantity, price, exchangeName, account)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            str(execution["strategy"]), str(execution["ticker"]),
+            int(execution["orderId"]), str(execution["execId"]),
+            execution["executionTimeUtc"], str(execution["side"]),
+            float(execution["quantity"]), float(execution["price"]),
+            str(execution.get("exchangeName", "")),
+            str(execution.get("account", "")),
+        ))
+        conn.commit()
+        return cursor.rowcount
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cursor.close()
+        conn.close()

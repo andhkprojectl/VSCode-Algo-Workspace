@@ -95,13 +95,29 @@ As built in `mariaDb.py`, this is implemented with:
 
 Input `df` columns expected: `symbolName, date, time, open, high, low, close, volume` (`date` = `YYYY-MM-DD`, `time` = `HH:MM:SS`); `date` + `time` are combined into `datetime1` before writing. DB connection settings come from environment variables `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (defaults: `localhost`, `3306`, `ibUser1`, empty password, `IBTradingDb`).
 
-## 5. File References
+## 5. Live-trade execution persistence
+
+`tradeExecution` stores actual IB execution/fill details for live strategies.
+Its DDL is in `sql/createTradeExecution.sql`; live mode also calls
+`ensureTradeExecutionTable(tableName="tradeExecution")` before enabling order
+flow. The unique `execId` key prevents duplicate fills when IB repeats an event.
+
+`saveTradeExecution(execution, tableName="tradeExecution")` inserts one
+execution with `INSERT IGNORE` and returns the inserted row count. The input
+mapping contains `strategy`, `ticker`, `orderId`, `execId`, `executionTimeUtc`,
+`side`, `quantity`, `price`, and optional `exchangeName` / `account` values.
+Execution timestamps are naive UTC; bar-table timestamps retain the existing
+S4003 America/New_York convention. These helpers use the same `DB_*`
+environment variables as the bar writer.
+
+## 6. File References
 
 | File | Role |
 |------|------|
 | `sql/createIBDbUser.sql` | Create database `IBTradingDb` and user `ibUser1` |
 | `sql/createTicker5Min.sql` | Create table `ticker5Min` |
 | `sql/createTicker1Min.sql` | Create table `ticker1Min` |
+| `sql/createTradeExecution.sql` | Create table `tradeExecution` for actual IB fills |
 | `sql/migrateTicker5Min_datetime1.sql` | Migrate `date` + `time` columns into single `datetime1` |
-| `mariaDb.py` | `saveDfToTicker5Min(df, tableName, isOverride)` implementation |
+| `mariaDb.py` | Bar upsert and live-trade execution table/insert implementations |
 | `VS_0006_dataFunc/VS_6003_GetMarketDataToDb/5min/DB_NVDA_20250101_20260430_5Min.py` | Fetches NVDA data from IB and saves it to `ticker5Min` |

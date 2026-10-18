@@ -73,16 +73,24 @@ reports to the strategy's `lookAheadTestResult` / `monteCarloResult` folders.
 ### 5. Live trading
 
 ```
-python "VS_4000_strategy/VS_4003_20260827_ES/6 liveTrade/S4003_live.py"
+python liveTrade.py --strategy S4003
 ```
 
-(A root `liveTrade.py --strategy <id>` wrapper is planned as TASKS.md T7.6.)
+Runs `VS_4000_strategy/VS_4003_20260827_ES/6 liveTrade/S4003_live.py`.
+Extra args are forwarded to the strategy live trade program.
 
-Streams 1-min bars from IB (`reqHistoricalData` with `keepUpToDate=True`),
-evaluates the strategy class on each new bar and places orders via `doTrade0`
-in `VS_0008_liveTrade/ibAutotrade.py`. Parameters from section `Live Trade`
-(incl. `tradePort`). Logs to the strategy's `liveTrade` folder
-(`S4003_live_signals.log`, `S4003_doTrade0_debug.log`).
+Loads six months of 1-min bars from MariaDB, backfills any gap from IB, then
+streams bars with `reqHistoricalData(keepUpToDate=True)`. Each new bar is
+evaluated with fixed `Live Trade` w1/n1/e1 parameters through the walk-forward
+engine. The configured FR-6 mode places market orders via `doTrade0` in
+`VS_0008_liveTrade/ibAutotrade.py`, reusing the streaming IB connection. Recent
+bars are upserted to MariaDB every 8 minutes, and actual IB fills are stored in
+`tradeExecution`.
+
+Logs are written to the strategy's `liveTrade` output folder:
+`S4003_live_signals.log`, `S4003_doTrade0_debug.log`, and—when
+`Live Trade.isDebug: true`—`trade_debug.log` with per-new-bar OHLCV, signals,
+and complete order parameters/results.
 
 SAFETY: `Live Trade.liveTrade: false` = OBSERVE mode — signals are computed and
 logged but NO orders are placed. Flip to `true` only after backtest,
@@ -92,7 +100,8 @@ walk-forward and other tests pass, and use paper ports before live ones.
 
 `--strategy <id>` (e.g. `S4003`, case-insensitive) selects the strategy folder
 `VS_4000_strategy/VS_<num>_*/` and the program `<id>_<mode>.py` inside the
-mode's subfolder (`3 BackTest`, `4 Walk Forward Test`, `5 OtherTest`).
+mode's subfolder (`3 BackTest`, `4 Walk Forward Test`, `5 OtherTest`,
+`6 liveTrade`).
 Currently available: `S4003` (ES 1-min intraday).
 
 ## Tests

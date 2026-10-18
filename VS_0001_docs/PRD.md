@@ -100,9 +100,12 @@ Some files already exists in the workspace. Keep files unchanged if file name no
 - MonteCarlo test perform test, simulate random price paths to estimate probability of success and find max drawdown
 
 ### FR-6 Live Trading
+- Initialization:
+    - When program start, 1) get last 6 months OHLCV data from MariaDb, table ticker1Min and save to in-memory dataframe
+    - if last bar datetime in dataframe is not previous minute, call IB function to get OHLCV data, period from dataframe last bar to previous minute, logic base on ingest.py. Then save result to both in-memory dataframe and table ticker1Min
 - Data: `ib.reqHistoricalData(..., barSizeSetting='1 min', keepUpToDate=True)`.
 - Maintain rolling bars in an in-memory pandas DataFrame (updated in the callback).
-- On each new bar (callback trigger), trigger buy/sell/short/cover signal base on walkforward file S4003_walkforward.py, with fix w1, n1 set in config.yaml.
+- On each new bar (callback trigger), trigger buy/sell/short/cover signal, logic base on walkforward file S4003_walkforward.py, but no need to do walkforward test, simply use fix w1, n1 set in config.yaml.
 - On signal:
 - `BUY`  -> place BUY market order (entry long)
 - `SELL` -> place SELL market order (exit long)
@@ -111,7 +114,9 @@ Some files already exists in the workspace. Keep files unchanged if file name no
 - Position is parameter in strategy local configure file. default 1 contract
 - Order execution via IB TWS/Gateway API (function `doTrade0` in `VS_0008_liveTrade/ibAutotrade.py`)
 - Maintain position tracking and risk limits
-- Log trade execution details to database
+- Log actual IB execution/fill details to MariaDB table `tradeExecution`; IB `execId` is unique to prevent duplicate rows
+- For every 8 minutes, update last 12 minutes bars (exclude current minute bar) from in-memory dataframe to database
+- if configuration config.yaml, isDebug set to true, whenever call back function is triggered and new bar, write to debug file: date time, OHLCV, buy/short/sell/cover signal detail, order information, e.g. parameter pass to function `doTrade0`
 
 
 ### FR-7 Configuration
@@ -121,7 +126,10 @@ Some files already exists in the workspace. Keep files unchanged if file name no
     - initial capital
     - backtest, walkforward test, other test result output folder name
     - walkforward test parameters: IIS start date, IIS end date, OOS step, rolling window:true/false, parameter 1, parameter 2 for tuning parameters, endDateIsOOS (1 = analysisEnd is last OOS day, 0 = analysisEnd is last IIS day)
-    - liveTrade=true/false
+    - lookAhead test parameters: max lookahead minutes, lookahead window size
+    - monteCarlo test parameters: number of simulations, random seed, price path generation method
+    - liveTrade=true/false. add 2 more parameter to config: live trade section: ticksize and pointValue
+    - liveTrade parameter: isDebug = true or false. if true, when live trade program run, write debug message to debug log at C:\Project\ProjectLife\VSCode Algo Workspace DataFile\<strategy folder name>\liveTrade\trade_debug.log. <strategy folder name> is strategy folder, e.g. --strategy <id>, <id>=S4003, <strategy folder name> is `VS_4003_20260827_ES`
 
 ## 4. Acceptance Criteria
 

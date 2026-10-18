@@ -30,6 +30,8 @@ VSCode Algo Workspace/
 │   ├── PRD.md
 │   ├── ARCHITECTURE.md
 │   └── TASKS.md
+│   ├── TASKS
+│   │   └── VS_4003.md      # fucntion spec of strategy in VS_4003_20260827_ES 
 ├── VS_0002_config
 │   ├── .env                          # IB / MariaDB credentials (never commit)
 │   ├── .env.example                  # template of the .env keys
@@ -73,11 +75,12 @@ VSCode Algo Workspace/
 ├── VS_0007_dbAndFile
 │   ├── mariaDB
 │   │   ├── mariaDb.md              # doc for mariaDb.py
-│   │   ├── mariaDb.py              # MariaDB functions (saveDfToTicker5Min etc.)
+│   │   ├── mariaDb.py              # MariaDB bar upserts and idempotent live-trade execution persistence
 │   │   └── sql
 │   │       ├── createIBDbUser.sql      # create database schema, user and privileges for IBTradingDb
 │   │       ├── createTicker1Min.sql    # create ticker1Min table
 │   │       ├── createTicker5Min.sql    # create ticker5Min table
+│   │       ├── createTradeExecution.sql # create tradeExecution table for actual IB fills
 │   │       └── migrateTicker5Min_datetime1.sql  # migration: adjust datetime column of ticker5Min
 │   └── sqlIte
 │       ├── sql
@@ -123,13 +126,13 @@ VSCode Algo Workspace/
 │   │   ├── 3 BackTest
 │   │   │   └── S4003_backtest.py             # backtest: RF gate + daily stops (TASKS.md T2.2)
 │   │   ├── 4 Walk Forward Test
-│   │   │   └── S4003_walkforward.py          # rolling IIS/OOS walk-forward with OOS-day gate (TASKS.md T2.1)
+│   │   │   └── S4003_walkforward.py          # rolling IIS/OOS walk-forward with OOS-day gate, speed-optimized engine path (_simulate_fast + warm-up truncation) (TASKS.md T2.1)
 │   │   ├── 5 OtherTest
 │   │   │   ├── S4003_lookAhead.py            # look-ahead bias test, verdict CLEAN (TASKS.md T3.1)
 │   │   │   └── S4003_monteCarlo.py           # Monte Carlo over trade P&L, percentile html (TASKS.md T3.2)
 │   │   ├── 6 liveTrade
-│   │   │   ├── S4003_live.py                 # live loop: IB keepUpToDate 1-min bars -> strategyS4003._simulate (walkforward engine path, fixed w1/n1 from config) -> doTrade0 (TASKS.md T4.1)
-│   │   │   ├── test_S4003_live.py            # offline tests: signal->order mapping, OBSERVE gate, DB replay
+│   │   │   ├── S4003_live.py                 # live loop: 6-month MariaDB init + IB gap backfill; keepUpToDate bars -> fixed-parameter _simulate_fast -> market doTrade0 on the same IB connection; 8-min bar flush, trade_debug.log via isDebug, and actual fills -> tradeExecution (TASKS.md T4.1)
+│   │   │   ├── test_S4003_live.py            # offline tests: market order mapping, OBSERVE gate, debug logs, DB replay, gap backfill, DB flush, execution-event persistence
 │   │   │   └── L4003_1_randomForest_glm.txt  # live-trade requirement for the RF model
 │   │   └── config.yaml                       # local strategy configuration (TASKS.md T0.1)
 │   └── VS_4004_20260204_NVDA           # NVDA intraday strategy family
@@ -170,7 +173,7 @@ VSCode Algo Workspace/
 ```
 
 ## Commands
-(under workspace root, see TASKS.md Phase 7)
+(under workspace root)
 - Ingest data: `ingest.py`, , see TASKS.md Phase T7.1
 - Backtest: `backtest.py`, see TASKS.md Phase T7.2
 - Walk-forward: `walkforward.py`, see TASKS.md Phase T7.3
